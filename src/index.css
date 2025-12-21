@@ -1,0 +1,154 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* WealthFlow - Elegant Dark Finance Design System */
+
+@layer base {
+  :root {
+    --background: 220 20% 97%;
+    --foreground: 220 25% 10%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 220 25% 10%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 25% 10%;
+
+    --primary: 142 70% 45%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 220 15% 92%;
+    --secondary-foreground: 220 25% 10%;
+
+    --muted: 220 15% 92%;
+    --muted-foreground: 220 10% 45%;
+
+    --accent: 262 80% 55%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 142 70% 45%;
+    --success-foreground: 0 0% 100%;
+
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
+
+    --border: 220 15% 88%;
+    --input: 220 15% 88%;
+    --ring: 142 70% 45%;
+
+    --radius: 0.75rem;
+
+    --chart-1: 142 70% 45%;
+    --chart-2: 262 80% 55%;
+    --chart-3: 38 92% 50%;
+    --chart-4: 200 80% 50%;
+    --chart-5: 330 80% 55%;
+
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 220 10% 30%;
+    --sidebar-primary: 142 70% 45%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 220 15% 94%;
+    --sidebar-accent-foreground: 220 25% 10%;
+    --sidebar-border: 220 15% 88%;
+    --sidebar-ring: 142 70% 45%;
+  }
+
+  .dark {
+    --background: 222 47% 6%;
+    --foreground: 0 0% 100%;
+
+    --card: 222 40% 10%;
+    --card-foreground: 0 0% 100%;
+
+    --popover: 222 40% 10%;
+    --popover-foreground: 0 0% 100%;
+
+    --primary: 142 70% 50%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 222 30% 16%;
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 222 30% 16%;
+    --muted-foreground: 0 0% 100%;
+
+    --accent: 262 80% 60%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 65% 55%;
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 142 70% 50%;
+    --success-foreground: 0 0% 100%;
+
+    --warning: 38 92% 55%;
+    --warning-foreground: 0 0% 100%;
+
+    --border: 222 25% 22%;
+    --input: 222 25% 22%;
+    --ring: 142 70% 50%;
+
+    --chart-1: 142 70% 50%;
+    --chart-2: 262 80% 60%;
+    --chart-3: 38 92% 55%;
+    --chart-4: 200 80% 55%;
+    --chart-5: 330 80% 60%;
+
+    --sidebar-background: 222 40% 8%;
+    --sidebar-foreground: 0 0% 100%;
+    --sidebar-primary: 142 70% 50%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 222 30% 14%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 222 25% 18%;
+    --sidebar-ring: 142 70% 50%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+  }
+
+  html {
+    @apply scroll-smooth;
+  }
+}
+
+@layer utilities {
+  .glass {
+    @apply bg-card/80 backdrop-blur-xl border border-border/50;
+  }
+
+  .gradient-primary {
+    background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--accent)) 100%);
+  }
+
+  .gradient-card {
+    background: linear-gradient(180deg, hsl(var(--card)) 0%, hsl(var(--card)/0.8) 100%);
+  }
+
+  .text-gradient {
+    @apply bg-clip-text text-transparent;
+    background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--accent)) 100%);
+  }
+
+  .glow-primary {
+    box-shadow: 0 0 40px hsl(var(--primary) / 0.15);
+  }
+
+  .glow-accent {
+    box-shadow: 0 0 40px hsl(var(--accent) / 0.15);
+  }
+}

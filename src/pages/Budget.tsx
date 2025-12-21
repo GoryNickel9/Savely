@@ -1,0 +1,215 @@
+import MainLayout from '@/components/layout/MainLayout';
+import { useBudgets } from '@/hooks/useBudgets';
+import { useCategories } from '@/hooks/useCategories';
+import { useTransactions } from '@/hooks/useTransactions';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Progress } from '@/components/ui/progress';
+import { CURRENCY_SYMBOLS, TransactionType } from '@/lib/types';
+import { Plus, FolderPlus } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { useToast } from '@/hooks/use-toast';
+
+const EMOJI_OPTIONS = ['🍔', '🚗', '🏠', '🛍️', '🎬', '💊', '📦', '💰', '💻', '📈', '💵', '✈️', '🎮', '📚', '🎵', '🏋️', '☕', '🎁'];
+const COLOR_OPTIONS = ['#f97316', '#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b', '#ef4444', '#6b7280', '#22c55e', '#14b8a6', '#06b6d4'];
+
+// Calculate median of an array
+const calculateMedian = (arr: number[]): number => {
+  if (arr.length === 0) return 0;
+  const sorted = [...arr].sort((a, b) => a - b);
+  const mid = Math.floor(sorted.length / 2);
+  return sorted.length % 2 !== 0 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+};
+
+export default function Budget() {
+  const { budgets, createBudget } = useBudgets();
+  const { expenseCategories, createCategory } = useCategories();
+  const { transactions } = useTransactions();
+  const { toast } = useToast();
+  const [open, setOpen] = useState(false);
+  const [categoryId, setCategoryId] = useState('');
+  const [amount, setAmount] = useState('');
+
+  // New category dialog state
+  const [catOpen, setCatOpen] = useState(false);
+  const [catName, setCatName] = useState('');
+  const [catIcon, setCatIcon] = useState('📦');
+  const [catColor, setCatColor] = useState('#6b7280');
+  const [catType, setCatType] = useState<TransactionType>('expense');
+
+  // Calculate the 18-month period ending at current date
+  const { startDate, endDate } = useMemo(() => {
+    const end = new Date();
+    const start = new Date();
+    start.setMonth(start.getMonth() - 18);
+    return { startDate: start, endDate: end };
+  }, []);
+
+  // Get median monthly spending for a category over the last 18 months
+  const getMedianSpending = useMemo(() => {
+    return (catId: string) => {
+      // Filter transactions for this category in the last 18 months
+      const categoryTransactions = transactions.filter(t => {
+        const txDate = new Date(t.date);
+        return t.category_id === catId && 
+               t.type === 'expense' && 
+               txDate >= startDate && 
+               txDate <= endDate;
+      });
+
+      // Group by month (year-month key)
+      const monthlyTotals: Record<string, number> = {};
+      categoryTransactions.forEach(t => {
+        const date = new Date(t.date);
+        const key = `${date.getFullYear()}-${date.getMonth()}`;
+        monthlyTotals[key] = (monthlyTotals[key] || 0) + Number(t.amount);
+      });
+
+      // Get array of monthly totals and calculate median
+      const totalsArray = Object.values(monthlyTotals);
+      return calculateMedian(totalsArray);
+    };
+  }, [transactions, startDate, endDate]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      await createBudget.mutateAsync({ category_id: categoryId, amount: parseFloat(amount) });
+      toast({ title: 'Budget creato!' });
+      setOpen(false);
+      setCategoryId('');
+      setAmount('');
+    } catch {
+      toast({ title: 'Errore', variant: 'destructive' });
+    }
+  };
+
+  const handleCreateCategory = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!catName.trim()) return;
+    try {
+      await createCategory.mutateAsync({ name: catName.trim(), icon: catIcon, color: catColor, type: catType });
+      toast({ title: 'Categoria creata!' });
+      setCatOpen(false);
+      setCatName('');
+      setCatIcon('📦');
+      setCatColor('#6b7280');
+      setCatType('expense');
+    } catch {
+      toast({ title: 'Errore', variant: 'destructive' });
+    }
+  };
+
+  const usedCategoryIds = budgets.map(b => b.category_id);
+  const availableCategories = expenseCategories.filter(c => !usedCategoryIds.includes(c.id));
+
+  const periodLabel = `${startDate.toLocaleDateString('it-IT', { month: 'short', year: 'numeric' })} - ${endDate.toLocaleDateString('it-IT', { month: 'short', year: 'numeric' })}`;
+
+  return (
+    <MainLayout>
+      <div className="space-y-6">
+        <div className="flex items-center justify-between flex-wrap gap-3">
+          <div>
+            <h1 className="text-3xl font-display font-bold">Budget</h1>
+            <p className="text-muted-foreground">Mediana mensile ({periodLabel})</p>
+          </div>
+          <div className="flex gap-2">
+            {/* Create Category Dialog */}
+            <Dialog open={catOpen} onOpenChange={setCatOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline"><FolderPlus className="w-4 h-4 mr-2" />Nuova Categoria</Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader><DialogTitle>Nuova Categoria</DialogTitle></DialogHeader>
+                <form onSubmit={handleCreateCategory} className="space-y-4">
+                  <Input placeholder="Nome categoria" value={catName} onChange={e => setCatName(e.target.value)} required />
+                  <div>
+                    <label className="text-sm text-muted-foreground mb-2 block">Icona</label>
+                    <div className="flex flex-wrap gap-2">
+                      {EMOJI_OPTIONS.map(emoji => (
+                        <button
+                          type="button"
+                          key={emoji}
+                          onClick={() => setCatIcon(emoji)}
+                          className={`w-10 h-10 text-xl rounded-lg border transition-all ${catIcon === emoji ? 'border-primary bg-primary/20' : 'border-border hover:border-primary/50'}`}
+                        >
+                          {emoji}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-sm text-muted-foreground mb-2 block">Colore</label>
+                    <div className="flex flex-wrap gap-2">
+                      {COLOR_OPTIONS.map(color => (
+                        <button
+                          type="button"
+                          key={color}
+                          onClick={() => setCatColor(color)}
+                          className={`w-8 h-8 rounded-full border-2 transition-all ${catColor === color ? 'border-foreground scale-110' : 'border-transparent'}`}
+                          style={{ backgroundColor: color }}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                  <Select value={catType} onValueChange={(v) => setCatType(v as TransactionType)}>
+                    <SelectTrigger><SelectValue placeholder="Tipo" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="expense">Spesa</SelectItem>
+                      <SelectItem value="income">Entrata</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Button type="submit" className="w-full" disabled={createCategory.isPending}>
+                    {createCategory.isPending ? 'Creazione...' : 'Crea Categoria'}
+                  </Button>
+                </form>
+              </DialogContent>
+            </Dialog>
+
+            {/* Create Budget Dialog */}
+            <Dialog open={open} onOpenChange={setOpen}>
+              <DialogTrigger asChild><Button><Plus className="w-4 h-4 mr-2" />Nuovo Budget</Button></DialogTrigger>
+              <DialogContent>
+                <DialogHeader><DialogTitle>Nuovo Budget</DialogTitle></DialogHeader>
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <Select value={categoryId} onValueChange={setCategoryId}>
+                    <SelectTrigger><SelectValue placeholder="Categoria" /></SelectTrigger>
+                    <SelectContent>{availableCategories.map(c => <SelectItem key={c.id} value={c.id}>{c.icon} {c.name}</SelectItem>)}</SelectContent>
+                  </Select>
+                  <Input type="number" placeholder="Importo" value={amount} onChange={e => setAmount(e.target.value)} required />
+                  <Button type="submit" className="w-full">Crea</Button>
+                </form>
+              </DialogContent>
+            </Dialog>
+          </div>
+        </div>
+
+        <div className="grid gap-4">
+          {budgets.length === 0 ? (
+            <div className="glass rounded-xl p-12 text-center text-muted-foreground">Nessun budget impostato</div>
+          ) : budgets.map(b => {
+            const medianSpent = getMedianSpending(b.category_id);
+            const percent = Math.min((medianSpent / Number(b.amount)) * 100, 100);
+            const isOver = medianSpent > Number(b.amount);
+            return (
+              <div key={b.id} className="glass rounded-xl p-6">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-3">
+                    <span className="text-2xl">{b.category?.icon}</span>
+                    <span className="font-medium">{b.category?.name}</span>
+                  </div>
+                  <span className={isOver ? 'text-destructive font-semibold' : 'text-muted-foreground'}>
+                    {CURRENCY_SYMBOLS.EUR}{medianSpent.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} / {CURRENCY_SYMBOLS.EUR}{Number(b.amount).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </span>
+                </div>
+                <Progress value={percent} className={isOver ? '[&>div]:bg-destructive' : ''} />
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </MainLayout>
+  );
+}
