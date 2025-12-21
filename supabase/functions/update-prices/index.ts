@@ -1,9 +1,31 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Origin': 'https://tuodominio.com', // Sostituire con il dominio reale
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+// Rate limiting configuration
+const RATE_LIMIT = new Map();
+const RATE_LIMIT_MAX = 10; // 10 richieste per minuto
+const RATE_LIMIT_WINDOW = 60 * 1000; // 1 minuto
+
+function checkRateLimit(ip: string): boolean {
+  const now = Date.now();
+  const requests = RATE_LIMIT.get(ip) || [];
+  
+  // Pulisci richieste vecchie
+  const validRequests = requests.filter((time: number) => now - time < RATE_LIMIT_WINDOW);
+  
+  if (validRequests.length >= RATE_LIMIT_MAX) {
+    return false;
+  }
+  
+  validRequests.push(now);
+  RATE_LIMIT.set(ip, validRequests);
+  return true;
+}
 
 interface Asset {
   id: string;
@@ -183,6 +205,18 @@ Deno.serve(async (req) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
+  }
+
+  // Rate limiting check
+  const clientIP = req.headers.get('x-forwarded-for') ||
+                   req.headers.get('x-real-ip') ||
+                   'unknown';
+  
+  if (!checkRateLimit(clientIP)) {
+    return new Response(
+      JSON.stringify({ error: 'Rate limit exceeded. Try again later.' }),
+      { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
   }
 
   try {

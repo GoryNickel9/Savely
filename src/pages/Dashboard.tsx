@@ -23,19 +23,19 @@ export default function Dashboard() {
     .filter(t => t.type === 'expense' && new Date(t.date).getMonth() === currentMonth && new Date(t.date).getFullYear() === currentYear)
     .reduce((sum, t) => sum + Number(t.amount), 0);
 
-  // Annual income/expenses for net worth calculation
-  const annualIncome = transactions
-    .filter(t => t.type === 'income' && new Date(t.date).getFullYear() === currentYear)
+  // All-time income/expenses for net worth calculation
+  const totalIncome = transactions
+    .filter(t => t.type === 'income')
     .reduce((sum, t) => sum + Number(t.amount), 0);
 
-  const annualExpenses = transactions
-    .filter(t => t.type === 'expense' && new Date(t.date).getFullYear() === currentYear)
+  const totalExpenses = transactions
+    .filter(t => t.type === 'expense')
     .reduce((sum, t) => sum + Number(t.amount), 0);
 
   const totalBudget = budgets.reduce((sum, b) => sum + Number(b.amount), 0);
   
-  // Net Worth = Annual Income - Annual Expenses + Portfolio Value
-  const netWorth = annualIncome - annualExpenses + totalValue;
+  // Net Worth = Portfolio Value + Total Income - Total Expenses
+  const netWorth = totalValue + totalIncome - totalExpenses;
 
   return (
     <MainLayout>

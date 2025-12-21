@@ -94,7 +94,7 @@ export default function Auth() {
     } else {
       toast({
         title: 'Registrazione completata!',
-        description: 'Benvenuto in WealthFlow',
+        description: 'Benvenuto in Spendy',
       });
     }
   };
@@ -131,7 +131,7 @@ export default function Auth() {
       {/* Left side - Branding */}
       <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-primary/20 via-background to-accent/20 p-12 flex-col justify-between">
         <div>
-          <h1 className="text-4xl font-display font-bold text-gradient">WealthFlow</h1>
+          <h1 className="text-4xl font-display font-bold text-gradient">Spendy</h1>
           <p className="text-muted-foreground mt-2">La tua finanza personale, semplificata</p>
         </div>
         
@@ -166,8 +166,8 @@ export default function Auth() {
             </div>
           </div>
         </div>
-        
-        <p className="text-sm text-muted-foreground">© 2024 WealthFlow. Tutti i diritti riservati.</p>
+
+        <p className="text-sm text-muted-foreground">© 2024 Spendy. Tutti i diritti riservati.</p>
       </div>
 
       {/* Right side - Auth form */}
@@ -175,7 +175,7 @@ export default function Auth() {
         <Card className="w-full max-w-md glass border-border/50">
           <CardHeader className="space-y-1 text-center">
             <div className="lg:hidden mb-4">
-              <h1 className="text-3xl font-display font-bold text-gradient">WealthFlow</h1>
+              <h1 className="text-3xl font-display font-bold text-gradient">Spendy</h1>
             </div>
             <CardTitle className="text-2xl font-display">Benvenuto</CardTitle>
             <CardDescription>Accedi o crea un account per continuare</CardDescription>
