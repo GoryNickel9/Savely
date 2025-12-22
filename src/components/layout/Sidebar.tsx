@@ -31,12 +31,13 @@ export default function Sidebar() {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const NavContent = () => (
-    <>
-      <div className="p-6">
-        <h1 className="text-2xl font-display font-bold text-gradient">Spendy</h1>
+    <div className="flex flex-col h-full">
+      <div className="p-6 flex-shrink-0">
+        <h1 className="text-2xl font-display font-bold">Spendy</h1>
+        <p className="text-sm text-muted-foreground mt-1">La tua finanza personale semplificata</p>
       </div>
 
-      <nav className="flex-1 px-4 space-y-1">
+      <nav className="flex-1 px-4 space-y-1 overflow-y-auto">
         {navigation.map((item) => {
           const isActive = location.pathname === item.href;
           return (
@@ -58,7 +59,7 @@ export default function Sidebar() {
         })}
       </nav>
 
-      <div className="p-4 border-t border-border">
+      <div className="p-4 border-t border-border flex-shrink-0">
         <button
           onClick={() => {
             setMobileOpen(false);
@@ -82,7 +83,7 @@ export default function Sidebar() {
           Esci
         </Button>
       </div>
-    </>
+    </div>
   );
 
   return (
