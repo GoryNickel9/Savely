@@ -23,19 +23,20 @@ export default function Dashboard() {
     .filter(t => t.type === 'expense' && new Date(t.date).getMonth() === currentMonth && new Date(t.date).getFullYear() === currentYear)
     .reduce((sum, t) => sum + Number(t.amount), 0);
 
-  // All-time income/expenses for net worth calculation
-  const totalIncome = transactions
-    .filter(t => t.type === 'income')
+  // Annual income/expenses for net worth calculation
+  const annualIncome = transactions
+    .filter(t => t.type === 'income' && new Date(t.date).getFullYear() === currentYear)
     .reduce((sum, t) => sum + Number(t.amount), 0);
 
-  const totalExpenses = transactions
-    .filter(t => t.type === 'expense')
+  const annualExpenses = transactions
+    .filter(t => t.type === 'expense' && new Date(t.date).getFullYear() === currentYear)
     .reduce((sum, t) => sum + Number(t.amount), 0);
 
   const totalBudget = budgets.reduce((sum, b) => sum + Number(b.amount), 0);
   
-  // Net Worth = Portfolio Value + Total Income - Total Expenses
-  const netWorth = totalValue + totalIncome - totalExpenses;
+  // Patrimonio Netto = Portfolio + cashflow annuale (entrata annuale - uscita annuale)
+  const annualCashflow = annualIncome - annualExpenses;
+  const netWorth = totalValue + annualCashflow;
 
   return (
     <MainLayout>

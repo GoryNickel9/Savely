@@ -4,7 +4,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Spendy - Elegant Dark Finance Design System */
+/* WealthFlow - Elegant Dark Finance Design System */
 
 @layer base {
   :root {
@@ -141,15 +141,7 @@
 
   .text-gradient {
     @apply bg-clip-text text-transparent;
-    background: linear-gradient(135deg,
-      hsl(var(--primary)) 0%,
-      hsl(var(--accent)) 50%,
-      hsl(var(--primary)) 100%);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-    /* Fallback color for browsers that don't support gradient text */
-    color: hsl(var(--primary));
+    background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--accent)) 100%);
   }
 
   .glow-primary {
