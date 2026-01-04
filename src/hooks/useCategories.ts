@@ -35,6 +35,36 @@ export function useCategories() {
     },
   });
 
+  const updateCategory = useMutation({
+    mutationFn: async ({ id, ...category }: { id: string; name: string; icon: string; color: string; type: TransactionType }) => {
+      if (!user) throw new Error('Not authenticated');
+      const { error } = await supabase
+        .from('categories')
+        .update(category)
+        .eq('id', id)
+        .eq('user_id', user.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['categories'] });
+    },
+  });
+
+  const deleteCategory = useMutation({
+    mutationFn: async (id: string) => {
+      if (!user) throw new Error('Not authenticated');
+      const { error } = await supabase
+        .from('categories')
+        .delete()
+        .eq('id', id)
+        .eq('user_id', user.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['categories'] });
+    },
+  });
+
   const incomeCategories = categories.filter(c => c.type === 'income');
   const expenseCategories = categories.filter(c => c.type === 'expense');
 
@@ -44,6 +74,8 @@ export function useCategories() {
     expenseCategories,
     isLoading,
     createCategory,
+    updateCategory,
+    deleteCategory,
     refetch,
   };
 }

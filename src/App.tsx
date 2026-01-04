@@ -10,6 +10,7 @@ import Dashboard from "./pages/Dashboard";
 import Transactions from "./pages/Transactions";
 import RecurringExpenses from "./pages/RecurringExpenses";
 import Budget from "./pages/Budget";
+import Categories from "./pages/Categories";
 import Charts from "./pages/Charts";
 import Portfolio from "./pages/Portfolio";
 import Settings from "./pages/Settings";
@@ -44,6 +45,7 @@ function AppRoutes() {
       <Route path="/transactions" element={<ProtectedRoute><Transactions /></ProtectedRoute>} />
       <Route path="/recurring" element={<ProtectedRoute><RecurringExpenses /></ProtectedRoute>} />
       <Route path="/budget" element={<ProtectedRoute><Budget /></ProtectedRoute>} />
+      <Route path="/categories" element={<ProtectedRoute><Categories /></ProtectedRoute>} />
       <Route path="/charts" element={<ProtectedRoute><Charts /></ProtectedRoute>} />
       <Route path="/portfolio" element={<ProtectedRoute><Portfolio /></ProtectedRoute>} />
       <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />

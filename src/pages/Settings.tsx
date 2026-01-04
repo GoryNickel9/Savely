@@ -23,6 +23,7 @@ import RevolutImportDialog from '@/components/settings/RevolutImportDialog';
 import BBVAImportDialog from '@/components/settings/BBVAImportDialog';
 import TradeRepublicImportDialog from '@/components/settings/TradeRepublicImportDialog';
 import ISINMappingsDialog from '@/components/settings/ISINMappingsDialog';
+import { InvestimentiImportDialog } from '@/components/settings/InvestimentiImportDialog';
 
 export default function Settings() {
   const { user, signOut } = useAuth();
@@ -36,6 +37,7 @@ export default function Settings() {
   const [bbvaDialogOpen, setBbvaDialogOpen] = useState(false);
   const [tradeRepublicDialogOpen, setTradeRepublicDialogOpen] = useState(false);
   const [isinMappingsDialogOpen, setIsinMappingsDialogOpen] = useState(false);
+  const [investimentiDialogOpen, setInvestimentiDialogOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const exportData = async (format: 'csv' | 'xlsx') => {
     if (!user) return;
@@ -351,6 +353,28 @@ export default function Settings() {
                       userId={user.id}
                     />
                   </>
+                )}
+              </div>
+
+              {/* Import Investimenti CSV */}
+              <div>
+                <p className="text-sm text-muted-foreground mb-2">
+                  Importa i tuoi investimenti da un file CSV con colonne italiane.
+                </p>
+                <Button
+                  variant="outline"
+                  onClick={() => setInvestimentiDialogOpen(true)}
+                  className="w-full sm:w-auto"
+                >
+                  <Upload className="w-5 h-5 mr-2" />
+                  Importa Investimenti CSV
+                </Button>
+                {user && (
+                  <InvestimentiImportDialog
+                    open={investimentiDialogOpen}
+                    onOpenChange={setInvestimentiDialogOpen}
+                    userId={user.id}
+                  />
                 )}
               </div>
 
