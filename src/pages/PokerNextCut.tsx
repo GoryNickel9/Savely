@@ -5,9 +5,11 @@ import { useTransactions } from '@/hooks/useTransactions';
 import { usePokerManualExpenses } from '@/hooks/usePokerManualExpenses';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { CURRENCY_SYMBOLS } from '@/lib/types';
+import MainLayout from '@/components/layout/MainLayout';
 
 // Mock data structures
 interface PokerNextCut {
@@ -224,8 +226,8 @@ export default function PokerNextCut() {
   const need = calculateNeed();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-6">
-      <div className="max-w-6xl mx-auto space-y-6">
+    <MainLayout>
+      <div className="space-y-6 max-w-6xl mx-auto">
         {/* Header with Back Button */}
         <div className="flex items-center gap-4">
           <button
@@ -241,9 +243,9 @@ export default function PokerNextCut() {
         </div>
 
         {/* Monthly Spending Section */}
-        <div className="bg-slate-800/50 rounded-xl border border-slate-700 overflow-hidden">
-          <div className="p-6 border-b border-slate-700 flex items-center justify-between">
-            <h2 className="text-xl font-bold text-white">Spesa Mensile</h2>
+        <Card className="bg-slate-800/50 border-slate-700">
+          <CardHeader className="border-b border-slate-700 flex items-center justify-between">
+            <CardTitle className="text-white">Spesa Mensile</CardTitle>
             <Dialog open={createOpen} onOpenChange={setCreateOpen}>
               <DialogTrigger asChild>
                 <Button size="sm">
@@ -277,8 +279,8 @@ export default function PokerNextCut() {
                 </form>
               </DialogContent>
             </Dialog>
-          </div>
-          <div className="p-6">
+          </CardHeader>
+          <CardContent className="p-6">
             <div className="space-y-4">
               {/* Total from Budget */}
               <div className="p-4 bg-blue-500/10 rounded-lg border border-blue-500/20">
@@ -325,10 +327,9 @@ export default function PokerNextCut() {
                   ))}
                 </div>
               )}
-
-            </div>
           </div>
-        </div>
+        </CardContent>
+          </Card>
 
         {/* Edit Expense Dialog */}
         <Dialog open={editOpen} onOpenChange={setEditOpen}>
@@ -352,11 +353,11 @@ export default function PokerNextCut() {
         </Dialog>
 
         {/* Next Cut Section */}
-        <div className="bg-slate-800/50 rounded-xl border border-slate-700 overflow-hidden">
-          <div className="p-6 border-b border-slate-700">
-            <h2 className="text-xl font-bold text-white">Next Cut</h2>
-          </div>
-          <div className="p-6">
+        <Card className="bg-slate-800/50 border-slate-700">
+          <CardHeader className="border-b border-slate-700">
+            <CardTitle className="text-white">Next Cut</CardTitle>
+          </CardHeader>
+          <CardContent className="p-6">
             <div className="p-4 bg-slate-900/30 rounded-lg border border-slate-700">
               {/* Table */}
               <div className="overflow-x-auto">
@@ -496,9 +497,9 @@ export default function PokerNextCut() {
                 </div>
               </div>
             </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       </div>
-    </div>
+    </MainLayout>
   );
 }

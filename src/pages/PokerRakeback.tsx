@@ -6,7 +6,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Trash2, Plus, RefreshCw, TrendingUp } from 'lucide-react';
+import { Trash2, Plus, Edit, Save, X, ArrowLeft } from 'lucide-react';
 
 interface RakebackEntry {
   id: string;
@@ -14,20 +14,31 @@ interface RakebackEntry {
   date: string;
   rake_generated: number;
   rakeback_received: number;
-  rakeback_percentage: number;
   created_at: string;
   updated_at: string;
+}
+
+interface YearlyData {
+  year: string;
+  totalRake: number;
+  totalRakeback: number;
+  averagePercentage: number;
 }
 
 export default function PokerRakeback() {
   const { user } = useAuth();
   const { toast } = useToast();
   
+  const currentYear = new Date().getFullYear();
+  
   const [entries, setEntries] = useState<RakebackEntry[]>([]);
-  const [newDate, setNewDate] = useState('');
+  const [newMonth, setNewMonth] = useState('');
   const [newRakeGenerated, setNewRakeGenerated] = useState('');
   const [newRakebackReceived, setNewRakebackReceived] = useState('');
-  const [newRakebackPercentage, setNewRakebackPercentage] = useState('30');
+  
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editRakeGenerated, setEditRakeGenerated] = useState('');
+  const [editRakebackReceived, setEditRakebackReceived] = useState('');
   
   const [loading, setLoading] = useState(true);
 
@@ -69,32 +80,87 @@ export default function PokerRakeback() {
   const totalRakebackReceived = entries.reduce((sum, e) => sum + e.rakeback_received, 0);
 
   // Calcola la percentuale media di rakeback
-  const averageRakebackPercentage = entries.length > 0
-    ? entries.reduce((sum, e) => sum + e.rakeback_percentage, 0) / entries.length
+  const averageRakebackPercentage = entries.length > 0 && totalRakeGenerated > 0
+    ? (totalRakebackReceived / totalRakeGenerated) * 100
     : 0;
+
+  // Raggruppa i dati per anno
+  const yearlyData: YearlyData[] = entries.reduce((acc: YearlyData[], entry) => {
+    const year = new Date(entry.date).getFullYear().toString();
+    const existing = acc.find(item => item.year === year);
+    
+    if (existing) {
+      existing.totalRake += entry.rake_generated;
+      existing.totalRakeback += entry.rakeback_received;
+      existing.averagePercentage = existing.totalRake > 0
+        ? (existing.totalRakeback / existing.totalRake) * 100
+        : 0;
+    } else {
+      acc.push({
+        year,
+        totalRake: entry.rake_generated,
+        totalRakeback: entry.rakeback_received,
+        averagePercentage: entry.rake_generated > 0
+          ? (entry.rakeback_received / entry.rake_generated) * 100
+          : 0
+      });
+    }
+    
+    return acc;
+  }, []).sort((a, b) => b.year.localeCompare(a.year));
 
   // Aggiungi entry rakeback
   const addEntry = async () => {
-    if (!newDate || !newRakeGenerated || !newRakebackReceived) return;
+    if (!newMonth || !newRakeGenerated || !newRakebackReceived) {
+      toast({
+        title: 'Attenzione',
+        description: 'Compila tutti i campi',
+        variant: 'destructive',
+      });
+      return;
+    }
     
     const rakeGenerated = parseFloat(newRakeGenerated);
     const rakebackReceived = parseFloat(newRakebackReceived);
-    const rakebackPercentage = parseFloat(newRakebackPercentage);
+    
+    // Converti MM/YYYY in data (primo giorno del mese)
+    const [year, month] = newMonth.split('-');
+    const date = `${year}-${month}-01`;
     
     try {
+      // Verifica se esiste già un record per questo mese
+      const { data: existingData, error: checkError } = await supabase
+        .from('poker_rakeback' as any)
+        .select('id')
+        .eq('user_id', user!.id)
+        .eq('date', date)
+        .maybeSingle();
+      
+      if (checkError && checkError.code !== 'PGRST116') {
+        throw checkError;
+      }
+      
+      if (existingData) {
+        toast({
+          title: 'Attenzione',
+          description: 'Esiste già un rakeback per questo mese',
+          variant: 'destructive',
+        });
+        return;
+      }
+      
       const { error } = await supabase
         .from('poker_rakeback' as any)
         .insert({
           user_id: user!.id,
-          date: newDate,
+          date: date,
           rake_generated: rakeGenerated,
           rakeback_received: rakebackReceived,
-          rakeback_percentage: rakebackPercentage,
         });
       
       if (error) throw error;
       
-      setNewDate('');
+      setNewMonth('');
       setNewRakeGenerated('');
       setNewRakebackReceived('');
       toast({ title: 'Rakeback aggiunto' });
@@ -121,11 +187,57 @@ export default function PokerRakeback() {
     }
   };
 
+  // Modifica entry rakeback
+  const startEdit = (entry: RakebackEntry) => {
+    setEditingId(entry.id);
+    setEditRakeGenerated(entry.rake_generated.toString());
+    setEditRakebackReceived(entry.rakeback_received.toString());
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+    setEditRakeGenerated('');
+    setEditRakebackReceived('');
+  };
+
+  const saveEdit = async (id: string) => {
+    if (!editRakeGenerated || !editRakebackReceived) {
+      toast({
+        title: 'Attenzione',
+        description: 'Compila tutti i campi obbligatori',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    const rakeGenerated = parseFloat(editRakeGenerated);
+    const rakebackReceived = parseFloat(editRakebackReceived);
+    
+    try {
+      const { error } = await supabase
+        .from('poker_rakeback' as any)
+        .update({
+          rake_generated: rakeGenerated,
+          rakeback_received: rakebackReceived,
+        })
+        .eq('id', id);
+      
+      if (error) throw error;
+      
+      toast({ title: 'Rakeback aggiornato' });
+      cancelEdit();
+      await loadData();
+    } catch (error) {
+      console.error('Errore:', error);
+      toast({ title: 'Errore', variant: 'destructive' });
+    }
+  };
+
   if (loading) {
     return (
       <MainLayout>
         <div className="flex items-center justify-center py-8">
-          <RefreshCw className="w-8 h-8 animate-spin text-muted-foreground" />
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
         </div>
       </MainLayout>
     );
@@ -133,10 +245,18 @@ export default function PokerRakeback() {
 
   return (
     <MainLayout>
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-display font-bold">Rake Back</h1>
-          <p className="text-muted-foreground">Traccia il tuo rakeback</p>
+      <div className="space-y-6 max-w-7xl mx-auto">
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => window.history.back()}
+            className="p-2 rounded-lg bg-slate-800/50 hover:bg-slate-700/50 transition-colors border border-slate-700"
+          >
+            <ArrowLeft className="w-5 h-5 text-slate-300" />
+          </button>
+          <div>
+            <h1 className="text-3xl font-display font-bold">Rake Back</h1>
+            <p className="text-muted-foreground">Traccia il tuo rakeback</p>
+          </div>
         </div>
 
         {/* Statistiche */}
@@ -148,10 +268,7 @@ export default function PokerRakeback() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="flex items-center gap-2">
-                <TrendingUp className="w-5 h-5 text-primary" />
-                <p className="text-2xl font-bold">€{totalRakeGenerated.toFixed(2)}</p>
-              </div>
+              <p className="text-2xl font-bold">€{totalRakeGenerated.toFixed(2)}</p>
             </CardContent>
           </Card>
           
@@ -184,17 +301,18 @@ export default function PokerRakeback() {
             <CardTitle>Nuovo Rakeback</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
+            <div className="grid gap-4 md:grid-cols-3">
               <div>
-                <label className="text-sm font-medium mb-2 block">Data</label>
+                <label className="text-sm font-medium mb-2 block">Mese</label>
                 <Input
-                  type="date"
-                  value={newDate}
-                  onChange={(e) => setNewDate(e.target.value)}
+                  type="month"
+                  value={newMonth}
+                  onChange={(e) => setNewMonth(e.target.value)}
+                  placeholder="MM/AAAA"
                 />
               </div>
               <div>
-                <label className="text-sm font-medium mb-2 block">Rake Generato (€)</label>
+                <label className="text-sm font-medium mb-2 block">Rake (€)</label>
                 <Input
                   type="number"
                   step="0.01"
@@ -204,7 +322,7 @@ export default function PokerRakeback() {
                 />
               </div>
               <div>
-                <label className="text-sm font-medium mb-2 block">Rakeback Ricevuto (€)</label>
+                <label className="text-sm font-medium mb-2 block">Rake Back (€)</label>
                 <Input
                   type="number"
                   step="0.01"
@@ -213,81 +331,179 @@ export default function PokerRakeback() {
                   onChange={(e) => setNewRakebackReceived(e.target.value)}
                 />
               </div>
-              <div>
-                <label className="text-sm font-medium mb-2 block">Percentuale Rakeback (%)</label>
-                <Input
-                  type="number"
-                  step="0.1"
-                  placeholder="Es. 30"
-                  value={newRakebackPercentage}
-                  onChange={(e) => setNewRakebackPercentage(e.target.value)}
-                />
-              </div>
-              <Button onClick={addEntry} className="w-full">
-                <Plus className="w-4 h-4 mr-2" />
-                Aggiungi
-              </Button>
             </div>
+            <Button onClick={addEntry} className="w-full mt-4 bg-green-500 hover:bg-green-600">
+              <Plus className="w-4 h-4 mr-2" />
+              Aggiungi
+            </Button>
           </CardContent>
         </Card>
 
-        {/* Lista Rakeback */}
+        {/* Tabella Rakeback per Mese */}
         <Card>
           <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle>Storico Rakeback</CardTitle>
-              <Button variant="outline" size="sm" onClick={loadData}>
-                <RefreshCw className="w-4 h-4 mr-2" />
-                Aggiorna
-              </Button>
-            </div>
+            <CardTitle>Rakeback per Mese ({currentYear})</CardTitle>
           </CardHeader>
-          <CardContent>
-            {entries.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
+          <CardContent className="p-0">
+            {entries.filter(e => new Date(e.date).getFullYear() === currentYear).length === 0 ? (
+              <div className="text-center py-12 text-muted-foreground">
                 Nessun rakeback registrato
               </div>
             ) : (
-              <div className="space-y-3">
-                {entries.map((entry) => (
-                  <div key={entry.id} className="p-4 bg-secondary/20 rounded-lg">
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <TrendingUp className="w-4 h-4 text-muted-foreground" />
-                          <span className="font-medium">
-                            {new Date(entry.date).toLocaleDateString('it-IT', {
-                              day: '2-digit',
-                              month: 'long',
-                              year: 'numeric'
-                            })}
-                          </span>
-                        </div>
-                        <div className="grid grid-cols-3 gap-4 text-sm">
-                          <div>
-                            <span className="text-muted-foreground">Rake: </span>
-                            <span className="font-medium">€{entry.rake_generated.toFixed(2)}</span>
-                          </div>
-                          <div>
-                            <span className="text-muted-foreground">Rakeback: </span>
-                            <span className="font-medium text-green-600">€{entry.rakeback_received.toFixed(2)}</span>
-                          </div>
-                          <div>
-                            <span className="text-muted-foreground">Percentuale: </span>
-                            <span className="font-medium">{entry.rakeback_percentage.toFixed(1)}%</span>
-                          </div>
-                        </div>
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => deleteEntry(entry.id)}
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-muted/50">
+                    <tr>
+                      <th className="text-left py-3 px-4 font-medium text-sm">Mese</th>
+                      <th className="text-right py-3 px-4 font-medium text-sm">Rake</th>
+                      <th className="text-right py-3 px-4 font-medium text-sm">Rake Back</th>
+                      <th className="text-right py-3 px-4 font-medium text-sm">Percentuale</th>
+                      <th className="text-center py-3 px-4 font-medium text-sm"></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {entries.filter(e => new Date(e.date).getFullYear() === currentYear).map((entry, index) => (
+                      <tr
+                        key={entry.id}
+                        className={`border-t ${index % 2 === 0 ? 'bg-background' : 'bg-muted/20'}`}
                       >
-                        <Trash2 className="w-4 h-4 text-destructive" />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
+                        <td className="py-3 px-4 font-medium">
+                          {new Date(entry.date).toLocaleDateString('it-IT', {
+                            month: 'long',
+                            year: 'numeric'
+                          })}
+                        </td>
+                        {editingId === entry.id ? (
+                          <>
+                            <td className="py-3 px-4">
+                              <Input
+                                type="number"
+                                step="0.01"
+                                value={editRakeGenerated}
+                                onChange={(e) => setEditRakeGenerated(e.target.value)}
+                                className="w-24 text-right"
+                              />
+                            </td>
+                            <td className="py-3 px-4">
+                              <Input
+                                type="number"
+                                step="0.01"
+                                value={editRakebackReceived}
+                                onChange={(e) => setEditRakebackReceived(e.target.value)}
+                                className="w-24 text-right"
+                              />
+                            </td>
+                            <td className="text-right py-3 px-4 text-muted-foreground">
+                              {parseFloat(editRakebackReceived || '0') > 0 && parseFloat(editRakeGenerated || '0') > 0
+                                ? ((parseFloat(editRakebackReceived) / parseFloat(editRakeGenerated)) * 100).toFixed(1) + '%'
+                                : '0%'}
+                            </td>
+                            <td className="text-center py-3 px-4">
+                              <div className="flex justify-center gap-1">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => saveEdit(entry.id)}
+                                  className="h-8 w-8 text-green-500 hover:text-green-600"
+                                >
+                                  <Save className="w-4 h-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={cancelEdit}
+                                  className="h-8 w-8"
+                                >
+                                  <X className="w-4 h-4" />
+                                </Button>
+                              </div>
+                            </td>
+                          </>
+                        ) : (
+                          <>
+                            <td className="text-right py-3 px-4 font-medium">
+                              €{entry.rake_generated.toFixed(2)}
+                            </td>
+                            <td className={`text-right py-3 px-4 font-medium ${entry.rakeback_received >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                              €{entry.rakeback_received.toFixed(2)}
+                            </td>
+                            <td className="text-right py-3 px-4 font-medium">
+                              {entry.rake_generated > 0 ? ((entry.rakeback_received / entry.rake_generated) * 100).toFixed(1) + '%' : '0%'}
+                            </td>
+                            <td className="text-center py-3 px-4">
+                              <div className="flex justify-center gap-1">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => startEdit(entry)}
+                                  className="h-8 w-8"
+                                >
+                                  <Edit className="w-4 h-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => deleteEntry(entry.id)}
+                                  className="h-8 w-8"
+                                >
+                                  <Trash2 className="w-4 h-4 text-destructive" />
+                                </Button>
+                              </div>
+                            </td>
+                          </>
+                        )}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Tabella Rakeback per Anno */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Rakeback per Anno</CardTitle>
+          </CardHeader>
+          <CardContent className="p-0">
+            {yearlyData.length === 0 ? (
+              <div className="text-center py-12 text-muted-foreground">
+                Nessun rakeback registrato
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-muted/50">
+                    <tr>
+                      <th className="text-left py-3 px-4 font-medium text-sm">Anno</th>
+                      <th className="text-right py-3 px-4 font-medium text-sm">Rake Totale</th>
+                      <th className="text-right py-3 px-4 font-medium text-sm">Rakeback Totale</th>
+                      <th className="text-right py-3 px-4 font-medium text-sm">Percentuale Media</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {yearlyData.map((data, index) => (
+                      <tr
+                        key={data.year}
+                        className={`border-t ${index % 2 === 0 ? 'bg-background' : 'bg-muted/20'}`}
+                      >
+                        <td className="py-3 px-4 font-medium">
+                          {data.year}
+                        </td>
+                        <td className="text-right py-3 px-4 font-medium">
+                          €{data.totalRake.toFixed(2)}
+                        </td>
+                        <td className={`text-right py-3 px-4 font-medium ${data.totalRakeback >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                          €{data.totalRakeback.toFixed(2)}
+                        </td>
+                        <td className="text-right py-3 px-4 font-medium">
+                          {data.averagePercentage.toFixed(1)}%
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             )}
           </CardContent>
