@@ -131,14 +131,19 @@ export function useRecurringExpenses() {
       let processed = 0;
 
       for (const expense of dueExpenses) {
-        // Check if transaction already exists for this date
+        // Check if transaction already exists for this month
+        const dueDate = new Date(expense.next_due_date);
+        const month = dueDate.getMonth() + 1; // JavaScript months are 0-indexed
+        const year = dueDate.getFullYear();
+        
         const { data: existing } = await supabase
           .from('transactions')
           .select('id')
           .eq('user_id', user!.id)
           .eq('description', `[Ricorrente] ${expense.name}`)
-          .eq('date', expense.next_due_date)
-          .single();
+          .gte('date', `${year}-${String(month).padStart(2, '0')}-01`)
+          .lt('date', `${year}-${String(month).padStart(2, '0')}-32`)
+          .maybeSingle();
 
         if (!existing) {
           // Create transaction

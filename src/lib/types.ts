@@ -1,6 +1,6 @@
 export type CurrencyCode = 'EUR' | 'USD' | 'GBP' | 'CHF' | 'JPY' | 'CAD' | 'AUD' | 'CNY';
 export type TransactionType = 'income' | 'expense';
-export type AssetType = 'stock' | 'etf' | 'crypto' | 'bond' | 'cash' | 'real_estate' | 'other';
+export type AssetType = 'stock' | 'etf' | 'crypto' | 'bond' | 'cash' | 'real_estate';
 
 export interface Profile {
   id: string;
@@ -99,5 +99,4 @@ export const ASSET_TYPE_LABELS: Record<AssetType, string> = {
   bond: 'Obbligazioni',
   cash: 'Liquidità',
   real_estate: 'Immobili',
-  other: 'Altro',
 };

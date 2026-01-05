@@ -37,6 +37,9 @@ export default function Portfolio() {
   const [selectedExisting, setSelectedExisting] = useState('');
   const [closeDialogOpen, setCloseDialogOpen] = useState(false);
   const [closingGroup, setClosingGroup] = useState<{ assets: PortfolioAsset[], name: string, symbol?: string, currentPrice?: number } | null>(null);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editingAsset, setEditingAsset] = useState<PortfolioAsset | null>(null);
+  const [editValue, setEditValue] = useState('');
 
   // Combine all assets for instrument selection
   const allAssets = [...openAssets, ...closedAssets];
@@ -74,15 +77,31 @@ export default function Portfolio() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await createAsset.mutateAsync({
+      const assetData: any = {
         name,
-        symbol,
         type,
-        quantity: parseFloat(quantity),
-        purchase_price: parseFloat(price),
-        current_price: parseFloat(price),
-        purchase_date: purchaseDate,
-      });
+      };
+
+      if (type === 'cash' || type === 'real_estate') {
+        // Per cash e real_estate, non usiamo simbolo, quantità=1, prezzo=valore totale
+        assetData.symbol = null;
+        assetData.quantity = 1;
+        assetData.purchase_price = parseFloat(price);
+        assetData.current_price = parseFloat(price);
+        // Per cash non impostiamo purchase_date
+        if (type !== 'cash') {
+          assetData.purchase_date = purchaseDate;
+        }
+      } else {
+        // Per gli altri tipi, usiamo tutti i campi
+        assetData.symbol = symbol;
+        assetData.quantity = parseFloat(quantity);
+        assetData.purchase_price = parseFloat(price);
+        assetData.current_price = parseFloat(price);
+        assetData.purchase_date = purchaseDate;
+      }
+
+      await createAsset.mutateAsync(assetData);
       toast({ title: 'Acquisto aggiunto!' });
       setOpen(false);
       resetForm();
@@ -100,6 +119,29 @@ export default function Portfolio() {
     setSelectedExisting('');
   };
 
+  const handleEditCash = (asset: PortfolioAsset) => {
+    setEditingAsset(asset);
+    setEditValue((asset.current_price ?? asset.purchase_price).toString());
+    setEditDialogOpen(true);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingAsset) return;
+    try {
+      await updateAsset.mutateAsync({
+        id: editingAsset.id,
+        purchase_price: parseFloat(editValue),
+        current_price: parseFloat(editValue),
+      });
+      toast({ title: 'Liquidità aggiornata!' });
+      setEditDialogOpen(false);
+      setEditingAsset(null);
+      setEditValue('');
+    } catch {
+      toast({ title: 'Errore', variant: 'destructive' });
+    }
+  };
+
   const chartData = Object.entries(
     openAssets.reduce((acc, a) => {
       const value = (a.current_price ?? a.purchase_price) * a.quantity;
@@ -108,12 +150,21 @@ export default function Portfolio() {
     }, {} as Record<string, number>)
   ).map(([type, value]) => ({ name: ASSET_TYPE_LABELS[type as AssetType], value }));
 
-  // Performance chart using real price history when available (open positions only)
+  // Calcola il totale per le percentuali (incluso cash)
+  const totalForPercentage = chartData.reduce((sum, item) => sum + item.value, 0);
+
+  const chartDataPercentage = chartData.map(item => ({
+    name: item.name,
+    value: totalForPercentage > 0 ? (item.value / totalForPercentage) * 100 : 0,
+  }));
+
+  // Performance chart using real price history when available (open positions only, excluding cash)
   const performanceData = useMemo(() => {
-    if (openAssets.length === 0) return [];
+    const assetsForPerformance = openAssets.filter(a => a.type !== 'cash');
+    if (assetsForPerformance.length === 0) return [];
 
     // Find earliest purchase date
-    const purchaseDates = openAssets.map(a => parseISO(a.purchase_date));
+    const purchaseDates = assetsForPerformance.map(a => parseISO(a.purchase_date));
     const earliestDate = purchaseDates.reduce((min, d) => isBefore(d, min) ? d : min, purchaseDates[0]);
     const today = new Date();
 
@@ -137,8 +188,8 @@ export default function Portfolio() {
       const dateStr = format(dayDate, 'yyyy-MM-dd');
       const isLastDay = idx === sampledDays.length - 1;
 
-      // Assets owned by this day (purchased before or on this day)
-      const ownedAssets = openAssets.filter(a => {
+      // Assets owned by this day (purchased before or on this day, excluding cash)
+      const ownedAssets = assetsForPerformance.filter(a => {
         const pDate = parseISO(a.purchase_date);
         return !isAfter(startOfDay(pDate), dayDate);
       });
@@ -181,7 +232,17 @@ export default function Portfolio() {
     });
   }, [openAssets, priceHistory]);
 
-  const totalInvested = openAssets.reduce((s, a) => s + a.purchase_price * a.quantity, 0);
+  const totalInvested = openAssets.filter(a => a.type !== 'cash').reduce((s, a) => s + a.purchase_price * a.quantity, 0);
+
+  // Calcola rendimento escludendo liquidità e immobili
+  const assetsForReturn = openAssets.filter(a => a.type !== 'cash' && a.type !== 'real_estate');
+  const totalValueForReturn = assetsForReturn.reduce((sum, a) => {
+    const price = a.current_price ?? a.purchase_price;
+    return sum + (price * a.quantity);
+  }, 0);
+  const totalCostForReturn = assetsForReturn.reduce((sum, a) => sum + a.purchase_price * a.quantity, 0);
+  const totalGainForReturn = totalValueForReturn - totalCostForReturn;
+  const totalGainPercentExcludingCashAndRealEstate = totalCostForReturn > 0 ? (totalGainForReturn / totalCostForReturn) * 100 : 0;
 
   return (
     <MainLayout>
@@ -193,7 +254,7 @@ export default function Portfolio() {
             {lastUpdate && (
               <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
                 <Clock className="w-3 h-3" />
-                Ultimo aggiornamento prezzi: {format(parseISO(lastUpdate.updated_at), "d MMM yyyy 'alle' HH:mm", { locale: it })}
+                I prezzi sono stati aggiornati il {format(parseISO(lastUpdate.updated_at), "dd.MM.yy 'alle ore' HH:mm", { locale: it })}
               </p>
             )}
           </div>
@@ -222,24 +283,34 @@ export default function Portfolio() {
                   )}
 
                   <div><Label>Nome</Label><Input value={name} onChange={e => setName(e.target.value)} required /></div>
-                  <div>
-                    <Label>Simbolo (per aggiornamento prezzi)</Label>
-                    <Input value={symbol} onChange={e => setSymbol(e.target.value.toUpperCase())} placeholder="es. AAPL, BTC, VWCE.DE" />
-                    <p className="text-xs text-muted-foreground mt-1">Usa simboli Yahoo Finance per azioni/ETF, simboli standard per crypto</p>
-                  </div>
+                  {type !== 'cash' && type !== 'real_estate' && (
+                    <div>
+                      <Label>Simbolo (per aggiornamento prezzi)</Label>
+                      <Input value={symbol} onChange={e => setSymbol(e.target.value.toUpperCase())} placeholder="es. AAPL, BTC, VWCE.DE" />
+                      <p className="text-xs text-muted-foreground mt-1">Usa simboli Yahoo Finance per azioni/ETF, simboli standard per crypto</p>
+                    </div>
+                  )}
                   <div><Label>Tipo</Label>
                     <Select value={type} onValueChange={v => setType(v as AssetType)}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>{Object.entries(ASSET_TYPE_LABELS).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}</SelectContent>
                     </Select>
                   </div>
-                  <div><Label>Data Acquisto</Label>
-                    <Input type="date" value={purchaseDate} onChange={e => setPurchaseDate(e.target.value)} required />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div><Label>Quantità</Label><Input type="number" step="any" value={quantity} onChange={e => setQuantity(e.target.value)} required /></div>
-                    <div><Label>Prezzo Acquisto (€)</Label><Input type="number" step="0.01" value={price} onChange={e => setPrice(e.target.value)} required /></div>
-                  </div>
+                  {type !== 'cash' && (
+                    <div><Label>Data Acquisto</Label><Input type="date" value={purchaseDate} onChange={e => setPurchaseDate(e.target.value)} required /></div>
+                  )}
+                  {type !== 'cash' && type !== 'real_estate' ? (
+                    <div className="grid grid-cols-2 gap-4">
+                      <div><Label>Quantità</Label><Input type="number" step="any" value={quantity} onChange={e => setQuantity(e.target.value)} required /></div>
+                      <div><Label>Prezzo Acquisto (€)</Label><Input type="number" step="0.01" value={price} onChange={e => setPrice(e.target.value)} required /></div>
+                    </div>
+                  ) : (
+                    <div>
+                      <Label>Valore (€)</Label>
+                      <Input type="number" step="0.01" value={price} onChange={e => setPrice(e.target.value)} required />
+                      <p className="text-xs text-muted-foreground mt-1">Inserisci il valore totale dell'asset</p>
+                    </div>
+                  )}
                   <Button type="submit" className="w-full">Salva</Button>
                 </form>
               </DialogContent>
@@ -265,8 +336,8 @@ export default function Portfolio() {
           </div>
           <div className="glass rounded-xl p-6 text-center">
             <p className="text-sm text-muted-foreground">Rendimento</p>
-            <p className={`text-2xl font-display font-bold ${totalGainPercent >= 0 ? 'text-success' : 'text-destructive'}`}>
-              {totalGainPercent >= 0 ? '+' : ''}{totalGainPercent.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%
+            <p className={`text-2xl font-display font-bold ${totalGainPercentExcludingCashAndRealEstate >= 0 ? 'text-success' : 'text-destructive'}`}>
+              {totalGainPercentExcludingCashAndRealEstate >= 0 ? '+' : ''}{totalGainPercentExcludingCashAndRealEstate.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%
             </p>
           </div>
         </div>
@@ -276,11 +347,11 @@ export default function Portfolio() {
           {/* Pie chart */}
           <div className="glass rounded-xl p-6">
             <h3 className="font-semibold mb-4">Asset Allocation</h3>
-            {chartData.length > 0 ? (
+            {chartDataPercentage.length > 0 ? (
               <ResponsiveContainer width="100%" height={250}>
-                <PieChart><Pie data={chartData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80}>
-                  {chartData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
-                </Pie><Tooltip formatter={(v: number) => `${CURRENCY_SYMBOLS.EUR}${v.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} /></PieChart>
+                <PieChart><Pie data={chartDataPercentage} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80}>
+                  {chartDataPercentage.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+                </Pie><Tooltip formatter={(v: number) => `${v.toFixed(1)}%`} /></PieChart>
               </ResponsiveContainer>
             ) : <p className="text-muted-foreground text-center py-8">Aggiungi asset per vedere l'allocazione</p>}
           </div>
@@ -290,7 +361,6 @@ export default function Portfolio() {
             <h3 className="font-semibold mb-2">Andamento Investimenti</h3>
             {priceHistory.length === 0 && openAssets.length > 0 && (
               <p className="text-xs text-muted-foreground mb-2">
-                💡 Clicca "Aggiorna Prezzi" per iniziare a salvare lo storico
               </p>
             )}
             {performanceData.length > 0 ? (
@@ -351,35 +421,52 @@ export default function Portfolio() {
                   <div>
                     <p className="font-medium">{first.name} {first.symbol && <span className="text-muted-foreground">({first.symbol})</span>}</p>
                     <p className="text-sm text-muted-foreground">
-                      {ASSET_TYPE_LABELS[first.type]} · {totalQuantity.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} unità @ {CURRENCY_SYMBOLS.EUR}{avgPurchasePrice.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      {first.type === 'cash' ? (
+                        ASSET_TYPE_LABELS[first.type]
+                      ) : (
+                        `${ASSET_TYPE_LABELS[first.type]} · ${totalQuantity.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} unità @ ${CURRENCY_SYMBOLS.EUR}${avgPurchasePrice.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                      )}
                     </p>
                   </div>
                   <div className="flex items-center gap-4 text-right">
                     <div>
                       <p className="font-semibold">{CURRENCY_SYMBOLS.EUR}{totalValueGroup.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-                      <p className={`text-sm ${totalGainVal >= 0 ? 'text-success' : 'text-destructive'}`}>
-                        {totalGainVal >= 0 ? '+' : ''}{CURRENCY_SYMBOLS.EUR}{totalGainVal.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ({gainPercent >= 0 ? '+' : ''}{gainPercent.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%)
-                      </p>
+                      {first.type !== 'cash' && (
+                        <p className={`text-sm ${totalGainVal >= 0 ? 'text-success' : 'text-destructive'}`}>
+                          {totalGainVal >= 0 ? '+' : ''}{CURRENCY_SYMBOLS.EUR}{totalGainVal.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ({gainPercent >= 0 ? '+' : ''}{gainPercent.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%)
+                        </p>
+                      )}
                     </div>
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => {
-                        setClosingGroup({
-                          assets: group,
-                          name: first.name,
-                          symbol: first.symbol ?? undefined,
-                          currentPrice: latestPrice,
-                        });
-                        setCloseDialogOpen(true);
-                      }}
-                    >
-                      <X className="w-4 h-4 mr-1" />
-                      Chiudi
-                    </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
+                    {first.type === 'cash' && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleEditCash(first)}
+                      >
+                        Modifica
+                      </Button>
+                    )}
+                    {first.type !== 'cash' && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setClosingGroup({
+                            assets: group,
+                            name: first.name,
+                            symbol: first.symbol ?? undefined,
+                            currentPrice: latestPrice,
+                          });
+                          setCloseDialogOpen(true);
+                        }}
+                      >
+                        <X className="w-4 h-4 mr-1" />
+                        Chiudi
+                      </Button>
+                    )}
+                    <Button
+                      variant="ghost"
+                      size="icon"
                       onClick={() => {
                         group.forEach(a => deleteAsset.mutate(a.id));
                       }}
@@ -427,15 +514,21 @@ export default function Portfolio() {
                     <div>
                       <p className="font-medium">{first.name} {first.symbol && <span className="text-muted-foreground">({first.symbol})</span>}</p>
                       <p className="text-sm text-muted-foreground">
-                        {ASSET_TYPE_LABELS[first.type]} · {totalQuantity.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} unità · Venduto {soldDate}
+                        {first.type === 'cash' ? (
+                          `${ASSET_TYPE_LABELS[first.type]} · Venduto ${soldDate}`
+                        ) : (
+                          `${ASSET_TYPE_LABELS[first.type]} · ${totalQuantity.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} unità · Venduto ${soldDate}`
+                        )}
                       </p>
                     </div>
                     <div className="flex items-center gap-4 text-right">
                       <div>
                         <p className="font-semibold">{CURRENCY_SYMBOLS.EUR}{totalSoldValue.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-                        <p className={`text-sm ${realizedPL >= 0 ? 'text-success' : 'text-destructive'}`}>
-                          {realizedPL >= 0 ? '+' : ''}{CURRENCY_SYMBOLS.EUR}{realizedPL.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ({realizedPercent >= 0 ? '+' : ''}{realizedPercent.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%)
-                        </p>
+                        {first.type !== 'cash' && (
+                          <p className={`text-sm ${realizedPL >= 0 ? 'text-success' : 'text-destructive'}`}>
+                            {realizedPL >= 0 ? '+' : ''}{CURRENCY_SYMBOLS.EUR}{realizedPL.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ({realizedPercent >= 0 ? '+' : ''}{realizedPercent.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%)
+                          </p>
+                        )}
                       </div>
                       <Button 
                         variant="ghost" 
@@ -479,6 +572,32 @@ export default function Portfolio() {
             }
           }}
         />
+
+        {/* Edit Cash Dialog */}
+        <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Modifica Liquidità</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label>Nome</Label>
+                <Input value={editingAsset?.name || ''} disabled />
+              </div>
+              <div>
+                <Label>Valore (€)</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={editValue}
+                  onChange={e => setEditValue(e.target.value)}
+                  autoFocus
+                />
+              </div>
+              <Button onClick={handleSaveEdit} className="w-full">Salva</Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </MainLayout>
   );

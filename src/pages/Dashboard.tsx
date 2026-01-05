@@ -8,8 +8,31 @@ import { Wallet, TrendingUp, TrendingDown, PieChart } from 'lucide-react';
 
 export default function Dashboard() {
   const { transactions } = useTransactions();
-  const { totalValue, totalGainPercent } = usePortfolio();
+  const { totalValue, totalGainPercent, totalGain, openAssets } = usePortfolio();
   const { budgets } = useBudgets();
+
+  // Calcola valore del portfolio escludendo liquidità e immobili
+  const portfolioValue = openAssets
+    .filter(a => a.type !== 'cash' && a.type !== 'real_estate')
+    .reduce((sum, asset) => {
+      const price = asset.current_price ?? asset.purchase_price;
+      return sum + (price * asset.quantity);
+    }, 0);
+
+  // Calcola P&L del portfolio escludendo liquidità e immobili
+  const portfolioPL = openAssets
+    .filter(a => a.type !== 'cash' && a.type !== 'real_estate')
+    .reduce((sum, asset) => {
+      const price = asset.current_price ?? asset.purchase_price;
+      const cost = asset.purchase_price;
+      return sum + ((price * asset.quantity) - (cost * asset.quantity));
+    }, 0);
+
+  // Calcola P&L percentuale del portfolio (esclusi liquidità e immobili)
+  const portfolioCost = openAssets
+    .filter(a => a.type !== 'cash' && a.type !== 'real_estate')
+    .reduce((sum, asset) => sum + (asset.purchase_price * asset.quantity), 0);
+  const portfolioPLPercent = portfolioCost > 0 ? (portfolioPL / portfolioCost) * 100 : 0;
 
   const currentMonth = new Date().getMonth();
   const currentYear = new Date().getFullYear();
@@ -34,9 +57,20 @@ export default function Dashboard() {
 
   const totalBudget = budgets.reduce((sum, b) => sum + Number(b.amount), 0);
   
-  // Patrimonio Netto = Bilancio (entrate totali - uscite totali) - NON include il portfolio
-  const balance = totalIncome - totalExpense;
-  const netWorth = balance;
+  // Patrimonio Netto = Cashflow (entrate totali - uscite totali) + P&L del portfolio (esclusi liquidità e immobili) + Valore immobili (scontato del 25%)
+  const cashflow = totalIncome - totalExpense;
+  
+  // Calcola valore degli immobili con sconto del 25%
+  const realEstateValue = openAssets
+    .filter(a => a.type === 'real_estate')
+    .reduce((sum, asset) => {
+      const price = asset.current_price ?? asset.purchase_price;
+      return sum + (price * asset.quantity);
+    }, 0);
+  
+  const realEstateDiscountedValue = realEstateValue * 0.75; // Sconto del 25%
+  
+  const netWorth = cashflow + portfolioPL + realEstateDiscountedValue;
 
   return (
     <MainLayout>
@@ -66,9 +100,9 @@ export default function Dashboard() {
           />
           <StatCard
             title="Portfolio"
-            value={`${CURRENCY_SYMBOLS.EUR}${totalValue.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+            value={`${CURRENCY_SYMBOLS.EUR}${portfolioValue.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
             icon={<PieChart className="w-6 h-6" />}
-            trend={{ value: totalGainPercent, isPositive: totalGainPercent >= 0 }}
+            trend={{ value: portfolioPLPercent, isPositive: portfolioPLPercent >= 0 }}
           />
         </div>
 
