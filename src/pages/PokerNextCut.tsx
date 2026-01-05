@@ -1,0 +1,494 @@
+import { useState, useMemo } from 'react';
+import { ArrowLeft, RefreshCw, Edit2, Check, X, Plus, Trash2 } from 'lucide-react';
+import { useBudgets } from '@/hooks/useBudgets';
+import { useTransactions } from '@/hooks/useTransactions';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { useToast } from '@/hooks/use-toast';
+import { CURRENCY_SYMBOLS } from '@/lib/types';
+
+// Mock data structures
+interface PokerNextCut {
+  id: string;
+  amount: number;
+  deal: number;
+  profit_loss: number;
+}
+
+interface ManualExpense {
+  id: string;
+  name: string;
+  amount: number;
+}
+
+// Calculate median of an array
+const calculateMedian = (arr: number[]): number => {
+  if (arr.length === 0) return 0;
+  const sorted = [...arr].sort((a, b) => a - b);
+  const mid = Math.floor(sorted.length / 2);
+  return sorted.length % 2 !== 0 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+};
+
+export default function PokerNextCut() {
+  const { budgets } = useBudgets();
+  const { transactions } = useTransactions();
+  const { toast } = useToast();
+  
+  // Next Cut (solo uno, senza nome)
+  const [nextCut, setNextCut] = useState<PokerNextCut>({
+    id: '1',
+    amount: 0, // Sarà calcolato da totalMonthlySpending
+    deal: 0.55,
+    profit_loss: 1804.87
+  });
+  
+  const [editingProfitLoss, setEditingProfitLoss] = useState(false);
+  const [editingProfitLossValue, setEditingProfitLossValue] = useState('');
+  const [editingDeal, setEditingDeal] = useState(false);
+  const [editingDealValue, setEditingDealValue] = useState('');
+  
+  const [loading, setLoading] = useState(false);
+
+  // Manual expenses state
+  const [manualExpenses, setManualExpenses] = useState<ManualExpense[]>([]);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [newExpenseName, setNewExpenseName] = useState('');
+  const [newExpenseAmount, setNewExpenseAmount] = useState('');
+
+  // Edit expense dialog state
+  const [editOpen, setEditOpen] = useState(false);
+  const [editingExpense, setEditingExpense] = useState<ManualExpense | null>(null);
+  const [editingExpenseAmount, setEditingExpenseAmount] = useState('');
+
+  // Calculate the 18-month period ending at current date
+  const { startDate, endDate } = useMemo(() => {
+    const end = new Date();
+    const start = new Date();
+    start.setMonth(start.getMonth() - 18);
+    return { startDate: start, endDate: end };
+  }, []);
+
+  // Get median monthly spending for a category over the last 18 months
+  const getMedianSpending = useMemo(() => {
+    return (catId: string) => {
+      // Filter transactions for this category in the last 18 months
+      const categoryTransactions = transactions.filter(t => {
+        const txDate = new Date(t.date);
+        return t.category_id === catId &&
+               t.type === 'expense' &&
+               txDate >= startDate &&
+               txDate <= endDate;
+      });
+
+      // Group by month (year-month key)
+      const monthlyTotals: Record<string, number> = {};
+      categoryTransactions.forEach(t => {
+        const date = new Date(t.date);
+        const key = `${date.getFullYear()}-${date.getMonth()}`;
+        monthlyTotals[key] = (monthlyTotals[key] || 0) + Number(t.amount);
+      });
+
+      // Get array of monthly totals and calculate median
+      const totalsArray = Object.values(monthlyTotals);
+      return calculateMedian(totalsArray);
+    };
+  }, [transactions, startDate, endDate]);
+
+  // Spesa mensile calcolata (dal Budget, basata su budget e transazioni ultimi 18 mesi)
+  // Questo valore è calcolato automaticamente e non modificabile dall'utente
+  const budgetMonthlySpending = useMemo(() => {
+    // Calculate total actual spending from categories WITH budget only
+    return budgets.reduce((sum, b) => sum + getMedianSpending(b.category_id), 0);
+  }, [budgets, getMedianSpending]);
+
+  // Calculate manual monthly spending
+  const manualMonthlySpending = useMemo(() => {
+    return manualExpenses.reduce((sum, exp) => sum + exp.amount, 0);
+  }, [manualExpenses]);
+
+  // Total monthly spending (budget + manual)
+  const totalMonthlySpending = budgetMonthlySpending + manualMonthlySpending;
+
+  // Update nextCut.amount when totalMonthlySpending changes
+  useMemo(() => {
+    setNextCut(prev => ({
+      ...prev,
+      amount: totalMonthlySpending
+    }));
+  }, [totalMonthlySpending]);
+
+  // Calculate Next Cut Gross (nascosto, usato solo nei calcoli)
+  const calculateNextCutGross = (deal: number) => {
+    return totalMonthlySpending / deal;
+  };
+
+  // Calculate "Quanto manca per il prossimo cut"
+  const calculateNeed = () => {
+    const gross = calculateNextCutGross(nextCut.deal);
+    return gross - nextCut.profit_loss;
+  };
+
+  // Update Profit/Loss
+  const updateProfitLoss = () => {
+    if (!editingProfitLossValue) return;
+    
+    setNextCut({
+      ...nextCut,
+      profit_loss: parseFloat(editingProfitLossValue)
+    });
+    
+    setEditingProfitLoss(false);
+    setEditingProfitLossValue('');
+  };
+
+  // Update Deal
+  const updateDeal = () => {
+    if (!editingDealValue) return;
+    
+    setNextCut({
+      ...nextCut,
+      deal: parseFloat(editingDealValue)
+    });
+    
+    setEditingDeal(false);
+    setEditingDealValue('');
+  };
+
+  // Add manual expense
+  const addManualExpense = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newExpenseName || !newExpenseAmount) return;
+    
+    const newExpense: ManualExpense = {
+      id: Date.now().toString(),
+      name: newExpenseName,
+      amount: parseFloat(newExpenseAmount)
+    };
+    
+    setManualExpenses([...manualExpenses, newExpense]);
+    toast({ title: 'Spesa aggiunta!' });
+    setCreateOpen(false);
+    setNewExpenseName('');
+    setNewExpenseAmount('');
+  };
+
+  // Edit manual expense
+  const updateManualExpense = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingExpense || !editingExpenseAmount) return;
+    
+    setManualExpenses(manualExpenses.map(exp => 
+      exp.id === editingExpense.id 
+        ? { ...exp, amount: parseFloat(editingExpenseAmount) }
+        : exp
+    ));
+    toast({ title: 'Spesa aggiornata!' });
+    setEditOpen(false);
+    setEditingExpense(null);
+    setEditingExpenseAmount('');
+  };
+
+  // Delete manual expense
+  const deleteManualExpense = (id: string) => {
+    setManualExpenses(manualExpenses.filter(exp => exp.id !== id));
+    toast({ title: 'Spesa eliminata!' });
+  };
+
+  const openEditDialog = (expense: ManualExpense) => {
+    setEditingExpense(expense);
+    setEditingExpenseAmount(expense.amount.toString());
+    setEditOpen(true);
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-6">
+        <div className="flex items-center justify-center py-8">
+          <RefreshCw className="w-8 h-8 animate-spin text-slate-400" />
+        </div>
+      </div>
+    );
+  }
+
+  const need = calculateNeed();
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-6">
+      <div className="max-w-6xl mx-auto space-y-6">
+        {/* Header with Back Button */}
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => window.history.back()}
+            className="p-2 rounded-lg bg-slate-800/50 hover:bg-slate-700/50 transition-colors border border-slate-700"
+          >
+            <ArrowLeft className="w-5 h-5 text-slate-300" />
+          </button>
+          <div>
+            <h1 className="text-3xl font-bold text-white">Next Cut</h1>
+            <p className="text-slate-400">Gestisci il tuo Next Cut</p>
+          </div>
+        </div>
+
+        {/* Monthly Spending Section */}
+        <div className="bg-slate-800/50 rounded-xl border border-slate-700 overflow-hidden">
+          <div className="p-6 border-b border-slate-700 flex items-center justify-between">
+            <h2 className="text-xl font-bold text-white">Spesa Mensile</h2>
+            <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+              <DialogTrigger asChild>
+                <Button size="sm">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Aggiungi nuova spesa
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Nuova spesa</DialogTitle>
+                </DialogHeader>
+                <form onSubmit={addManualExpense} className="space-y-4">
+                  <Input
+                    type="text"
+                    placeholder="Nome"
+                    value={newExpenseName}
+                    onChange={e => setNewExpenseName(e.target.value)}
+                    required
+                  />
+                  <Input
+                    type="number"
+                    step="0.01"
+                    placeholder="Importo"
+                    value={newExpenseAmount}
+                    onChange={e => setNewExpenseAmount(e.target.value)}
+                    required
+                  />
+                  <Button type="submit" className="w-full">
+                    Aggiungi
+                  </Button>
+                </form>
+              </DialogContent>
+            </Dialog>
+          </div>
+          <div className="p-6">
+            <div className="space-y-4">
+              {/* Total from Budget */}
+              <div className="p-4 bg-blue-500/10 rounded-lg border border-blue-500/20">
+                <p className="text-sm text-slate-400 mb-2">Spesa mensile</p>
+                <p className="text-2xl font-bold text-white">
+                  {CURRENCY_SYMBOLS.EUR}{budgetMonthlySpending.toFixed(2)}
+                </p>
+                <p className="text-xs text-slate-500 mt-2">Calcolato automaticamente dagli ultimi 18 mesi di transazioni</p>
+              </div>
+
+              {/* Manual expenses list */}
+              {manualExpenses.length > 0 && (
+                <div className="space-y-3 mt-4">
+                  <p className="text-sm text-slate-400">Spese aggiuntive</p>
+                  {manualExpenses.map(exp => (
+                    <div key={exp.id} className="p-4 bg-slate-900/30 rounded-lg border border-slate-700">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="font-medium text-white">{exp.name}</p>
+                          <p className="text-sm text-slate-400">
+                            {CURRENCY_SYMBOLS.EUR}{exp.amount.toFixed(2)}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => openEditDialog(exp)}
+                            className="h-8 w-8"
+                          >
+                            <Edit2 className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => deleteManualExpense(exp.id)}
+                            className="h-8 w-8 text-red-400 hover:text-red-300"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+            </div>
+          </div>
+        </div>
+
+        {/* Edit Expense Dialog */}
+        <Dialog open={editOpen} onOpenChange={setEditOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Modifica spesa</DialogTitle>
+            </DialogHeader>
+            <form onSubmit={updateManualExpense} className="space-y-4">
+              <Input
+                type="number"
+                placeholder="Nuovo importo"
+                value={editingExpenseAmount}
+                onChange={e => setEditingExpenseAmount(e.target.value)}
+                required
+              />
+              <Button type="submit" className="w-full">
+                Aggiorna
+              </Button>
+            </form>
+          </DialogContent>
+        </Dialog>
+
+        {/* Next Cut Section */}
+        <div className="bg-slate-800/50 rounded-xl border border-slate-700 overflow-hidden">
+          <div className="p-6 border-b border-slate-700">
+            <h2 className="text-xl font-bold text-white">Next Cut</h2>
+          </div>
+          <div className="p-6">
+            <div className="p-4 bg-slate-900/30 rounded-lg border border-slate-700">
+              {/* Table */}
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-slate-700">
+                      <th className="text-left py-3 px-4 text-sm font-medium text-slate-400">Next Cut Net</th>
+                      <th className="text-left py-3 px-4 text-sm font-medium text-slate-400">Deal</th>
+                      <th className="text-left py-3 px-4 text-sm font-medium text-slate-400">P/L Attuale</th>
+                      <th className="text-left py-3 px-4 text-sm font-medium text-slate-400">Quanto manca</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td className="py-4 px-4">
+                        <div className="font-medium text-white text-lg">€{totalMonthlySpending.toFixed(2)}</div>
+                      </td>
+                      <td className="py-4 px-4">
+                        {editingDeal ? (
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="number"
+                              step="0.01"
+                              value={editingDealValue}
+                              onChange={(e) => setEditingDealValue(e.target.value)}
+                              className="w-24 px-3 py-2 bg-slate-900/50 border border-slate-600 rounded text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              autoFocus
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') updateDeal();
+                                if (e.key === 'Escape') {
+                                  setEditingDeal(false);
+                                  setEditingDealValue('');
+                                }
+                              }}
+                            />
+                            <button
+                              onClick={updateDeal}
+                              className="p-1.5 text-green-400 hover:text-green-300 bg-slate-800 rounded"
+                            >
+                              <Check className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => {
+                                setEditingDeal(false);
+                                setEditingDealValue('');
+                              }}
+                              className="p-1.5 text-red-400 hover:text-red-300 bg-slate-800 rounded"
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-2">
+                            <div className="font-medium text-white text-lg">
+                              {nextCut.deal.toFixed(2)}
+                            </div>
+                            <button
+                              onClick={() => {
+                                setEditingDeal(true);
+                                setEditingDealValue(nextCut.deal.toString());
+                              }}
+                              className="p-1 text-slate-400 hover:text-blue-400"
+                            >
+                              <Edit2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        )}
+                      </td>
+                      <td className="py-4 px-4">
+                        {editingProfitLoss ? (
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="number"
+                              step="0.01"
+                              value={editingProfitLossValue}
+                              onChange={(e) => setEditingProfitLossValue(e.target.value)}
+                              className="w-28 px-3 py-2 bg-slate-900/50 border border-slate-600 rounded text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              autoFocus
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') updateProfitLoss();
+                                if (e.key === 'Escape') {
+                                  setEditingProfitLoss(false);
+                                  setEditingProfitLossValue('');
+                                }
+                              }}
+                            />
+                            <button
+                              onClick={updateProfitLoss}
+                              className="p-1.5 text-green-400 hover:text-green-300 bg-slate-800 rounded"
+                            >
+                              <Check className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => {
+                                setEditingProfitLoss(false);
+                                setEditingProfitLossValue('');
+                              }}
+                              className="p-1.5 text-red-400 hover:text-red-300 bg-slate-800 rounded"
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-2">
+                            <div className="font-medium text-white text-lg">
+                              €{nextCut.profit_loss.toFixed(2)}
+                            </div>
+                            <button
+                              onClick={() => {
+                                setEditingProfitLoss(true);
+                                setEditingProfitLossValue(nextCut.profit_loss.toString());
+                              }}
+                              className="p-1 text-slate-400 hover:text-blue-400"
+                            >
+                              <Edit2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        )}
+                      </td>
+                      <td className="py-4 px-4">
+                        <div className={`font-medium text-lg ${need > 0 ? 'text-red-400' : 'text-green-400'}`}>
+                          €{need.toFixed(2)}
+                        </div>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Info section */}
+              <div className="mt-4 pt-4 border-t border-slate-700">
+                <div className="flex items-center gap-2 text-xs text-slate-500">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <span>Clicca sui valori "Deal" e "P/L Attuale" per modificarli</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

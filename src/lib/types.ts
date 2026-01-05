@@ -8,8 +8,14 @@ export interface Profile {
   full_name: string | null;
   avatar_url: string | null;
   default_currency: CurrencyCode;
+  permissions: Record<string, boolean>;
   created_at: string;
   updated_at: string;
+}
+
+export interface UserPermissions {
+  admin: boolean;
+  poker: boolean;
 }
 
 export interface Category {
@@ -100,3 +106,24 @@ export const ASSET_TYPE_LABELS: Record<AssetType, string> = {
   cash: 'Liquidità',
   real_estate: 'Immobili',
 };
+
+export interface PokerMonthlyExpense {
+  id: string;
+  user_id: string;
+  name: string;
+  amount: number;
+  is_mandatory: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PokerNextCut {
+  id: string;
+  user_id: string;
+  name: string;
+  amount: number;
+  deal: number;
+  profit_loss: number;
+  created_at: string;
+  updated_at: string;
+}

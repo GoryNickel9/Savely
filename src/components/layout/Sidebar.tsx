@@ -1,6 +1,7 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
+import { usePermissions } from '@/hooks/usePermissions';
 import { Button } from '@/components/ui/button';
 import {
   LayoutDashboard,
@@ -13,6 +14,8 @@ import {
   X,
   CalendarClock,
   Folder,
+  Shield,
+  Dices,
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -29,6 +32,7 @@ export default function Sidebar() {
   const location = useLocation();
   const navigate = useNavigate();
   const { signOut, user } = useAuth();
+  const { permissions } = usePermissions();
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const NavContent = () => (
@@ -58,9 +62,42 @@ export default function Sidebar() {
             </Link>
           );
         })}
+
+        {/* Sezione Poker - visibile solo agli utenti con permesso poker */}
+        {permissions?.poker && (
+          <Link
+            to="/poker"
+            onClick={() => setMobileOpen(false)}
+            className={cn(
+              'flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200',
+              location.pathname === '/poker'
+                ? 'bg-primary text-primary-foreground shadow-lg glow-primary'
+                : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
+            )}
+          >
+            <Dices className="w-5 h-5" />
+            Poker
+          </Link>
+        )}
       </nav>
 
       <div className="p-4 border-t border-border flex-shrink-0">
+        {/* Sezione Admin - visibile solo agli admin */}
+        {permissions?.admin && (
+          <Link
+            to="/admin"
+            onClick={() => setMobileOpen(false)}
+            className={cn(
+              'flex items-center gap-3 px-4 py-2 mb-2 w-full rounded-lg text-sm font-medium transition-all duration-200',
+              location.pathname === '/admin'
+                ? 'bg-primary text-primary-foreground shadow-lg glow-primary'
+                : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
+            )}
+          >
+            <Shield className="w-5 h-5" />
+            Amministrazione
+          </Link>
+        )}
         <button
           onClick={() => {
             setMobileOpen(false);
