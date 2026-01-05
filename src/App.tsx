@@ -20,6 +20,10 @@ import Poker from "./pages/Poker";
 import PokerNextCut from "./pages/PokerNextCut";
 import PokerHourlyEarnings from "./pages/PokerHourlyEarnings";
 import PokerRakeback from "./pages/PokerRakeback";
+import Fumo from "./pages/Fumo";
+import FumoLiquidoSigaretta from "./pages/FumoLiquidoSigaretta";
+import FumoCBD from "./pages/FumoCBD";
+import FumoTHC from "./pages/FumoTHC";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -102,6 +106,10 @@ function AppRoutes() {
       <Route path="/categories" element={<ProtectedRoute><Categories /></ProtectedRoute>} />
       <Route path="/charts" element={<ProtectedRoute><Charts /></ProtectedRoute>} />
       <Route path="/portfolio" element={<ProtectedRoute><Portfolio /></ProtectedRoute>} />
+      <Route path="/fumo" element={<ProtectedRoute><Fumo /></ProtectedRoute>} />
+      <Route path="/fumo/liquido-sigaretta" element={<ProtectedRoute><FumoLiquidoSigaretta /></ProtectedRoute>} />
+      <Route path="/fumo/cbd" element={<ProtectedRoute><FumoCBD /></ProtectedRoute>} />
+      <Route path="/fumo/thc" element={<ProtectedRoute><FumoTHC /></ProtectedRoute>} />
       <Route path="/poker" element={<PokerRoute><Poker /></PokerRoute>} />
       <Route path="/poker/next-cut" element={<PokerRoute><PokerNextCut /></PokerRoute>} />
       <Route path="/poker/hourly-earnings" element={<PokerRoute><PokerHourlyEarnings /></PokerRoute>} />

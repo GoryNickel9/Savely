@@ -16,6 +16,7 @@ export interface Profile {
 export interface UserPermissions {
   admin: boolean;
   poker: boolean;
+  fumo: boolean;
 }
 
 export interface Category {

@@ -80,6 +80,7 @@ export default function PermissionsManager({ currentUserId }: PermissionsManager
 
   const permissionLabels: { [K in keyof UserPermissions]?: string } = {
     poker: 'Poker',
+    fumo: 'Fumo',
   };
 
   if (loading) {

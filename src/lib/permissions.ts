@@ -21,6 +21,7 @@ export async function getUserPermissions(userId: string): Promise<UserPermission
     return {
       admin: permissions.admin || false,
       poker: permissions.poker || false,
+      fumo: permissions.fumo || false,
     };
   } catch (error) {
     console.error('Errore nel recupero dei permessi:', error);
@@ -35,6 +36,7 @@ export function getDefaultPermissions(): UserPermissions {
   return {
     admin: false,
     poker: false,
+    fumo: false,
   };
 }
 

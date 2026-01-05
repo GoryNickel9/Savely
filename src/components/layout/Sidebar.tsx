@@ -16,6 +16,7 @@ import {
   Folder,
   Shield,
   Dices,
+  Droplets,
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -77,6 +78,23 @@ export default function Sidebar() {
           >
             <Dices className="w-5 h-5" />
             Poker
+          </Link>
+        )}
+
+        {/* Sezione Fumo - visibile solo agli utenti con permesso fumo */}
+        {permissions?.fumo && (
+          <Link
+            to="/fumo"
+            onClick={() => setMobileOpen(false)}
+            className={cn(
+              'flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200',
+              location.pathname === '/fumo'
+                ? 'bg-primary text-primary-foreground shadow-lg glow-primary'
+                : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
+            )}
+          >
+            <Droplets className="w-5 h-5" />
+            Fumo
           </Link>
         )}
       </nav>
