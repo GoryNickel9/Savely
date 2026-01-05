@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { CurrencyCode, Category } from '@/lib/types';
 
-export type RecurringFrequency = 'weekly' | 'biweekly' | 'monthly' | 'quarterly' | 'yearly';
+export type RecurringFrequency = 'weekly' | 'monthly' | 'quarterly' | 'yearly';
 
 export interface RecurringExpense {
   id: string;
@@ -13,6 +13,7 @@ export interface RecurringExpense {
   amount: number;
   currency: CurrencyCode;
   frequency: RecurringFrequency;
+  week_interval?: number;
   next_due_date: string;
   is_active: boolean;
   created_at: string;
@@ -21,8 +22,7 @@ export interface RecurringExpense {
 }
 
 export const FREQUENCY_LABELS: Record<RecurringFrequency, string> = {
-  weekly: 'Settimanale',
-  biweekly: 'Bisettimanale',
+  weekly: 'Ogni X settimane',
   monthly: 'Mensile',
   quarterly: 'Trimestrale',
   yearly: 'Annuale',
@@ -53,6 +53,7 @@ export function useRecurringExpenses() {
       currency?: CurrencyCode;
       category_id?: string;
       frequency: RecurringFrequency;
+      week_interval?: number;
       next_due_date: string;
       is_active?: boolean;
     }) => {
@@ -81,6 +82,7 @@ export function useRecurringExpenses() {
       currency?: CurrencyCode;
       category_id?: string;
       frequency?: RecurringFrequency;
+      week_interval?: number;
       next_due_date?: string;
       is_active?: boolean;
     }) => {
@@ -162,7 +164,7 @@ export function useRecurringExpenses() {
         }
 
         // Calculate next due date
-        const nextDate = calculateNextDueDate(expense.next_due_date, expense.frequency as RecurringFrequency);
+        const nextDate = calculateNextDueDate(expense.next_due_date, expense.frequency as RecurringFrequency, expense.week_interval);
         
         await supabase
           .from('recurring_expenses')
@@ -188,15 +190,12 @@ export function useRecurringExpenses() {
   };
 }
 
-function calculateNextDueDate(currentDate: string, frequency: RecurringFrequency): string {
+function calculateNextDueDate(currentDate: string, frequency: RecurringFrequency, weekInterval: number = 1): string {
   const date = new Date(currentDate);
   
   switch (frequency) {
     case 'weekly':
-      date.setDate(date.getDate() + 7);
-      break;
-    case 'biweekly':
-      date.setDate(date.getDate() + 14);
+      date.setDate(date.getDate() + (7 * weekInterval));
       break;
     case 'monthly':
       date.setMonth(date.getMonth() + 1);

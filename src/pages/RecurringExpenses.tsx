@@ -46,6 +46,7 @@ export default function RecurringExpenses() {
   const [amount, setAmount] = useState('');
   const [categoryId, setCategoryId] = useState('');
   const [frequency, setFrequency] = useState<RecurringFrequency>('monthly');
+  const [weekInterval, setWeekInterval] = useState(1);
   const [nextDueDate, setNextDueDate] = useState(new Date().toISOString().split('T')[0]);
 
   const expenseCategories = categories.filter(c => c.type === 'expense');
@@ -69,6 +70,7 @@ export default function RecurringExpenses() {
     setAmount('');
     setCategoryId('');
     setFrequency('monthly');
+    setWeekInterval(1);
     setNextDueDate(new Date().toISOString().split('T')[0]);
     setEditingExpense(null);
   };
@@ -81,6 +83,7 @@ export default function RecurringExpenses() {
       amount: parseFloat(amount),
       category_id: categoryId || undefined,
       frequency,
+      week_interval: frequency === 'weekly' ? weekInterval : undefined,
       next_due_date: nextDueDate,
     };
 
@@ -105,6 +108,7 @@ export default function RecurringExpenses() {
     setAmount(String(expense.amount));
     setCategoryId(expense.category_id || '');
     setFrequency(expense.frequency as RecurringFrequency);
+    setWeekInterval(expense.week_interval || 1);
     setNextDueDate(expense.next_due_date);
     setDialogOpen(true);
   };
@@ -214,6 +218,18 @@ export default function RecurringExpenses() {
                       </SelectContent>
                     </Select>
                   </div>
+                  {frequency === 'weekly' && (
+                    <div>
+                      <Label>Intervallo (settimane)</Label>
+                      <Input
+                        type="number"
+                        min="1"
+                        value={weekInterval}
+                        onChange={(e) => setWeekInterval(parseInt(e.target.value) || 1)}
+                        required
+                      />
+                    </div>
+                  )}
                   <div>
                     <Label>Prossima Scadenza</Label>
                     <Input
@@ -249,7 +265,12 @@ export default function RecurringExpenses() {
                   <div>
                     <p className="font-medium">{expense.name}</p>
                     <div className="flex gap-2 text-sm text-muted-foreground">
-                      <span>{FREQUENCY_LABELS[expense.frequency as RecurringFrequency]}</span>
+                      <span>
+                        {expense.frequency === 'weekly'
+                          ? `Ogni ${expense.week_interval || 1} settimana${(expense.week_interval || 1) > 1 ? 'e' : ''}`
+                          : FREQUENCY_LABELS[expense.frequency as RecurringFrequency]
+                        }
+                      </span>
                       <span>•</span>
                       <span>Prossima: {new Date(expense.next_due_date).toLocaleDateString('it-IT')}</span>
                     </div>

@@ -309,6 +309,7 @@ export type Database = {
           next_due_date: string
           updated_at: string
           user_id: string
+          week_interval: number | null
         }
         Insert: {
           amount: number
@@ -322,6 +323,7 @@ export type Database = {
           next_due_date: string
           updated_at?: string
           user_id: string
+          week_interval?: number | null
         }
         Update: {
           amount?: number
@@ -335,6 +337,7 @@ export type Database = {
           next_due_date?: string
           updated_at?: string
           user_id?: string
+          week_interval?: number | null
         }
         Relationships: [
           {
