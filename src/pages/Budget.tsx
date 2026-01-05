@@ -7,13 +7,10 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
-import { CURRENCY_SYMBOLS, TransactionType } from '@/lib/types';
-import { Plus, FolderPlus, Edit2, Trash2 } from 'lucide-react';
+import { CURRENCY_SYMBOLS } from '@/lib/types';
+import { Plus, Edit2, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
-
-const EMOJI_OPTIONS = ['🍔', '🚗', '🏠', '🛍️', '🎬', '💊', '📦', '💰', '💻', '📈', '💵', '✈️', '🎮', '📚', '🎵', '🏋️', '☕', '🎁'];
-const COLOR_OPTIONS = ['#f97316', '#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b', '#ef4444', '#6b7280', '#22c55e', '#14b8a6', '#06b6d4'];
 
 // Calculate median of an array
 const calculateMedian = (arr: number[]): number => {
@@ -25,7 +22,7 @@ const calculateMedian = (arr: number[]): number => {
 
 export default function Budget() {
   const { budgets, createBudget, updateBudget, deleteBudget } = useBudgets();
-  const { expenseCategories, createCategory } = useCategories();
+  const { expenseCategories } = useCategories();
   const { transactions } = useTransactions();
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
@@ -36,13 +33,6 @@ export default function Budget() {
   const [editOpen, setEditOpen] = useState(false);
   const [editBudgetId, setEditBudgetId] = useState('');
   const [editAmount, setEditAmount] = useState('');
-
-  // New category dialog state
-  const [catOpen, setCatOpen] = useState(false);
-  const [catName, setCatName] = useState('');
-  const [catIcon, setCatIcon] = useState('📦');
-  const [catColor, setCatColor] = useState('#6b7280');
-  const [catType, setCatType] = useState<TransactionType>('expense');
 
   // Calculate the 18-month period ending at current date
   const { startDate, endDate } = useMemo(() => {
@@ -137,22 +127,6 @@ export default function Budget() {
     setEditOpen(true);
   };
 
-  const handleCreateCategory = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!catName.trim()) return;
-    try {
-      await createCategory.mutateAsync({ name: catName.trim(), icon: catIcon, color: catColor, type: catType });
-      toast({ title: 'Categoria creata!' });
-      setCatOpen(false);
-      setCatName('');
-      setCatIcon('📦');
-      setCatColor('#6b7280');
-      setCatType('expense');
-    } catch {
-      toast({ title: 'Errore', variant: 'destructive' });
-    }
-  };
-
   const usedCategoryIds = budgets.map(b => b.category_id);
   const availableCategories = expenseCategories.filter(c => !usedCategoryIds.includes(c.id));
 
@@ -167,58 +141,6 @@ export default function Budget() {
             <p className="text-muted-foreground">Mediana mensile ({periodLabel})</p>
           </div>
           <div className="flex gap-2">
-            {/* Create Category Dialog */}
-            <Dialog open={catOpen} onOpenChange={setCatOpen}>
-              <DialogTrigger asChild>
-                <Button variant="outline"><FolderPlus className="w-4 h-4 mr-2" />Nuova Categoria</Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader><DialogTitle>Nuova Categoria</DialogTitle></DialogHeader>
-                <form onSubmit={handleCreateCategory} className="space-y-4">
-                  <Input placeholder="Nome categoria" value={catName} onChange={e => setCatName(e.target.value)} required />
-                  <div>
-                    <label className="text-sm text-muted-foreground mb-2 block">Icona</label>
-                    <div className="flex flex-wrap gap-2">
-                      {EMOJI_OPTIONS.map(emoji => (
-                        <button
-                          type="button"
-                          key={emoji}
-                          onClick={() => setCatIcon(emoji)}
-                          className={`w-10 h-10 text-xl rounded-lg border transition-all ${catIcon === emoji ? 'border-primary bg-primary/20' : 'border-border hover:border-primary/50'}`}
-                        >
-                          {emoji}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                  <div>
-                    <label className="text-sm text-muted-foreground mb-2 block">Colore</label>
-                    <div className="flex flex-wrap gap-2">
-                      {COLOR_OPTIONS.map(color => (
-                        <button
-                          type="button"
-                          key={color}
-                          onClick={() => setCatColor(color)}
-                          className={`w-8 h-8 rounded-full border-2 transition-all ${catColor === color ? 'border-foreground scale-110' : 'border-transparent'}`}
-                          style={{ backgroundColor: color }}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                  <Select value={catType} onValueChange={(v) => setCatType(v as TransactionType)}>
-                    <SelectTrigger><SelectValue placeholder="Tipo" /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="expense">Spesa</SelectItem>
-                      <SelectItem value="income">Entrata</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Button type="submit" className="w-full" disabled={createCategory.isPending}>
-                    {createCategory.isPending ? 'Creazione...' : 'Crea Categoria'}
-                  </Button>
-                </form>
-              </DialogContent>
-            </Dialog>
-
             {/* Create Budget Dialog */}
             <Dialog open={open} onOpenChange={setOpen}>
               <DialogTrigger asChild><Button><Plus className="w-4 h-4 mr-2" />Nuovo Budget</Button></DialogTrigger>

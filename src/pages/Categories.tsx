@@ -8,9 +8,7 @@ import { TransactionType } from '@/lib/types';
 import { Plus, Edit2, Trash2, FolderPlus } from 'lucide-react';
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
-
-const EMOJI_OPTIONS = ['🍔', '🚗', '🏠', '🎬', '💊', '📦', '💰', '📈', '💵', '✈️', '🎮', '🎵', '🏋️', '☕', '🎁', '🍕', '🎨', '🏥', '⚽', '📱', '🔧', '🚲', '🚌', '👕'];
-const COLOR_OPTIONS = ['#f97316', '#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b', '#ef4444', '#6b7280', '#22c55e', '#14b8a6', '#06b6d4'];
+import { EMOJI_OPTIONS, COLOR_OPTIONS } from '@/lib/constants';
 
 export default function Categories() {
   const { categories, createCategory, updateCategory, deleteCategory } = useCategories();

@@ -3,6 +3,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useCategories } from '@/hooks/useCategories';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { LogOut, User, Download, Upload, FileSpreadsheet, Trash2, Settings2, Edit2, FolderPlus } from 'lucide-react';
 import { useState, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
@@ -33,9 +34,7 @@ import BBVAImportDialog from '@/components/settings/BBVAImportDialog';
 import TradeRepublicImportDialog from '@/components/settings/TradeRepublicImportDialog';
 import ISINMappingsDialog from '@/components/settings/ISINMappingsDialog';
 import { TransactionType } from '@/lib/types';
-
-const EMOJI_OPTIONS = ['🍔', '🚗', '🏠', '🛍️', '🎬', '💊', '📦', '💰', '💻', '📈', '💵', '✈️', '🎮', '📚', '🎵', '🏋️', '☕', '🎁', '🍕', '🍣', '🥗', '🍷', '🎨', '🏥', '⚽', '🎸', '📱', '🔧', '🚲', '🚇', '🚌', '🧘', '🦷', '👕', '👟', '💄', '💡', '📧', '📄'];
-const COLOR_OPTIONS = ['#f97316', '#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b', '#ef4444', '#6b7280', '#22c55e', '#14b8a6', '#06b6d4'];
+import { EMOJI_OPTIONS, COLOR_OPTIONS } from '@/lib/constants';
 
 export default function Settings() {
   const { user, signOut, updateEmail, updatePassword } = useAuth();
@@ -71,6 +70,13 @@ export default function Settings() {
   const [editCatIcon, setEditCatIcon] = useState('📦');
   const [editCatColor, setEditCatColor] = useState('#6b7280');
   const [editCatType, setEditCatType] = useState<TransactionType>('expense');
+  
+  // New category dialog state
+  const [newCatOpen, setNewCatOpen] = useState(false);
+  const [newCatName, setNewCatName] = useState('');
+  const [newCatIcon, setNewCatIcon] = useState('📦');
+  const [newCatColor, setNewCatColor] = useState('#6b7280');
+  const [newCatType, setNewCatType] = useState<TransactionType>('expense');
   const exportData = async (format: 'csv' | 'xlsx') => {
     if (!user) return;
     setIsExporting(true);
@@ -404,6 +410,28 @@ export default function Settings() {
     }
   };
 
+  const handleCreateCategory = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newCatName.trim()) return;
+    try {
+      await updateCategory.mutateAsync({
+        id: '',
+        name: newCatName.trim(),
+        icon: newCatIcon,
+        color: newCatColor,
+        type: newCatType
+      });
+      toast({ title: 'Categoria creata!' });
+      setNewCatOpen(false);
+      setNewCatName('');
+      setNewCatIcon('📦');
+      setNewCatColor('#6b7280');
+      setNewCatType('expense');
+    } catch {
+      toast({ title: 'Errore', variant: 'destructive' });
+    }
+  };
+
   const userName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Utente';
 
   return (
@@ -650,53 +678,109 @@ export default function Settings() {
               Gestione Categorie
             </h3>
             
-            <Dialog open={categoriesDialogOpen} onOpenChange={setCategoriesDialogOpen}>
-              <DialogTrigger asChild>
-                <Button variant="outline" className="w-full sm:w-auto">
-                  <FolderPlus className="w-4 h-4 mr-2" />
-                  Gestisci Categorie
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-                <DialogHeader>
-                  <DialogTitle>Gestisci Categorie</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4">
-                  <div>
-                    <p className="text-sm text-muted-foreground mb-2">
-                      Modifica le tue categorie, le loro emoji e i colori.
-                    </p>
-                  </div>
-                  
-                  <div className="space-y-3">
-                    {categories.length === 0 ? (
-                      <div className="text-center text-muted-foreground py-4">Nessuna categoria</div>
-                    ) : (
-                      categories.map(category => (
-                        <div key={category.id} className="glass rounded-lg p-3 flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <span className="text-2xl">{category.icon}</span>
-                            <div>
-                              <div className="font-medium">{category.name}</div>
-                              <div className="text-sm text-muted-foreground">{category.type === 'expense' ? 'Spesa' : 'Entrata'}</div>
+            <div className="flex flex-wrap gap-2">
+              <Dialog open={categoriesDialogOpen} onOpenChange={setCategoriesDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" className="w-full sm:w-auto">
+                    <FolderPlus className="w-4 h-4 mr-2" />
+                    Gestisci Categorie
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle>Gestisci Categorie</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div>
+                      <p className="text-sm text-muted-foreground mb-2">
+                        Modifica le tue categorie, le loro emoji e i colori.
+                      </p>
+                    </div>
+                    
+                    <div className="space-y-3">
+                      {categories.length === 0 ? (
+                        <div className="text-center text-muted-foreground py-4">Nessuna categoria</div>
+                      ) : (
+                        categories.map(category => (
+                          <div key={category.id} className="glass rounded-lg p-3 flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <span className="text-2xl">{category.icon}</span>
+                              <div>
+                                <div className="font-medium">{category.name}</div>
+                                <div className="text-sm text-muted-foreground">{category.type === 'expense' ? 'Spesa' : 'Entrata'}</div>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <div
+                                className="w-5 h-5 rounded-full border-2"
+                                style={{ backgroundColor: category.color, borderColor: category.color }}
+                              />
+                              <Button variant="ghost" size="icon" onClick={() => openCategoryEdit(category)}>
+                                <Edit2 className="w-4 h-4" />
+                              </Button>
                             </div>
                           </div>
-                          <div className="flex items-center gap-2">
-                            <div
-                              className="w-5 h-5 rounded-full border-2"
-                              style={{ backgroundColor: category.color, borderColor: category.color }}
-                            />
-                            <Button variant="ghost" size="icon" onClick={() => openCategoryEdit(category)}>
-                              <Edit2 className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        </div>
-                      ))
-                    )}
+                        ))
+                      )}
+                    </div>
                   </div>
-                </div>
-              </DialogContent>
-            </Dialog>
+                </DialogContent>
+              </Dialog>
+              
+              <Dialog open={newCatOpen} onOpenChange={setNewCatOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" className="w-full sm:w-auto">
+                    <FolderPlus className="w-4 h-4 mr-2" />
+                    Nuova Categoria
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader><DialogTitle>Nuova Categoria</DialogTitle></DialogHeader>
+                  <form onSubmit={handleCreateCategory} className="space-y-4">
+                    <Input placeholder="Nome categoria" value={newCatName} onChange={e => setNewCatName(e.target.value)} required />
+                    <div>
+                      <label className="text-sm text-muted-foreground mb-2 block">Icona</label>
+                      <div className="flex flex-wrap gap-2">
+                        {EMOJI_OPTIONS.map(emoji => (
+                          <button
+                            type="button"
+                            key={emoji}
+                            onClick={() => setNewCatIcon(emoji)}
+                            className={`w-10 h-10 text-xl rounded-lg border transition-all ${newCatIcon === emoji ? 'border-primary bg-primary/20' : 'border-border hover:border-primary/50'}`}
+                          >
+                            {emoji}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-sm text-muted-foreground mb-2 block">Colore</label>
+                      <div className="flex flex-wrap gap-2">
+                        {COLOR_OPTIONS.map(color => (
+                          <button
+                            type="button"
+                            key={color}
+                            onClick={() => setNewCatColor(color)}
+                            className={`w-8 h-8 rounded-full border-2 transition-all ${newCatColor === color ? 'border-foreground scale-110' : 'border-transparent'}`}
+                            style={{ backgroundColor: color }}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                    <Select value={newCatType} onValueChange={(v) => setNewCatType(v as TransactionType)}>
+                      <SelectTrigger><SelectValue placeholder="Tipo" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="expense">Spesa</SelectItem>
+                        <SelectItem value="income">Entrata</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Button type="submit" className="w-full" disabled={updateCategory.isPending}>
+                      {updateCategory.isPending ? 'Creazione...' : 'Crea Categoria'}
+                    </Button>
+                  </form>
+                </DialogContent>
+              </Dialog>
+            </div>
           </div>
 
           {/* Category Edit Dialog */}

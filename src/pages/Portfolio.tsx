@@ -422,7 +422,12 @@ export default function Portfolio() {
                     <p className="font-medium">{first.name} {first.symbol && <span className="text-muted-foreground">({first.symbol})</span>}</p>
                     <p className="text-sm text-muted-foreground">
                       {first.type === 'cash' ? (
-                        ASSET_TYPE_LABELS[first.type]
+                        <span>
+                          {ASSET_TYPE_LABELS[first.type]}
+                          <span className="ml-2 text-xs text-muted-foreground">
+                            - Aggiornato al {format(parseISO(lastUpdate?.updated_at || first.updated_at), 'dd.MM.yy', { locale: it })}
+                          </span>
+                        </span>
                       ) : (
                         `${ASSET_TYPE_LABELS[first.type]} · ${totalQuantity.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} unità @ ${CURRENCY_SYMBOLS.EUR}${avgPurchasePrice.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
                       )}

@@ -119,7 +119,41 @@ export default function Charts() {
       dailyBalances[dateKey] += t.type === 'income' ? Number(t.amount) : -Number(t.amount);
     });
 
-    // Generate all days in range
+    // Generate all days in range (limit to max 365 days to prevent performance issues)
+    const daysDiff = Math.floor((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+    const maxDays = 365;
+    
+    if (daysDiff > maxDays) {
+      // If range is too large, aggregate by month instead of day
+      const monthlyBalances: Record<string, number> = {};
+      filteredTransactions.forEach(t => {
+        const monthKey = format(parseISO(t.date), 'yyyy-MM');
+        if (!monthlyBalances[monthKey]) {
+          monthlyBalances[monthKey] = 0;
+        }
+        monthlyBalances[monthKey] += t.type === 'income' ? Number(t.amount) : -Number(t.amount);
+      });
+      
+      // Generate all months in range
+      const allMonths: Date[] = [];
+      let currentMonth = startOfMonth(startDate);
+      while (currentMonth <= endDate) {
+        allMonths.push(currentMonth);
+        currentMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1);
+      }
+      
+      let cumulative = 0;
+      return allMonths.map(month => {
+        const monthKey = format(month, 'yyyy-MM');
+        cumulative += monthlyBalances[monthKey] || 0;
+        return {
+          date: monthKey + '-01',
+          dateLabel: format(month, 'MMM yyyy', { locale: it }),
+          cumulative,
+        };
+      });
+    }
+    
     const allDays = eachDayOfInterval({ start: startDate, end: endDate });
     
     let cumulative = 0;
@@ -211,7 +245,7 @@ export default function Charts() {
         </div>
 
         {/* Summary cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="glass rounded-xl p-6 text-center">
             <p className="text-sm text-muted-foreground">Entrate</p>
             <p className="text-2xl font-display font-bold text-success">{CURRENCY_SYMBOLS.EUR}{totalIncome.toLocaleString('it-IT', { minimumFractionDigits: 2 })}</p>
@@ -221,9 +255,15 @@ export default function Charts() {
             <p className="text-2xl font-display font-bold text-destructive">{CURRENCY_SYMBOLS.EUR}{totalExpense.toLocaleString('it-IT', { minimumFractionDigits: 2 })}</p>
           </div>
           <div className="glass rounded-xl p-6 text-center">
-            <p className="text-sm text-muted-foreground">Bilancio</p>
+            <p className="text-sm text-muted-foreground">Cash Flow</p>
             <p className={`text-2xl font-display font-bold ${totalIncome - totalExpense >= 0 ? 'text-success' : 'text-destructive'}`}>
               {totalIncome - totalExpense >= 0 ? '+' : ''}{CURRENCY_SYMBOLS.EUR}{(totalIncome - totalExpense).toLocaleString('it-IT', { minimumFractionDigits: 2 })}
+            </p>
+          </div>
+          <div className="glass rounded-xl p-6 text-center">
+            <p className="text-sm text-muted-foreground">Saving rate</p>
+            <p className="text-2xl font-display font-bold text-success">
+              {totalIncome > 0 ? `${Math.max(0, ((totalIncome - totalExpense) / totalIncome) * 100).toFixed(1)}%` : '0%'}
             </p>
           </div>
         </div>
