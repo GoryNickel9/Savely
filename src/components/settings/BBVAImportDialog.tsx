@@ -8,7 +8,7 @@ import { Progress } from '@/components/ui/progress';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useCategories } from '@/hooks/useCategories';
-import { Check, X, FileSpreadsheet } from 'lucide-react';
+import { Check, X, FileSpreadsheet, Plus } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
 interface BBVAImportDialogProps {
@@ -33,7 +33,7 @@ type ImportStep = 'upload' | 'review' | 'importing' | 'complete';
 
 export default function BBVAImportDialog({ open, onOpenChange, userId }: BBVAImportDialogProps) {
   const { toast } = useToast();
-  const { categories, refetch: refetchCategories } = useCategories();
+  const { categories, refetch: refetchCategories, isLoading } = useCategories();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [step, setStep] = useState<ImportStep>('upload');
@@ -44,6 +44,10 @@ export default function BBVAImportDialog({ open, onOpenChange, userId }: BBVAImp
   const [dbCategoryMappings, setDbCategoryMappings] = useState<Record<string, { categoryId: string; keyword: string }>>({});
   const [editedNota, setEditedNota] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
+  const [showNewCategoryForm, setShowNewCategoryForm] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState('');
+  const [newCategoryIcon, setNewCategoryIcon] = useState('💰');
+  const [newCategoryColor, setNewCategoryColor] = useState('#22c55e');
   const [acceptedTransactions, setAcceptedTransactions] = useState<Array<BBVATransaction & { categoryId: string; editedNota: string }>>([]);
   const [autoImportedTransactions, setAutoImportedTransactions] = useState<AutoImportTransaction[]>([]);
   const [importProgress, setImportProgress] = useState(0);
@@ -54,6 +58,15 @@ export default function BBVAImportDialog({ open, onOpenChange, userId }: BBVAImp
 
   const expenseCategories = categories?.filter(c => c.type === 'expense') || [];
   const incomeCategories = categories?.filter(c => c.type === 'income') || [];
+  const isLoadingCategories = isLoading;
+  
+  
+  const DEFAULT_ICONS_INCOME = ['💰', '💵', '📈', '💳', '🏦', '💎', '🎯', '🎁'];
+  const DEFAULT_ICONS_EXPENSE = ['💸', '🛒', '🍔', '🚗', '🏠', '💊', '🎬', '📦'];
+  const DEFAULT_COLORS = [
+    '#22c55e', '#3b82f6', '#8b5cf6', '#f59e0b',
+    '#ef4444', '#ec4899', '#14b8a6', '#6b7280'
+  ];
 
   const currentTransaction = transactions[currentIndex];
 
@@ -333,6 +346,51 @@ export default function BBVAImportDialog({ open, onOpenChange, userId }: BBVAImp
     }
   };
 
+  const handleCreateCategory = async () => {
+    if (!newCategoryName.trim()) {
+      toast({
+        title: 'Nome categoria richiesto',
+        description: 'Inserisci un nome per la nuova categoria.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from('categories')
+      .insert({
+        user_id: userId,
+        name: newCategoryName.trim(),
+        icon: newCategoryIcon,
+        color: newCategoryColor,
+        type: currentTransaction?.isIncome ? 'income' : 'expense',
+      })
+      .select('id')
+      .single();
+
+    if (error) {
+      toast({
+        title: 'Errore creazione categoria',
+        description: 'Impossibile creare la categoria.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Refetch categories to update the list
+    refetchCategories();
+    
+    // Select the newly created category
+    setSelectedCategory(data.id);
+    setShowNewCategoryForm(false);
+    setNewCategoryName('');
+    
+    toast({
+      title: 'Categoria creata',
+      description: `Categoria "${newCategoryName}" creata con successo.`,
+    });
+  };
+
   const handleAccept = () => {
     if (!selectedCategory) {
       toast({
@@ -479,11 +537,16 @@ export default function BBVAImportDialog({ open, onOpenChange, userId }: BBVAImp
     setAutoImportedCount(0);
     setEditedNota('');
     setSelectedCategory('');
+    setShowNewCategoryForm(false);
+    setNewCategoryName('');
+    setNewCategoryIcon('💰');
+    setNewCategoryColor('#22c55e');
     onOpenChange(false);
   };
 
-  const availableCategories = currentTransaction?.isIncome ? incomeCategories : expenseCategories;
+  const availableCategories = categories || [];
   const progress = transactions.length > 0 ? ((currentIndex + 1) / transactions.length) * 100 : 0;
+  
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
@@ -500,22 +563,30 @@ export default function BBVAImportDialog({ open, onOpenChange, userId }: BBVAImp
 
         {step === 'upload' && (
           <div className="space-y-4">
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".csv,.xlsx,.xls"
-              onChange={handleFileUpload}
-              className="hidden"
-            />
-            <Button 
-              onClick={() => fileInputRef.current?.click()}
-              variant="outline"
-              className="w-full h-32 flex flex-col items-center justify-center gap-2 border-dashed"
-            >
-              <FileSpreadsheet className="w-8 h-8 text-muted-foreground" />
-              <span>Clicca per caricare il file</span>
-              <span className="text-xs text-muted-foreground">CSV o Excel</span>
-            </Button>
+            {isLoadingCategories ? (
+              <div className="text-center py-8">
+                <p className="text-sm text-muted-foreground">Caricamento categorie...</p>
+              </div>
+            ) : (
+              <>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".csv,.xlsx,.xls"
+                  onChange={handleFileUpload}
+                  className="hidden"
+                />
+                <Button
+                  onClick={() => fileInputRef.current?.click()}
+                  variant="outline"
+                  className="w-full h-32 flex flex-col items-center justify-center gap-2 border-dashed"
+                >
+                  <FileSpreadsheet className="w-8 h-8 text-muted-foreground" />
+                  <span>Clicca per caricare il file</span>
+                  <span className="text-xs text-muted-foreground">CSV o Excel</span>
+                </Button>
+              </>
+            )}
           </div>
         )}
 
@@ -554,7 +625,76 @@ export default function BBVAImportDialog({ open, onOpenChange, userId }: BBVAImp
 
             <div className="space-y-2">
               <Label>Categoria</Label>
-              {availableCategories.length > 0 ? (
+              {isLoadingCategories ? (
+                <p className="text-sm text-muted-foreground">Caricamento categorie...</p>
+              ) : showNewCategoryForm ? (
+                <div className="space-y-3 p-3 border rounded-lg bg-muted/50">
+                  <div className="space-y-2">
+                    <Label className="text-xs">Nome categoria</Label>
+                    <Input
+                      value={newCategoryName}
+                      onChange={(e) => setNewCategoryName(e.target.value)}
+                      placeholder="Es. Alimentari"
+                      autoFocus
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs">Icona</Label>
+                    <div className="flex flex-wrap gap-2">
+                      {(currentTransaction?.isIncome ? DEFAULT_ICONS_INCOME : DEFAULT_ICONS_EXPENSE).map(icon => (
+                        <button
+                          key={icon}
+                          type="button"
+                          onClick={() => setNewCategoryIcon(icon)}
+                          className={`w-10 h-10 text-xl rounded-lg border-2 transition-all ${
+                            newCategoryIcon === icon
+                              ? 'border-primary bg-primary/10'
+                              : 'border-transparent hover:border-muted-foreground/30'
+                          }`}
+                        >
+                          {icon}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs">Colore</Label>
+                    <div className="flex flex-wrap gap-2">
+                      {DEFAULT_COLORS.map(color => (
+                        <button
+                          key={color}
+                          type="button"
+                          onClick={() => setNewCategoryColor(color)}
+                          className={`w-8 h-8 rounded-full border-2 transition-all ${
+                            newCategoryColor === color
+                              ? 'border-foreground scale-110'
+                              : 'border-transparent hover:scale-105'
+                          }`}
+                          style={{ backgroundColor: color }}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowNewCategoryForm(false)}
+                      className="flex-1"
+                    >
+                      Annulla
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={handleCreateCategory}
+                      className="flex-1"
+                    >
+                      <Plus className="w-4 h-4 mr-1" />
+                      Crea
+                    </Button>
+                  </div>
+                </div>
+              ) : availableCategories.length > 0 ? (
                 <Select value={selectedCategory} onValueChange={setSelectedCategory}>
                   <SelectTrigger>
                     <SelectValue placeholder="Seleziona categoria" />
@@ -568,7 +708,29 @@ export default function BBVAImportDialog({ open, onOpenChange, userId }: BBVAImp
                   </SelectContent>
                 </Select>
               ) : (
-                <p className="text-sm text-muted-foreground">Caricamento categorie...</p>
+                <div className="space-y-2">
+                  <p className="text-sm text-destructive">
+                    Nessuna categoria trovata per questo tipo di transazione.
+                  </p>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => refetchCategories()}
+                      className="flex-1"
+                    >
+                      Ricarica
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={() => setShowNewCategoryForm(true)}
+                      className="flex-1"
+                    >
+                      <Plus className="w-4 h-4 mr-1" />
+                      Crea nuova
+                    </Button>
+                  </div>
+                </div>
               )}
             </div>
 

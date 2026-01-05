@@ -14,7 +14,7 @@ import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
-import { TrendingUp, TrendingDown, Briefcase, ArrowLeft, Check, AlertTriangle } from 'lucide-react';
+import { TrendingUp, TrendingDown, Briefcase, ArrowLeft, Check, AlertTriangle, Upload } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import * as XLSX from 'xlsx';
@@ -79,6 +79,23 @@ export default function SpendyImportDialog({ open, onOpenChange, userId }: Spend
   const [importProgress, setImportProgress] = useState<ImportProgress | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
+  // Helper to parse numbers (supports both Italian and English formats)
+  const parseItalianNumber = (value: any): number => {
+    if (typeof value === 'number') return value;
+    if (!value) return 0;
+    const str = String(value).trim();
+    
+    // Check if it's Italian format (has comma as decimal separator)
+    if (str.includes(',')) {
+      // Italian format: dot as thousands separator, comma as decimal separator
+      const normalized = str.replace(/\./g, '').replace(',', '.');
+      return parseFloat(normalized) || 0;
+    } else {
+      // English format: dot as decimal separator
+      return parseFloat(str) || 0;
+    }
+  };
+
   // Helper to clean BOM and normalize column names
   const cleanRow = (row: Record<string, unknown>): Record<string, unknown> => {
     const cleaned: Record<string, unknown> = {};
@@ -92,7 +109,22 @@ export default function SpendyImportDialog({ open, onOpenChange, userId }: Spend
   // XLSX when reading CSV can convert dates to Excel serial numbers (e.g. 45444.08)
   const normalizeDate = (value: unknown): string => {
     const fallback = new Date().toISOString().slice(0, 10);
-
+    
+    const s = String(value ?? '').trim();
+    if (!s) return fallback;
+    
+    // Keep YYYY-MM-DD as-is (this should be checked first!)
+    if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+    
+    // Handle DD/MM/YYYY format (Italian date format)
+    const italianDateMatch = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(s);
+    if (italianDateMatch) {
+      const [, day, month, year] = italianDateMatch;
+      const date = new Date(`${year}-${month}-${day}`);
+      if (!Number.isNaN(date.getTime())) return date.toISOString().slice(0, 10);
+    }
+    
+    // If it's a number (Excel serial), convert it
     if (typeof value === 'number' && Number.isFinite(value)) {
       // Excel epoch: 1899-12-30
       const excelEpoch = Date.UTC(1899, 11, 30);
@@ -100,26 +132,20 @@ export default function SpendyImportDialog({ open, onOpenChange, userId }: Spend
       const date = new Date(excelEpoch + days * 86400000);
       return date.toISOString().slice(0, 10);
     }
-
-    const s = String(value ?? '').trim();
-    if (!s) return fallback;
-
-    // Keep YYYY-MM-DD as-is
-    if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
-
+    
     // If it's a numeric-like string, try parsing as Excel serial
     const maybeNum = Number(s);
-    if (Number.isFinite(maybeNum)) {
+    if (Number.isFinite(maybeNum) && !s.includes('-')) {
       const excelEpoch = Date.UTC(1899, 11, 30);
       const days = Math.floor(maybeNum);
       const date = new Date(excelEpoch + days * 86400000);
       return date.toISOString().slice(0, 10);
     }
-
+    
     // Last resort: Date parser
     const d = new Date(s);
     if (!Number.isNaN(d.getTime())) return d.toISOString().slice(0, 10);
-
+    
     return fallback;
   };
 
@@ -166,17 +192,73 @@ export default function SpendyImportDialog({ open, onOpenChange, userId }: Spend
     return duplicatesFound;
   };
 
+  const detectFileType = (rows: Record<string, unknown>[], fileName?: string): 'income' | 'expense' | 'investment' | null => {
+    if (rows.length === 0) return null;
+    
+    // First, check filename pattern (Spendy Desktop naming convention)
+    if (fileName) {
+      const lowerFileName = fileName.toLowerCase();
+      if (lowerFileName.startsWith('entrate_')) {
+        return 'income';
+      }
+      if (lowerFileName.startsWith('spese_')) {
+        return 'expense';
+      }
+      if (lowerFileName.startsWith('investimenti_')) {
+        return 'investment';
+      }
+    }
+    
+    // Fallback: analyze content
+    const firstRow = rows[0];
+    const columns = Object.keys(firstRow).map(k => k.toLowerCase());
+    
+    // Check for investment CSV (Italian format)
+    const investmentColumns = ['id', 'data', 'ticker', 'investito', 'valore_attuale', 'prezzo_carico', 'benchmark', 'data_vendita', 'prezzo_vendita'];
+    const hasInvestmentColumns = investmentColumns.every(col =>
+      columns.some(c => c.includes(col.toLowerCase()))
+    );
+    
+    if (hasInvestmentColumns || columns.includes('ticker')) {
+      return 'investment';
+    }
+    
+    // Check for income/expense (Spendy Desktop format)
+    const transactionColumns = ['data', 'importo', 'categoria', 'note'];
+    const hasTransactionColumns = transactionColumns.some(col =>
+      columns.includes(col.toLowerCase())
+    );
+    
+    if (hasTransactionColumns) {
+      // Try to determine if income or expense based on first amount
+      const firstAmount = Number(firstRow.importo);
+      if (firstAmount > 0) {
+        return 'income';
+      } else {
+        return 'expense';
+      }
+    }
+    
+    return null;
+  };
+
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !importType) return;
+    if (!file) return;
 
     setIsLoading(true);
 
     try {
       const data = await file.arrayBuffer();
-      const wb = XLSX.read(data);
+      const wb = XLSX.read(data, {
+        cellDates: false, // Don't parse dates as Excel serial numbers
+        cellText: false, // Don't parse formatted text
+      });
       const ws = wb.Sheets[wb.SheetNames[0]];
-      const rawRows = XLSX.utils.sheet_to_json(ws) as Record<string, unknown>[];
+      const rawRows = XLSX.utils.sheet_to_json(ws, {
+        raw: false, // Use formatted values
+        dateNF: 'yyyy-mm-dd', // Force date format
+      }) as Record<string, unknown>[];
       const rows = rawRows.map(cleanRow);
 
       console.log('Parsed rows:', rows.length, 'First row:', rows[0]);
@@ -190,9 +272,22 @@ export default function SpendyImportDialog({ open, onOpenChange, userId }: Spend
         return;
       }
 
+      // Auto-detect file type
+      const detectedType = detectFileType(rows, file.name);
+      
+      if (!detectedType) {
+        toast({
+          title: 'Formato non riconosciuto',
+          description: 'Impossibile determinare il tipo di file. Verifica il formato.',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      setImportType(detectedType);
       setParsedRows(rows);
 
-      if (importType === 'income' || importType === 'expense') {
+      if (detectedType === 'income' || detectedType === 'expense') {
         // Get unique categories from the file
         const uniqueCategories = [...new Set(rows.map(row => String(row.categoria || 'Altro')))];
         
@@ -201,7 +296,7 @@ export default function SpendyImportDialog({ open, onOpenChange, userId }: Spend
           .from('categories')
           .select('id, name, icon')
           .eq('user_id', userId)
-          .eq('type', importType);
+          .eq('type', detectedType);
 
         const existingCatsList = existingCats || [];
         setExistingCategories(existingCatsList);
@@ -213,7 +308,7 @@ export default function SpendyImportDialog({ open, onOpenChange, userId }: Spend
           .filter(name => !existingNames.includes(name))
           .map((name, index) => ({
             name,
-            icon: importType === 'income' 
+            icon: detectedType === 'income'
               ? DEFAULT_ICONS_INCOME[index % DEFAULT_ICONS_INCOME.length]
               : DEFAULT_ICONS_EXPENSE[index % DEFAULT_ICONS_EXPENSE.length],
             color: DEFAULT_COLORS[index % DEFAULT_COLORS.length],
@@ -223,7 +318,7 @@ export default function SpendyImportDialog({ open, onOpenChange, userId }: Spend
         setNewCategories(newCats);
 
         // Check for duplicates
-        const foundDuplicates = await checkForDuplicates(rows, importType);
+        const foundDuplicates = await checkForDuplicates(rows, detectedType);
         setDuplicates(foundDuplicates);
 
         setStep('preview-categories');
@@ -360,7 +455,7 @@ export default function SpendyImportDialog({ open, onOpenChange, userId }: Spend
 
           const { error } = await supabase.from('transactions').insert({
             user_id: userId,
-            amount: Number(row.importo) || 0,
+            amount: parseItalianNumber(row.importo),
             type: importType,
             description: String(row.note || ''),
             date: normalizeDate(row.data),
@@ -396,18 +491,28 @@ export default function SpendyImportDialog({ open, onOpenChange, userId }: Spend
         for (let i = 0; i < rows.length; i++) {
           const row = rows[i];
           
-          // Parse values from the new CSV format
+          // Parse values from the new CSV format using Italian number format
           const ticker = String(row.ticker || '').trim();
-          const investito = Number(row.investito) || 0;
-          const prezzoCarico = Number(row.prezzo_carico) || 0;
-          const valoreAttuale = Number(row.valore_attuale) || null;
+          const investito = parseItalianNumber(row.investito);
+          const prezzoCarico = parseItalianNumber(row.prezzo_carico);
+          const valoreAttuale = row.valore_attuale ? parseItalianNumber(row.valore_attuale) : null;
           const dataAcquisto = normalizeDate(row.data);
+          
+          // Log parsed values for debugging
+          console.log(`Row ${i}:`, {
+            ticker,
+            investito,
+            prezzoCarico,
+            valoreAttuale,
+            dataAcquisto,
+            rawData: row.data
+          });
 
           // Consider a position "sold" only if BOTH sale date and sale price are present.
           const rawDataVendita = String(row.data_vendita ?? '').trim();
           const rawPrezzoVendita = String(row.prezzo_vendita ?? '').trim();
-
-          const prezzoVenditaNum = rawPrezzoVendita ? Number(rawPrezzoVendita) : Number.NaN;
+          
+          const prezzoVenditaNum = rawPrezzoVendita ? parseItalianNumber(rawPrezzoVendita) : Number.NaN;
           const prezzoVendita = Number.isFinite(prezzoVenditaNum) ? prezzoVenditaNum : null;
           const dataVendita = rawDataVendita && prezzoVendita !== null ? normalizeDate(rawDataVendita) : null;
 
@@ -520,13 +625,13 @@ export default function SpendyImportDialog({ open, onOpenChange, userId }: Spend
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>
-            {step === 'select-type' && 'Seleziona tipo di dati'}
+            {step === 'select-type' && 'Importa Dati'}
             {step === 'preview-categories' && 'Anteprima categorie'}
             {step === 'resolve-duplicates' && 'Gestisci duplicati'}
             {step === 'importing' && 'Importazione in corso...'}
           </DialogTitle>
           <DialogDescription>
-            {step === 'select-type' && 'Scegli il tipo di dati da importare dal file CSV o Excel di Spendy Desktop.'}
+            {step === 'select-type' && 'Carica un file CSV o Excel. Il sistema rileverà automaticamente il tipo di dati (entrate, uscite o investimenti).'}
             {step === 'preview-categories' && `Verranno importate ${parsedRows.length} transazioni. Configura le categorie.`}
             {step === 'resolve-duplicates' && `Trovati ${duplicates.length} possibili duplicati. Scegli quali tenere.`}
             {step === 'importing' && 'Attendere il completamento dell\'importazione.'}
@@ -543,42 +648,23 @@ export default function SpendyImportDialog({ open, onOpenChange, userId }: Spend
 
         {step === 'select-type' && (
           <div className="grid gap-4 py-4">
-            <Button
-              variant="outline"
-              className="h-16 text-lg"
-              onClick={() => {
-                setImportType('income');
-                fileInputRef.current?.click();
-              }}
-              disabled={isLoading}
-            >
-              <TrendingUp className="w-6 h-6 mr-3 text-green-500" />
-              Entrate
-            </Button>
-            <Button
-              variant="outline"
-              className="h-16 text-lg"
-              onClick={() => {
-                setImportType('expense');
-                fileInputRef.current?.click();
-              }}
-              disabled={isLoading}
-            >
-              <TrendingDown className="w-6 h-6 mr-3 text-red-500" />
-              Uscite
-            </Button>
-            <Button
-              variant="outline"
-              className="h-16 text-lg"
-              onClick={() => {
-                setImportType('investment');
-                fileInputRef.current?.click();
-              }}
-              disabled={isLoading}
-            >
-              <Briefcase className="w-6 h-6 mr-3 text-blue-500" />
-              Investimenti
-            </Button>
+            <div className="text-center space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Carica un file CSV o Excel. Il sistema rileverà automaticamente il tipo di dati.
+              </p>
+              <Button
+                variant="default"
+                className="h-16 text-lg w-full"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isLoading}
+              >
+                <Upload className="w-6 h-6 mr-3" />
+                {isLoading ? 'Analisi file...' : 'Seleziona file'}
+              </Button>
+              <p className="text-xs text-muted-foreground">
+                Formati supportati: CSV, Excel (.xlsx, .xls)
+              </p>
+            </div>
           </div>
         )}
 

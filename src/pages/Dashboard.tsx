@@ -34,9 +34,9 @@ export default function Dashboard() {
 
   const totalBudget = budgets.reduce((sum, b) => sum + Number(b.amount), 0);
   
-  // Patrimonio Netto = Bilancio (entrate totali - uscite totali) + Portfolio
+  // Patrimonio Netto = Bilancio (entrate totali - uscite totali) - NON include il portfolio
   const balance = totalIncome - totalExpense;
-  const netWorth = totalValue + balance;
+  const netWorth = balance;
 
   return (
     <MainLayout>

@@ -1,7 +1,9 @@
 import MainLayout from '@/components/layout/MainLayout';
 import { useAuth } from '@/hooks/useAuth';
+import { useCategories } from '@/hooks/useCategories';
 import { Button } from '@/components/ui/button';
-import { LogOut, User, Download, Upload, FileSpreadsheet, Trash2, Settings2 } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { LogOut, User, Download, Upload, FileSpreadsheet, Trash2, Settings2, Edit2, FolderPlus } from 'lucide-react';
 import { useState, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -17,16 +19,27 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 import * as XLSX from 'xlsx';
 import SpendyImportDialog from '@/components/settings/SpendyImportDialog';
 import RevolutImportDialog from '@/components/settings/RevolutImportDialog';
 import BBVAImportDialog from '@/components/settings/BBVAImportDialog';
 import TradeRepublicImportDialog from '@/components/settings/TradeRepublicImportDialog';
 import ISINMappingsDialog from '@/components/settings/ISINMappingsDialog';
-import { InvestimentiImportDialog } from '@/components/settings/InvestimentiImportDialog';
+import { TransactionType } from '@/lib/types';
+
+const EMOJI_OPTIONS = ['🍔', '🚗', '🏠', '🛍️', '🎬', '💊', '📦', '💰', '💻', '📈', '💵', '✈️', '🎮', '📚', '🎵', '🏋️', '☕', '🎁', '🍕', '🍣', '🥗', '🍷', '🎨', '🏥', '⚽', '🎸', '📱', '🔧', '🚲', '🚇', '🚌', '🧘', '🦷', '👕', '👟', '💄', '💡', '📧', '📄'];
+const COLOR_OPTIONS = ['#f97316', '#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b', '#ef4444', '#6b7280', '#22c55e', '#14b8a6', '#06b6d4'];
 
 export default function Settings() {
-  const { user, signOut } = useAuth();
+  const { user, signOut, updateEmail, updatePassword } = useAuth();
+  const { categories, updateCategory } = useCategories();
   const { toast } = useToast();
   const navigate = useNavigate();
   const [isExporting, setIsExporting] = useState(false);
@@ -37,8 +50,27 @@ export default function Settings() {
   const [bbvaDialogOpen, setBbvaDialogOpen] = useState(false);
   const [tradeRepublicDialogOpen, setTradeRepublicDialogOpen] = useState(false);
   const [isinMappingsDialogOpen, setIsinMappingsDialogOpen] = useState(false);
-  const [investimentiDialogOpen, setInvestimentiDialogOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // Account edit dialog state
+  const [accountEditOpen, setAccountEditOpen] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newEmail, setNewEmail] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [isUpdating, setIsUpdating] = useState(false);
+  
+  // Import/Export dialog state
+  const [importExportDialogOpen, setImportExportDialogOpen] = useState(false);
+  
+  // Category management state
+  const [categoriesDialogOpen, setCategoriesDialogOpen] = useState(false);
+  const [categoryEditOpen, setCategoryEditOpen] = useState(false);
+  const [editingCategory, setEditingCategory] = useState<string | null>(null);
+  const [editCatName, setEditCatName] = useState('');
+  const [editCatIcon, setEditCatIcon] = useState('📦');
+  const [editCatColor, setEditCatColor] = useState('#6b7280');
+  const [editCatType, setEditCatType] = useState<TransactionType>('expense');
   const exportData = async (format: 'csv' | 'xlsx') => {
     if (!user) return;
     setIsExporting(true);
@@ -125,10 +157,19 @@ export default function Settings() {
     URL.revokeObjectURL(url);
   };
 
+  const parseItalianNumber = (value: any): number => {
+    if (typeof value === 'number') return value;
+    if (!value) return 0;
+    const str = String(value).trim();
+    // Remove dots (thousands separator) and replace comma with dot (decimal separator)
+    const normalized = str.replace(/\./g, '').replace(',', '.');
+    return parseFloat(normalized) || 0;
+  };
+
   const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !user) return;
-
+    
     setIsImporting(true);
 
     try {
@@ -145,7 +186,7 @@ export default function Settings() {
         for (const row of rows) {
           const { error } = await supabase.from('transactions').insert({
             user_id: user.id,
-            amount: Number(row.amount) || 0,
+            amount: parseItalianNumber(row.amount),
             type: row.type === 'income' ? 'income' : 'expense',
             description: String(row.description || ''),
             date: String(row.date || new Date().toISOString().split('T')[0]),
@@ -201,13 +242,63 @@ export default function Settings() {
             user_id: user.id,
             name: String(row.name || 'Asset'),
             type: String(row.type || 'stock') as 'stock' | 'etf' | 'crypto' | 'bond' | 'cash' | 'real_estate' | 'other',
-            quantity: Number(row.quantity) || 0,
-            purchase_price: Number(row.purchase_price) || 0,
-            current_price: row.current_price ? Number(row.current_price) : null,
+            quantity: parseItalianNumber(row.quantity),
+            purchase_price: parseItalianNumber(row.purchase_price),
+            current_price: row.current_price ? parseItalianNumber(row.current_price) : null,
             symbol: row.symbol ? String(row.symbol) : null,
             purchase_date: String(row.purchase_date || new Date().toISOString().split('T')[0]),
           });
           if (!error) importedCount++;
+        }
+      }
+
+      // Import investments from CSV
+      if (wb.SheetNames.includes('Investimenti')) {
+        const ws = wb.Sheets['Investimenti'];
+        const rows = XLSX.utils.sheet_to_json(ws) as Record<string, unknown>[];
+        
+        for (const row of rows) {
+          const ticker = String(row.ticker || '');
+          const investito = parseItalianNumber(row.investito);
+          const valoreAttuale = parseItalianNumber(row.valore_attuale);
+          const prezzoCarico = parseItalianNumber(row.prezzo_carico);
+          const dataVendita = row.data_vendita ? String(row.data_vendita) : null;
+          const prezzoVendita = row.prezzo_vendita ? parseItalianNumber(row.prezzo_vendita) : null;
+
+          // Determine asset type based on ticker
+          let assetType: 'stock' | 'etf' | 'crypto' | 'bond' | 'cash' | 'real_estate' | 'other' = 'stock';
+          if (ticker.includes('-EUR') || ticker.includes('BTC') || ticker.includes('ETH')) {
+            assetType = 'crypto';
+          } else if (ticker.includes('.MI') || ticker.includes('.L') || ticker.includes('.PA')) {
+            assetType = 'stock';
+          } else if (ticker.includes('ETF') || ticker.includes('IE00')) {
+            assetType = 'etf';
+          }
+
+          const { error } = await supabase.from('portfolio_assets').insert({
+            user_id: user.id,
+            name: ticker,
+            type: assetType,
+            quantity: investito,
+            purchase_price: prezzoCarico,
+            current_price: valoreAttuale,
+            symbol: ticker,
+            purchase_date: String(row.data || new Date().toISOString().split('T')[0]),
+          });
+          if (!error) importedCount++;
+
+          // If sold, create a sell transaction
+          if (dataVendita && prezzoVendita) {
+            const { error: sellError } = await supabase.from('transactions').insert({
+              user_id: user.id,
+              amount: prezzoVendita * investito,
+              type: 'income',
+              description: `Vendita ${ticker}`,
+              date: dataVendita,
+              currency: 'EUR',
+            });
+            if (!sellError) importedCount++;
+          }
         }
       }
 
@@ -232,6 +323,88 @@ export default function Settings() {
     }
   };
 
+  const handleAccountUpdate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsUpdating(true);
+    
+    try {
+      // Always require current password for security
+      if (!currentPassword) {
+        throw new Error('Inserisci la password attuale per confermare le modifiche');
+      }
+      
+      // Update email if changed
+      if (newEmail && newEmail !== user?.email) {
+        const { error } = await updateEmail(newEmail);
+        if (error) throw error;
+        toast({ title: 'Email aggiornata con successo' });
+      }
+      
+      // Update password if provided
+      if (newPassword) {
+        if (newPassword !== confirmPassword) {
+          throw new Error('Le password non coincidono');
+        }
+        if (newPassword.length < 6) {
+          throw new Error('La password deve avere almeno 6 caratteri');
+        }
+        if (newPassword === currentPassword) {
+          throw new Error('La nuova password non può essere uguale a quella attuale');
+        }
+        const { error } = await updatePassword(newPassword);
+        if (error) throw error;
+        toast({ title: 'Password aggiornata con successo' });
+      }
+      
+      setAccountEditOpen(false);
+      setCurrentPassword('');
+      setNewEmail('');
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (error: any) {
+      toast({
+        title: 'Errore',
+        description: error.message || 'Impossibile aggiornare le credenziali',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const openCategoryEdit = (category: any) => {
+    setEditingCategory(category.id);
+    setEditCatName(category.name);
+    setEditCatIcon(category.icon);
+    setEditCatColor(category.color);
+    setEditCatType(category.type);
+    setCategoryEditOpen(true);
+  };
+
+  const handleCategoryUpdate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editCatName.trim() || !editingCategory) return;
+    try {
+      await updateCategory.mutateAsync({
+        id: editingCategory,
+        name: editCatName.trim(),
+        icon: editCatIcon,
+        color: editCatColor,
+        type: editCatType
+      });
+      toast({ title: 'Categoria aggiornata!' });
+      setCategoryEditOpen(false);
+      setEditingCategory(null);
+      setEditCatName('');
+      setEditCatIcon('📦');
+      setEditCatColor('#6b7280');
+      setEditCatType('expense');
+    } catch {
+      toast({ title: 'Errore', variant: 'destructive' });
+    }
+  };
+
+  const userName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Utente';
 
   return (
     <MainLayout>
@@ -244,10 +417,10 @@ export default function Settings() {
         <div className="glass rounded-xl p-6 space-y-6">
           <div className="flex items-center gap-4">
             <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center text-primary text-2xl font-medium">
-              {user?.email?.charAt(0).toUpperCase()}
+              {userName.charAt(0).toUpperCase()}
             </div>
             <div>
-              <h2 className="text-xl font-semibold">Account</h2>
+              <h2 className="text-xl font-semibold">{userName}</h2>
               <p className="text-muted-foreground">{user?.email}</p>
             </div>
           </div>
@@ -259,13 +432,73 @@ export default function Settings() {
             </h3>
             <div className="space-y-3">
               <div className="flex justify-between items-center py-2">
+                <span className="text-muted-foreground">Nome</span>
+                <span className="font-medium">{userName}</span>
+              </div>
+              <div className="flex justify-between items-center py-2">
                 <span className="text-muted-foreground">Email</span>
                 <span className="font-medium">{user?.email}</span>
               </div>
-              <div className="flex justify-between items-center py-2">
-                <span className="text-muted-foreground">ID Utente</span>
-                <span className="font-mono text-sm text-muted-foreground">{user?.id?.slice(0, 8)}...</span>
-              </div>
+            </div>
+            <div className="mt-4">
+              <Dialog open={accountEditOpen} onOpenChange={setAccountEditOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" className="w-full sm:w-auto">
+                    <Edit2 className="w-4 h-4 mr-2" />
+                    Modifica credenziali
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Modifica credenziali</DialogTitle>
+                  </DialogHeader>
+                  <form onSubmit={handleAccountUpdate} className="space-y-4">
+                    <div>
+                      <label className="text-sm text-muted-foreground mb-2 block">Password attuale</label>
+                      <Input
+                        type="password"
+                        placeholder="Inserisci la password attuale per confermare"
+                        value={currentPassword}
+                        onChange={(e) => setCurrentPassword(e.target.value)}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm text-muted-foreground mb-2 block">Nuova email</label>
+                      <Input
+                        type="email"
+                        placeholder="nuova@email.com"
+                        value={newEmail}
+                        onChange={(e) => setNewEmail(e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm text-muted-foreground mb-2 block">Nuova password</label>
+                      <Input
+                        type="password"
+                        placeholder="Lascia vuoto per non cambiare"
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                      />
+                    </div>
+                    {newPassword && (
+                      <div>
+                        <label className="text-sm text-muted-foreground mb-2 block">Conferma nuova password</label>
+                        <Input
+                          type="password"
+                          placeholder="Conferma la nuova password"
+                          value={confirmPassword}
+                          onChange={(e) => setConfirmPassword(e.target.value)}
+                          required
+                        />
+                      </div>
+                    )}
+                    <Button type="submit" className="w-full" disabled={isUpdating}>
+                      {isUpdating ? 'Aggiornamento...' : 'Aggiorna'}
+                    </Button>
+                  </form>
+                </DialogContent>
+              </Dialog>
             </div>
           </div>
 
@@ -276,148 +509,239 @@ export default function Settings() {
               Import / Export Dati
             </h3>
             
-            <div className="space-y-4">
-              {/* Import from Spendy Desktop */}
-              <div>
-                <p className="text-sm text-muted-foreground mb-2">
-                  Importa dati esportati da Spendy Desktop.
-                </p>
-                <Button
-                  variant="outline"
-                  onClick={() => setSpendyDialogOpen(true)}
-                  className="w-full sm:w-auto"
-                >
-                  <Upload className="w-5 h-5 mr-2" />
-                  Importa da Spendy Desktop
+            <Dialog open={importExportDialogOpen} onOpenChange={setImportExportDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" className="w-full sm:w-auto">
+                  <FileSpreadsheet className="w-4 h-4 mr-2" />
+                  Gestisci Import / Export
                 </Button>
-                {user && (
-                  <SpendyImportDialog
-                    open={spendyDialogOpen}
-                    onOpenChange={setSpendyDialogOpen}
-                    userId={user.id}
-                  />
-                )}
-              </div>
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>Import / Export Dati</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-6">
+                  {/* Import from Spendy Desktop */}
+                  <div>
+                    <p className="text-sm text-muted-foreground mb-2">
+                      Importa dati esportati da Spendy Desktop.
+                    </p>
+                    <Button
+                      variant="outline"
+                      onClick={() => setSpendyDialogOpen(true)}
+                      className="w-full sm:w-auto"
+                    >
+                      <Upload className="w-5 h-5 mr-2" />
+                      Importa da Spendy Desktop
+                    </Button>
+                    {user && (
+                      <SpendyImportDialog
+                        open={spendyDialogOpen}
+                        onOpenChange={setSpendyDialogOpen}
+                        userId={user.id}
+                      />
+                    )}
+                  </div>
 
-              {/* Import from Banks */}
-              <div>
-                <p className="text-sm text-muted-foreground mb-2">
-                  Importa transazioni dalla tua banca.
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  <Button
-                    variant="outline"
-                    onClick={() => setRevolutDialogOpen(true)}
-                    className="w-full sm:w-auto"
-                  >
-                    <Upload className="w-5 h-5 mr-2" />
-                    Revolut
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() => setTradeRepublicDialogOpen(true)}
-                    className="w-full sm:w-auto"
-                  >
-                    <Upload className="w-5 h-5 mr-2" />
-                    Trade Republic
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() => setBbvaDialogOpen(true)}
-                    className="w-full sm:w-auto"
-                  >
-                    <Upload className="w-5 h-5 mr-2" />
-                    BBVA
-                  </Button>
+                  {/* Import from Banks */}
+                  <div>
+                    <p className="text-sm text-muted-foreground mb-2">
+                      Importa transazioni dalla tua banca.
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        variant="outline"
+                        onClick={() => setRevolutDialogOpen(true)}
+                        className="w-full sm:w-auto"
+                      >
+                        <Upload className="w-5 h-5 mr-2" />
+                        Revolut
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => setTradeRepublicDialogOpen(true)}
+                        className="w-full sm:w-auto"
+                      >
+                        <Upload className="w-5 h-5 mr-2" />
+                        Trade Republic
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => setBbvaDialogOpen(true)}
+                        className="w-full sm:w-auto"
+                      >
+                        <Upload className="w-5 h-5 mr-2" />
+                        BBVA
+                      </Button>
+                    </div>
+                    {user && (
+                      <>
+                        <RevolutImportDialog
+                          open={revolutDialogOpen}
+                          onOpenChange={setRevolutDialogOpen}
+                          userId={user.id}
+                        />
+                        <BBVAImportDialog
+                          open={bbvaDialogOpen}
+                          onOpenChange={setBbvaDialogOpen}
+                          userId={user.id}
+                        />
+                        <TradeRepublicImportDialog
+                          open={tradeRepublicDialogOpen}
+                          onOpenChange={setTradeRepublicDialogOpen}
+                          userId={user.id}
+                        />
+                        <ISINMappingsDialog
+                          open={isinMappingsDialogOpen}
+                          onOpenChange={setIsinMappingsDialogOpen}
+                          userId={user.id}
+                        />
+                      </>
+                    )}
+                  </div>
+
+                  {/* ISIN Mappings Management */}
+                  <div>
+                    <p className="text-sm text-muted-foreground mb-2">
+                      Gestisci i mapping ISIN per gli investimenti importati.
+                    </p>
+                    <Button
+                      variant="outline"
+                      onClick={() => setIsinMappingsDialogOpen(true)}
+                      className="w-full sm:w-auto"
+                    >
+                      <Settings2 className="w-5 h-5 mr-2" />
+                      Gestisci Mapping ISIN
+                    </Button>
+                  </div>
+
+                  <div>
+                    <p className="text-sm text-muted-foreground mb-2">
+                      Esporta tutti i tuoi dati in un file.
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        variant="outline"
+                        onClick={() => exportData('xlsx')}
+                        disabled={isExporting}
+                      >
+                        <Download className="w-5 h-5 mr-2" />
+                        {isExporting ? 'Esportazione...' : 'Esporta Excel'}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => exportData('csv')}
+                        disabled={isExporting}
+                      >
+                        <Download className="w-5 h-5 mr-2" />
+                        {isExporting ? 'Esportazione...' : 'Esporta CSV'}
+                      </Button>
+                    </div>
+                  </div>
                 </div>
-                {user && (
-                  <>
-                    <RevolutImportDialog
-                      open={revolutDialogOpen}
-                      onOpenChange={setRevolutDialogOpen}
-                      userId={user.id}
-                    />
-                    <BBVAImportDialog
-                      open={bbvaDialogOpen}
-                      onOpenChange={setBbvaDialogOpen}
-                      userId={user.id}
-                    />
-                    <TradeRepublicImportDialog
-                      open={tradeRepublicDialogOpen}
-                      onOpenChange={setTradeRepublicDialogOpen}
-                      userId={user.id}
-                    />
-                    <ISINMappingsDialog
-                      open={isinMappingsDialogOpen}
-                      onOpenChange={setIsinMappingsDialogOpen}
-                      userId={user.id}
-                    />
-                  </>
-                )}
-              </div>
-
-              {/* Import Investimenti CSV */}
-              <div>
-                <p className="text-sm text-muted-foreground mb-2">
-                  Importa i tuoi investimenti da un file CSV con colonne italiane.
-                </p>
-                <Button
-                  variant="outline"
-                  onClick={() => setInvestimentiDialogOpen(true)}
-                  className="w-full sm:w-auto"
-                >
-                  <Upload className="w-5 h-5 mr-2" />
-                  Importa Investimenti CSV
-                </Button>
-                {user && (
-                  <InvestimentiImportDialog
-                    open={investimentiDialogOpen}
-                    onOpenChange={setInvestimentiDialogOpen}
-                    userId={user.id}
-                  />
-                )}
-              </div>
-
-              {/* ISIN Mappings Management */}
-              <div>
-                <p className="text-sm text-muted-foreground mb-2">
-                  Gestisci i mapping ISIN per gli investimenti importati.
-                </p>
-                <Button
-                  variant="outline"
-                  onClick={() => setIsinMappingsDialogOpen(true)}
-                  className="w-full sm:w-auto"
-                >
-                  <Settings2 className="w-5 h-5 mr-2" />
-                  Gestisci Mapping ISIN
-                </Button>
-              </div>
-
-              <div>
-                <p className="text-sm text-muted-foreground mb-2">
-                  Esporta tutti i tuoi dati in un file.
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  <Button
-                    variant="outline"
-                    onClick={() => exportData('xlsx')}
-                    disabled={isExporting}
-                  >
-                    <Download className="w-5 h-5 mr-2" />
-                    {isExporting ? 'Esportazione...' : 'Esporta Excel'}
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() => exportData('csv')}
-                    disabled={isExporting}
-                  >
-                    <Download className="w-5 h-5 mr-2" />
-                    {isExporting ? 'Esportazione...' : 'Esporta CSV'}
-                  </Button>
-                </div>
-              </div>
-            </div>
+              </DialogContent>
+            </Dialog>
           </div>
+
+          {/* Categories Section */}
+          <div className="border-t border-border pt-6">
+            <h3 className="font-medium mb-4 flex items-center gap-2">
+              <FolderPlus className="w-5 h-5" />
+              Gestione Categorie
+            </h3>
+            
+            <Dialog open={categoriesDialogOpen} onOpenChange={setCategoriesDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" className="w-full sm:w-auto">
+                  <FolderPlus className="w-4 h-4 mr-2" />
+                  Gestisci Categorie
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>Gestisci Categorie</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div>
+                    <p className="text-sm text-muted-foreground mb-2">
+                      Modifica le tue categorie, le loro emoji e i colori.
+                    </p>
+                  </div>
+                  
+                  <div className="space-y-3">
+                    {categories.length === 0 ? (
+                      <div className="text-center text-muted-foreground py-4">Nessuna categoria</div>
+                    ) : (
+                      categories.map(category => (
+                        <div key={category.id} className="glass rounded-lg p-3 flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <span className="text-2xl">{category.icon}</span>
+                            <div>
+                              <div className="font-medium">{category.name}</div>
+                              <div className="text-sm text-muted-foreground">{category.type === 'expense' ? 'Spesa' : 'Entrata'}</div>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <div
+                              className="w-5 h-5 rounded-full border-2"
+                              style={{ backgroundColor: category.color, borderColor: category.color }}
+                            />
+                            <Button variant="ghost" size="icon" onClick={() => openCategoryEdit(category)}>
+                              <Edit2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
+
+          {/* Category Edit Dialog */}
+          <Dialog open={categoryEditOpen} onOpenChange={setCategoryEditOpen}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Modifica Categoria</DialogTitle>
+              </DialogHeader>
+              <form onSubmit={handleCategoryUpdate} className="space-y-4">
+                <Input placeholder="Nome categoria" value={editCatName} onChange={e => setEditCatName(e.target.value)} required />
+                <div>
+                  <label className="text-sm text-muted-foreground mb-2 block">Icona</label>
+                  <div className="flex flex-wrap gap-2 max-h-40 overflow-y-auto">
+                    {EMOJI_OPTIONS.map(emoji => (
+                      <button
+                        type="button"
+                        key={emoji}
+                        onClick={() => setEditCatIcon(emoji)}
+                        className={`w-10 h-10 text-xl rounded-lg border transition-all ${editCatIcon === emoji ? 'border-primary bg-primary/20' : 'border-border hover:border-primary/50'}`}
+                      >
+                        {emoji}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <label className="text-sm text-muted-foreground mb-2 block">Colore</label>
+                  <div className="flex flex-wrap gap-2">
+                    {COLOR_OPTIONS.map(color => (
+                      <button
+                        type="button"
+                        key={color}
+                        onClick={() => setEditCatColor(color)}
+                        className={`w-8 h-8 rounded-full border-2 transition-all ${editCatColor === color ? 'border-foreground scale-110' : 'border-transparent'}`}
+                        style={{ backgroundColor: color }}
+                      />
+                    ))}
+                  </div>
+                </div>
+                <Button type="submit" className="w-full" disabled={updateCategory.isPending}>
+                  {updateCategory.isPending ? 'Aggiornamento...' : 'Aggiorna Categoria'}
+                </Button>
+              </form>
+            </DialogContent>
+          </Dialog>
 
           {/* Danger Zone */}
           <div className="border-t border-border pt-6 space-y-4">
