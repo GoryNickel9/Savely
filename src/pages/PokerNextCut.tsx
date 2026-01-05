@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { ArrowLeft, RefreshCw, Edit2, Check, X, Plus, Trash2 } from 'lucide-react';
 import { useBudgets } from '@/hooks/useBudgets';
 import { useTransactions } from '@/hooks/useTransactions';
+import { usePokerManualExpenses } from '@/hooks/usePokerManualExpenses';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -16,11 +17,6 @@ interface PokerNextCut {
   profit_loss: number;
 }
 
-interface ManualExpense {
-  id: string;
-  name: string;
-  amount: number;
-}
 
 // Calculate median of an array
 const calculateMedian = (arr: number[]): number => {
@@ -33,6 +29,7 @@ const calculateMedian = (arr: number[]): number => {
 export default function PokerNextCut() {
   const { budgets } = useBudgets();
   const { transactions } = useTransactions();
+  const { expenses: manualExpenses, addExpense, updateExpense, deleteExpense } = usePokerManualExpenses();
   const { toast } = useToast();
   
   // Next Cut (solo uno, senza nome)
@@ -50,15 +47,14 @@ export default function PokerNextCut() {
   
   const [loading, setLoading] = useState(false);
 
-  // Manual expenses state
-  const [manualExpenses, setManualExpenses] = useState<ManualExpense[]>([]);
+  // Create expense dialog state
   const [createOpen, setCreateOpen] = useState(false);
   const [newExpenseName, setNewExpenseName] = useState('');
   const [newExpenseAmount, setNewExpenseAmount] = useState('');
 
   // Edit expense dialog state
   const [editOpen, setEditOpen] = useState(false);
-  const [editingExpense, setEditingExpense] = useState<ManualExpense | null>(null);
+  const [editingExpense, setEditingExpense] = useState<{ id: string; name: string; amount: number } | null>(null);
   const [editingExpenseAmount, setEditingExpenseAmount] = useState('');
 
   // Calculate the 18-month period ending at current date
@@ -156,46 +152,60 @@ export default function PokerNextCut() {
   };
 
   // Add manual expense
-  const addManualExpense = (e: React.FormEvent) => {
+  const addManualExpense = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newExpenseName || !newExpenseAmount) return;
     
-    const newExpense: ManualExpense = {
-      id: Date.now().toString(),
-      name: newExpenseName,
-      amount: parseFloat(newExpenseAmount)
-    };
-    
-    setManualExpenses([...manualExpenses, newExpense]);
-    toast({ title: 'Spesa aggiunta!' });
-    setCreateOpen(false);
-    setNewExpenseName('');
-    setNewExpenseAmount('');
+    try {
+      await addExpense(newExpenseName, parseFloat(newExpenseAmount));
+      toast({ title: 'Spesa aggiunta!' });
+      setCreateOpen(false);
+      setNewExpenseName('');
+      setNewExpenseAmount('');
+    } catch (error) {
+      toast({
+        title: 'Errore',
+        description: 'Impossibile aggiungere la spesa',
+        variant: 'destructive'
+      });
+    }
   };
 
   // Edit manual expense
-  const updateManualExpense = (e: React.FormEvent) => {
+  const updateManualExpense = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingExpense || !editingExpenseAmount) return;
     
-    setManualExpenses(manualExpenses.map(exp => 
-      exp.id === editingExpense.id 
-        ? { ...exp, amount: parseFloat(editingExpenseAmount) }
-        : exp
-    ));
-    toast({ title: 'Spesa aggiornata!' });
-    setEditOpen(false);
-    setEditingExpense(null);
-    setEditingExpenseAmount('');
+    try {
+      await updateExpense(editingExpense.id, parseFloat(editingExpenseAmount));
+      toast({ title: 'Spesa aggiornata!' });
+      setEditOpen(false);
+      setEditingExpense(null);
+      setEditingExpenseAmount('');
+    } catch (error) {
+      toast({
+        title: 'Errore',
+        description: 'Impossibile aggiornare la spesa',
+        variant: 'destructive'
+      });
+    }
   };
 
   // Delete manual expense
-  const deleteManualExpense = (id: string) => {
-    setManualExpenses(manualExpenses.filter(exp => exp.id !== id));
-    toast({ title: 'Spesa eliminata!' });
+  const handleDeleteExpense = async (id: string) => {
+    try {
+      await deleteExpense(id);
+      toast({ title: 'Spesa eliminata!' });
+    } catch (error) {
+      toast({
+        title: 'Errore',
+        description: 'Impossibile eliminare la spesa',
+        variant: 'destructive'
+      });
+    }
   };
 
-  const openEditDialog = (expense: ManualExpense) => {
+  const openEditDialog = (expense: { id: string; name: string; amount: number }) => {
     setEditingExpense(expense);
     setEditingExpenseAmount(expense.amount.toString());
     setEditOpen(true);
@@ -304,7 +314,7 @@ export default function PokerNextCut() {
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => deleteManualExpense(exp.id)}
+                            onClick={() => handleDeleteExpense(exp.id)}
                             className="h-8 w-8 text-red-400 hover:text-red-300"
                           >
                             <Trash2 className="h-4 w-4" />
