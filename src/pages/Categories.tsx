@@ -9,7 +9,7 @@ import { Plus, Edit2, Trash2, FolderPlus } from 'lucide-react';
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 
-const EMOJI_OPTIONS = ['🍔', '🚗', '🏠', '🛍️', '🎬', '💊', '📦', '💰', '💻', '📈', '💵', '✈️', '🎮', '📚', '🎵', '🏋️', '☕', '🎁', '🍕', '🍣', '🥗', '🍷', '🎨', '🏥', '⚽', '🎸', '📱', '🔧', '🚲', '🚇', '🚌', '🧘', '🦷', '👕', '👟', '💄', '💡', '📧', '📄'];
+const EMOJI_OPTIONS = ['🍔', '🚗', '🏠', '🎬', '💊', '📦', '💰', '📈', '💵', '✈️', '🎮', '🎵', '🏋️', '☕', '🎁', '🍕', '🎨', '🏥', '⚽', '📱', '🔧', '🚲', '🚌', '👕'];
 const COLOR_OPTIONS = ['#f97316', '#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b', '#ef4444', '#6b7280', '#22c55e', '#14b8a6', '#06b6d4'];
 
 export default function Categories() {
