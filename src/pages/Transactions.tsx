@@ -10,9 +10,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { CURRENCY_SYMBOLS, TransactionType, Transaction } from '@/lib/types';
 import { Plus, Trash2, Pencil, Search, Calendar } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { startOfMonth, endOfMonth, subMonths, isWithinInterval, parseISO } from 'date-fns';
+import { startOfMonth, endOfMonth, subMonths, startOfYear, endOfYear, subYears, isWithinInterval, parseISO } from 'date-fns';
 
-type FilterPeriod = 'this_month' | 'last_month' | 'custom';
+type FilterPeriod = 'this_month' | 'last_month' | 'last_semester' | 'last_year' | 'this_year' | 'custom';
 
 export default function Transactions() {
   const { transactions, createTransaction, updateTransaction, deleteTransaction } = useTransactions();
@@ -36,6 +36,7 @@ export default function Transactions() {
   const [filterStartDate, setFilterStartDate] = useState('');
   const [filterEndDate, setFilterEndDate] = useState('');
   const [categorySearch, setCategorySearch] = useState('');
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
 
   const categories = type === 'income' ? incomeCategories : expenseCategories;
 
@@ -114,6 +115,18 @@ export default function Transactions() {
         if (!isWithinInterval(tDate, { start: thisMonthStart, end: thisMonthEnd })) return false;
       } else if (filterPeriod === 'last_month') {
         if (!isWithinInterval(tDate, { start: lastMonthStart, end: lastMonthEnd })) return false;
+      } else if (filterPeriod === 'last_semester') {
+        const lastSemesterStart = startOfMonth(subMonths(now, 5));
+        const lastSemesterEnd = endOfMonth(now);
+        if (!isWithinInterval(tDate, { start: lastSemesterStart, end: lastSemesterEnd })) return false;
+      } else if (filterPeriod === 'last_year') {
+        const lastYearStart = startOfMonth(subMonths(now, 11));
+        const lastYearEnd = endOfMonth(now);
+        if (!isWithinInterval(tDate, { start: lastYearStart, end: lastYearEnd })) return false;
+      } else if (filterPeriod === 'this_year') {
+        const yearStart = new Date(selectedYear, 0, 1);
+        const yearEnd = new Date(selectedYear, 11, 31);
+        if (!isWithinInterval(tDate, { start: yearStart, end: yearEnd })) return false;
       } else if (filterPeriod === 'custom') {
         if (filterStartDate && tDate < parseISO(filterStartDate)) return false;
         if (filterEndDate && tDate > parseISO(filterEndDate)) return false;
@@ -132,7 +145,13 @@ export default function Transactions() {
 
       return true;
     });
-  }, [transactions, filterPeriod, filterCategoryId, filterStartDate, filterEndDate, categorySearch]);
+  }, [transactions, filterPeriod, filterCategoryId, filterStartDate, filterEndDate, categorySearch, selectedYear]);
+
+  // Extract unique years from transactions
+  const availableYears = useMemo(() => {
+    const years = transactions.map(t => new Date(t.date).getFullYear());
+    return Array.from(new Set(years)).sort((a, b) => b - a);
+  }, [transactions]);
 
   return (
     <MainLayout>
@@ -189,6 +208,9 @@ export default function Transactions() {
                 <SelectContent>
                   <SelectItem value="this_month">Questo mese</SelectItem>
                   <SelectItem value="last_month">Scorso mese</SelectItem>
+                  <SelectItem value="last_semester">Ultimo semestre</SelectItem>
+                  <SelectItem value="last_year">Ultimi 12 mesi</SelectItem>
+                  <SelectItem value="this_year">Anno</SelectItem>
                   <SelectItem value="custom">Personalizzato</SelectItem>
                 </SelectContent>
               </Select>
@@ -196,7 +218,7 @@ export default function Transactions() {
 
             {/* Category search */}
             <div>
-              <Label className="text-xs text-muted-foreground">Cerca categoria</Label>
+              <Label className="text-xs text-muted-foreground">Cerca categoria o note</Label>
               <Input
                 placeholder="Cerca..."
                 value={categorySearch}
@@ -231,6 +253,23 @@ export default function Transactions() {
                   <Input type="date" value={filterEndDate} onChange={e => setFilterEndDate(e.target.value)} />
                 </div>
               </>
+            )}
+
+            {/* Year selection */}
+            {filterPeriod === 'this_year' && (
+              <div>
+                <Label className="text-xs text-muted-foreground">Anno</Label>
+                <Select value={selectedYear.toString()} onValueChange={(v) => setSelectedYear(parseInt(v))}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableYears.map(year => (
+                      <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             )}
           </div>
         </div>

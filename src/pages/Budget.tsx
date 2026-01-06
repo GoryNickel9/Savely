@@ -38,7 +38,7 @@ export default function Budget() {
   const { startDate, endDate } = useMemo(() => {
     const end = new Date();
     const start = new Date();
-    start.setMonth(start.getMonth() - 18);
+    start.setMonth(start.getMonth() - 24);
     return { startDate: start, endDate: end };
   }, []);
 
