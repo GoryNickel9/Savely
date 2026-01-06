@@ -3,6 +3,7 @@ import { ArrowLeft, RefreshCw, Edit2, Check, X, Plus, Trash2 } from 'lucide-reac
 import { useBudgets } from '@/hooks/useBudgets';
 import { useTransactions } from '@/hooks/useTransactions';
 import { usePokerManualExpenses } from '@/hooks/usePokerManualExpenses';
+import { usePokerNextCut } from '@/hooks/usePokerNextCut';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,14 +11,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { useToast } from '@/hooks/use-toast';
 import { CURRENCY_SYMBOLS } from '@/lib/types';
 import MainLayout from '@/components/layout/MainLayout';
-
-// Mock data structures
-interface PokerNextCut {
-  id: string;
-  amount: number;
-  deal: number;
-  profit_loss: number;
-}
 
 
 // Calculate median of an array
@@ -32,22 +25,13 @@ export default function PokerNextCut() {
   const { budgets } = useBudgets();
   const { transactions } = useTransactions();
   const { expenses: manualExpenses, addExpense, updateExpense, deleteExpense } = usePokerManualExpenses();
+  const { nextCut, loading: nextCutLoading, updateDeal, updateProfitLoss, updateAmount } = usePokerNextCut();
   const { toast } = useToast();
-  
-  // Next Cut (solo uno, senza nome)
-  const [nextCut, setNextCut] = useState<PokerNextCut>({
-    id: '1',
-    amount: 0, // Sarà calcolato da totalMonthlySpending
-    deal: 0.55,
-    profit_loss: 1804.87
-  });
   
   const [editingProfitLoss, setEditingProfitLoss] = useState(false);
   const [editingProfitLossValue, setEditingProfitLossValue] = useState('');
   const [editingDeal, setEditingDeal] = useState(false);
   const [editingDealValue, setEditingDealValue] = useState('');
-  
-  const [loading, setLoading] = useState(false);
 
   // Create expense dialog state
   const [createOpen, setCreateOpen] = useState(false);
@@ -108,13 +92,12 @@ export default function PokerNextCut() {
   // Total monthly spending (budget + manual)
   const totalMonthlySpending = budgetMonthlySpending + manualMonthlySpending;
 
-  // Update nextCut.amount when totalMonthlySpending changes
+  // Update nextCut.amount in database when totalMonthlySpending changes
   useMemo(() => {
-    setNextCut(prev => ({
-      ...prev,
-      amount: totalMonthlySpending
-    }));
-  }, [totalMonthlySpending]);
+    if (nextCut && nextCut.amount !== totalMonthlySpending) {
+      updateAmount(totalMonthlySpending);
+    }
+  }, [totalMonthlySpending, nextCut, updateAmount]);
 
   // Calculate Next Cut Gross (nascosto, usato solo nei calcoli)
   const calculateNextCutGross = (deal: number) => {
@@ -123,34 +106,45 @@ export default function PokerNextCut() {
 
   // Calculate "Quanto manca per il prossimo cut"
   const calculateNeed = () => {
+    if (!nextCut) return 0;
     const gross = calculateNextCutGross(nextCut.deal);
     return gross - nextCut.profit_loss;
   };
 
   // Update Profit/Loss
-  const updateProfitLoss = () => {
-    if (!editingProfitLossValue) return;
+  const handleUpdateProfitLoss = async () => {
+    if (!editingProfitLossValue || !nextCut) return;
     
-    setNextCut({
-      ...nextCut,
-      profit_loss: parseFloat(editingProfitLossValue)
-    });
-    
-    setEditingProfitLoss(false);
-    setEditingProfitLossValue('');
+    try {
+      await updateProfitLoss(parseFloat(editingProfitLossValue));
+      toast({ title: 'P/L Attuale aggiornato!' });
+      setEditingProfitLoss(false);
+      setEditingProfitLossValue('');
+    } catch (error) {
+      toast({
+        title: 'Errore',
+        description: 'Impossibile aggiornare il P/L Attuale',
+        variant: 'destructive'
+      });
+    }
   };
 
   // Update Deal
-  const updateDeal = () => {
-    if (!editingDealValue) return;
+  const handleUpdateDeal = async () => {
+    if (!editingDealValue || !nextCut) return;
     
-    setNextCut({
-      ...nextCut,
-      deal: parseFloat(editingDealValue)
-    });
-    
-    setEditingDeal(false);
-    setEditingDealValue('');
+    try {
+      await updateDeal(parseFloat(editingDealValue));
+      toast({ title: 'Deal aggiornato!' });
+      setEditingDeal(false);
+      setEditingDealValue('');
+    } catch (error) {
+      toast({
+        title: 'Errore',
+        description: 'Impossibile aggiornare il deal',
+        variant: 'destructive'
+      });
+    }
   };
 
   // Add manual expense
@@ -213,7 +207,7 @@ export default function PokerNextCut() {
     setEditOpen(true);
   };
 
-  if (loading) {
+  if (nextCutLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-6">
         <div className="flex items-center justify-center py-8">
@@ -386,7 +380,7 @@ export default function PokerNextCut() {
                               className="w-24 px-3 py-2 bg-slate-900/50 border border-slate-600 rounded text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                               autoFocus
                               onKeyDown={(e) => {
-                                if (e.key === 'Enter') updateDeal();
+                                if (e.key === 'Enter') handleUpdateDeal();
                                 if (e.key === 'Escape') {
                                   setEditingDeal(false);
                                   setEditingDealValue('');
@@ -394,7 +388,7 @@ export default function PokerNextCut() {
                               }}
                             />
                             <button
-                              onClick={updateDeal}
+                              onClick={handleUpdateDeal}
                               className="p-1.5 text-green-400 hover:text-green-300 bg-slate-800 rounded"
                             >
                               <Check className="w-4 h-4" />
@@ -412,12 +406,12 @@ export default function PokerNextCut() {
                         ) : (
                           <div className="flex items-center gap-2">
                             <div className="font-medium text-white text-lg">
-                              {nextCut.deal.toFixed(2)}
+                              {nextCut?.deal.toFixed(2) || '0.00'}
                             </div>
                             <button
                               onClick={() => {
                                 setEditingDeal(true);
-                                setEditingDealValue(nextCut.deal.toString());
+                                setEditingDealValue(nextCut?.deal.toString() || '0.55');
                               }}
                               className="p-1 text-slate-400 hover:text-blue-400"
                             >
@@ -437,7 +431,7 @@ export default function PokerNextCut() {
                               className="w-28 px-3 py-2 bg-slate-900/50 border border-slate-600 rounded text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                               autoFocus
                               onKeyDown={(e) => {
-                                if (e.key === 'Enter') updateProfitLoss();
+                                if (e.key === 'Enter') handleUpdateProfitLoss();
                                 if (e.key === 'Escape') {
                                   setEditingProfitLoss(false);
                                   setEditingProfitLossValue('');
@@ -445,7 +439,7 @@ export default function PokerNextCut() {
                               }}
                             />
                             <button
-                              onClick={updateProfitLoss}
+                              onClick={handleUpdateProfitLoss}
                               className="p-1.5 text-green-400 hover:text-green-300 bg-slate-800 rounded"
                             >
                               <Check className="w-4 h-4" />
@@ -463,12 +457,12 @@ export default function PokerNextCut() {
                         ) : (
                           <div className="flex items-center gap-2">
                             <div className="font-medium text-white text-lg">
-                              €{nextCut.profit_loss.toFixed(2)}
+                              €{nextCut?.profit_loss.toFixed(2) || '0.00'}
                             </div>
                             <button
                               onClick={() => {
                                 setEditingProfitLoss(true);
-                                setEditingProfitLossValue(nextCut.profit_loss.toString());
+                                setEditingProfitLossValue(nextCut?.profit_loss.toString() || '0');
                               }}
                               className="p-1 text-slate-400 hover:text-blue-400"
                             >

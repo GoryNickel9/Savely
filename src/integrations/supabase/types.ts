@@ -323,6 +323,39 @@ export type Database = {
         }
         Relationships: []
       }
+      poker_next_cut: {
+        Row: {
+          amount: number
+          created_at: string
+          deal: number
+          id: string
+          name: string
+          profit_loss: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          deal: number
+          id?: string
+          name: string
+          profit_loss: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          deal?: number
+          id?: string
+          name?: string
+          profit_loss?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       recurring_expenses: {
         Row: {
           amount: number
