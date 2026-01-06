@@ -95,7 +95,7 @@ export default function Dashboard() {
           <StatCard
             title="Uscite del Mese"
             value={`${CURRENCY_SYMBOLS.EUR}${monthlyExpenses.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
-            icon={<TrendingDown className="w-6 h-6" />}
+            icon={<TrendingDown className="w-6 h-6 text-destructive" />}
             className="border-l-4 border-l-destructive"
           />
           <StatCard

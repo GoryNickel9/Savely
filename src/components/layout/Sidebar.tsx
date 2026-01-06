@@ -13,10 +13,9 @@ import {
   Menu,
   X,
   CalendarClock,
-  Folder,
   Shield,
   Dices,
-  Droplets,
+  Cigarette,
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -93,7 +92,7 @@ export default function Sidebar() {
                 : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
             )}
           >
-            <Droplets className="w-5 h-5" />
+            <Cigarette className="w-5 h-5" />
             Fumo
           </Link>
         )}

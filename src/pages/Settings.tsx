@@ -4,7 +4,7 @@ import { useCategories } from '@/hooks/useCategories';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { LogOut, User, Download, Upload, FileSpreadsheet, Trash2, Settings2, Edit2, FolderPlus } from 'lucide-react';
+import { LogOut, User, Download, Upload, FileSpreadsheet, Trash2, Settings2, Edit2, FolderPlus, Folder, FolderPen } from 'lucide-react';
 import { useState, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -674,7 +674,7 @@ export default function Settings() {
           {/* Categories Section */}
           <div className="border-t border-border pt-6">
             <h3 className="font-medium mb-4 flex items-center gap-2">
-              <FolderPlus className="w-5 h-5" />
+              <Folder className="w-5 h-5" />
               Gestione Categorie
             </h3>
             
@@ -682,7 +682,7 @@ export default function Settings() {
               <Dialog open={categoriesDialogOpen} onOpenChange={setCategoriesDialogOpen}>
                 <DialogTrigger asChild>
                   <Button variant="outline" className="w-full sm:w-auto">
-                    <FolderPlus className="w-4 h-4 mr-2" />
+                    <FolderPen className="w-4 h-4 mr-2" />
                     Gestisci Categorie
                   </Button>
                 </DialogTrigger>

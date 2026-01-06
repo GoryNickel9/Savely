@@ -1,6 +1,6 @@
 import MainLayout from '@/components/layout/MainLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowRight, Droplets, Leaf, Flame } from 'lucide-react';
+import { ArrowRight, Cigarette, Cannabis } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { usePermissions } from '@/hooks/usePermissions';
 import { Navigate } from 'react-router-dom';
@@ -36,7 +36,7 @@ export default function Fumo() {
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle className="flex items-center gap-2">
-                    <Droplets className="w-5 h-5 text-primary" />
+                    <Cigarette className="w-5 h-5 text-primary" />
                     Liquido Sigaretta
                   </CardTitle>
                   <ArrowRight className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
@@ -56,7 +56,7 @@ export default function Fumo() {
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle className="flex items-center gap-2">
-                    <Leaf className="w-5 h-5 text-primary" />
+                    <Cannabis className="w-5 h-5 text-primary" />
                     CBD
                   </CardTitle>
                   <ArrowRight className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
@@ -76,7 +76,7 @@ export default function Fumo() {
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle className="flex items-center gap-2">
-                    <Flame className="w-5 h-5 text-primary" />
+                    <Cannabis className="w-5 h-5 text-primary" />
                     THC
                   </CardTitle>
                   <ArrowRight className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
