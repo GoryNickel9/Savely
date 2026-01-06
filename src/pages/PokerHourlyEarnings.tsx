@@ -299,14 +299,13 @@ export default function PokerHourlyEarnings() {
           </button>
           <div>
             <h1 className="text-3xl font-display font-bold">Guadagno Orario</h1>
-            <p className="text-muted-foreground">Traccia il tuo guadagno orario al poker</p>
+            <p className="text-muted-foreground">Traccia il tuo guadagno orario nel poker</p>
           </div>
         </div>
 
         {/* Aggiungi Guadagno Orario */}
         <Card>
           <CardHeader>
-            <CardTitle>Nuovo Guadagno Orario</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid gap-4 md:grid-cols-4">
@@ -320,7 +319,7 @@ export default function PokerHourlyEarnings() {
                 />
               </div>
               <div>
-                <label className="text-sm font-medium mb-2 block">Ore Giocate (minuti)</label>
+                <label className="text-sm font-medium mb-2 block">Ore giocate (minuti)</label>
                 <Input
                   type="number"
                   step="1"
@@ -360,7 +359,7 @@ export default function PokerHourlyEarnings() {
         {/* Tabella Guadagni Orari per Mese */}
         <Card>
           <CardHeader>
-            <CardTitle>Guadagni Orari per Mese ({currentYear})</CardTitle>
+            <CardTitle>Guadagni orari per mese nel {currentYear}</CardTitle>
           </CardHeader>
           <CardContent className="p-0">
             {earnings.filter(e => new Date(e.date).getFullYear() === currentYear).length === 0 ? (
@@ -501,7 +500,7 @@ export default function PokerHourlyEarnings() {
         {/* Tabella Guadagni Orari per Anno */}
         <Card>
           <CardHeader>
-            <CardTitle>Guadagni Orari per Anno</CardTitle>
+            <CardTitle>Guadagni orari per anno</CardTitle>
           </CardHeader>
           <CardContent className="p-0">
             {yearlyData.length === 0 ? (

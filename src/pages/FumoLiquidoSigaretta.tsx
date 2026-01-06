@@ -164,6 +164,14 @@ export default function FumoLiquidoSigaretta() {
 
   yearlyData.sort((a, b) => b.anno - a.anno);
 
+  // Calcola l'anno corrente
+  const currentYear = new Date().getFullYear();
+
+  // Filtra i record per l'anno corrente
+  const currentYearRecords = records.filter(record =>
+    new Date(record.data_arrivo).getFullYear() === currentYear
+  );
+
   // Aggiungi nuovo record
   const addNewRecord = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -293,7 +301,7 @@ export default function FumoLiquidoSigaretta() {
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
-              <CardTitle>Tabella Consumo Liquido Sigaretta</CardTitle>
+              <CardTitle>Spesa mensile per anno {currentYear}</CardTitle>
               <Dialog open={createOpen} onOpenChange={setCreateOpen}>
                 <DialogTrigger asChild>
                   <Button>
@@ -350,9 +358,9 @@ export default function FumoLiquidoSigaretta() {
             </div>
           </CardHeader>
           <CardContent className="p-0">
-            {records.length === 0 ? (
+            {currentYearRecords.length === 0 ? (
               <div className="text-center py-12">
-                <p className="text-muted-foreground mb-4">Nessun record registrato</p>
+                <p className="text-muted-foreground mb-4">Nessun record registrato per l'anno {currentYear}</p>
                 <Button onClick={() => setCreateOpen(true)} className="bg-green-500 hover:bg-green-600">
                   Aggiungi prima riga
                 </Button>
@@ -374,7 +382,7 @@ export default function FumoLiquidoSigaretta() {
                     </tr>
                   </thead>
                   <tbody>
-                    {records.map((record, index) => (
+                    {currentYearRecords.map((record, index) => (
                       <tr 
                         key={record.id} 
                         className={`border-t ${index % 2 === 0 ? 'bg-background' : 'bg-muted/20'}`}
@@ -488,7 +496,7 @@ export default function FumoLiquidoSigaretta() {
         {/* Tabella per Anno */}
         <Card>
           <CardHeader>
-            <CardTitle>Statistiche Annuale</CardTitle>
+            <CardTitle>Spese per anno</CardTitle>
           </CardHeader>
           <CardContent className="p-0">
             {yearlyData.length === 0 ? (

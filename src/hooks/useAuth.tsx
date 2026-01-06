@@ -99,7 +99,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signUp = async (email: string, password: string, fullName?: string) => {
-    const redirectUrl = `${window.location.origin}/`;
+    const redirectUrl = `${window.location.origin}/auth/callback`;
+    
+    // DEBUG: Log per verificare l'URL di redirect
+    console.log('📧 Email verification redirect URL:', redirectUrl);
+    console.log('🌐 Current origin:', window.location.origin);
+    
     const { error } = await supabase.auth.signUp({
       email,
       password,
@@ -108,6 +113,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         data: { full_name: fullName },
       },
     });
+    
+    if (error) {
+      console.error('❌ Sign up error:', error);
+    } else {
+      console.log('✅ Sign up successful, email sent to:', email);
+    }
+    
     return { error: error as Error | null };
   };
 

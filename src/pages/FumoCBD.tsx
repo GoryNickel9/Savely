@@ -274,7 +274,7 @@ export default function FumoCBD() {
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
-              <CardTitle>Tabella CBD</CardTitle>
+              <CardTitle>Spesa mensile</CardTitle>
               <Dialog open={createOpen} onOpenChange={setCreateOpen}>
                 <DialogTrigger asChild>
                   <Button>
@@ -469,7 +469,7 @@ export default function FumoCBD() {
         {/* Statistiche Annuale */}
         <Card>
           <CardHeader>
-            <CardTitle>Statistiche Annuale</CardTitle>
+            <CardTitle>Spese per anno</CardTitle>
           </CardHeader>
           <CardContent className="p-0">
             <div className="overflow-x-auto">

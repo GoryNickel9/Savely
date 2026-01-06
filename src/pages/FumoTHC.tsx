@@ -147,6 +147,14 @@ export default function FumoTHC() {
     loadData();
   }, [user?.id]);
 
+  // Calcola l'anno corrente
+  const currentYear = new Date().getFullYear();
+
+  // Filtra le entry per l'anno corrente
+  const currentYearEntries = entries.filter(entry =>
+    new Date(entry.data_acquisto).getFullYear() === currentYear
+  );
+
   const addNewRecord = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newCosto || !newDataArrivo) return;
@@ -281,7 +289,7 @@ export default function FumoTHC() {
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
-              <CardTitle>Tabella THC</CardTitle>
+              <CardTitle>Spesa mensile per anno {currentYear}</CardTitle>
               <Dialog open={createOpen} onOpenChange={setCreateOpen}>
                 <DialogTrigger asChild>
                   <Button>
@@ -338,9 +346,9 @@ export default function FumoTHC() {
             </div>
           </CardHeader>
           <CardContent className="p-0">
-            {entries.length === 0 ? (
+            {currentYearEntries.length === 0 ? (
               <div className="text-center py-12">
-                <p className="text-muted-foreground mb-4">Nessun record registrato</p>
+                <p className="text-muted-foreground mb-4">Nessun record registrato per l'anno {currentYear}</p>
                 <Button onClick={() => setCreateOpen(true)} className="bg-green-500 hover:bg-green-600">
                   Aggiungi prima riga
                 </Button>
@@ -362,7 +370,7 @@ export default function FumoTHC() {
                     </tr>
                   </thead>
                   <tbody>
-                    {entries.map((entry, index) => (
+                    {currentYearEntries.map((entry, index) => (
                       <tr
                         key={entry.id}
                         className={`border-t ${index % 2 === 0 ? 'bg-background' : 'bg-muted/20'}`}
@@ -476,7 +484,7 @@ export default function FumoTHC() {
         {/* Statistiche Annuale */}
         <Card>
           <CardHeader>
-            <CardTitle>Statistiche Annuale</CardTitle>
+            <CardTitle>Spese per anno</CardTitle>
           </CardHeader>
           <CardContent className="p-0">
             <div className="overflow-x-auto">

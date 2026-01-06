@@ -255,7 +255,7 @@ export default function PokerRakeback() {
           </button>
           <div>
             <h1 className="text-3xl font-display font-bold">Rake Back</h1>
-            <p className="text-muted-foreground">Traccia il tuo rakeback</p>
+            <p className="text-muted-foreground">Traccia la tua rakeback</p>
           </div>
         </div>
 
@@ -298,7 +298,6 @@ export default function PokerRakeback() {
         {/* Aggiungi Rakeback */}
         <Card>
           <CardHeader>
-            <CardTitle>Nuovo Rakeback</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid gap-4 md:grid-cols-3">
@@ -342,7 +341,7 @@ export default function PokerRakeback() {
         {/* Tabella Rakeback per Mese */}
         <Card>
           <CardHeader>
-            <CardTitle>Rakeback per Mese ({currentYear})</CardTitle>
+            <CardTitle>Rakeback per mese nel {currentYear}</CardTitle>
           </CardHeader>
           <CardContent className="p-0">
             {entries.filter(e => new Date(e.date).getFullYear() === currentYear).length === 0 ? (
@@ -464,7 +463,7 @@ export default function PokerRakeback() {
         {/* Tabella Rakeback per Anno */}
         <Card>
           <CardHeader>
-            <CardTitle>Rakeback per Anno</CardTitle>
+            <CardTitle>Rakeback per anno</CardTitle>
           </CardHeader>
           <CardContent className="p-0">
             {yearlyData.length === 0 ? (

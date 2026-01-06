@@ -9,7 +9,6 @@ export default function Poker() {
       <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-display font-bold">Poker</h1>
-          <p className="text-muted-foreground">Gestisci i tuoi costi e guadagni</p>
         </div>
 
         <div className="grid gap-6 md:grid-cols-3">
@@ -27,7 +26,7 @@ export default function Poker() {
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-muted-foreground">
-                  Gestisci i tuoi Next Cut e calcola quanto manca per raggiungere i tuoi obiettivi
+                  Gestisci e calcola quanto manca per raggiungere il prossimo cut
                 </p>
               </CardContent>
             </Card>
@@ -47,7 +46,7 @@ export default function Poker() {
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-muted-foreground">
-                  Traccia il tuo guadagno orario al poker e monitora le tue performance
+                  Traccia il tuo guadagno orario nel poker
                 </p>
               </CardContent>
             </Card>
@@ -67,7 +66,7 @@ export default function Poker() {
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-muted-foreground">
-                  Monitora il rake generato e il rakeback ricevuto dalle tue sessioni
+                  Traccia la tua rakeback
                 </p>
               </CardContent>
             </Card>
