@@ -11,14 +11,8 @@ import { CURRENCY_SYMBOLS } from '@/lib/types';
 import { Plus, Edit2, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
-
-// Calculate median of an array
-const calculateMedian = (arr: number[]): number => {
-  if (arr.length === 0) return 0;
-  const sorted = [...arr].sort((a, b) => a - b);
-  const mid = Math.floor(sorted.length / 2);
-  return sorted.length % 2 !== 0 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
-};
+import { getMedianMonthlySpending } from '@/lib/utils';
+import { MEDIAN_CALCULATION_MONTHS } from '@/lib/constants';
 
 export default function Budget() {
   const { budgets, createBudget, updateBudget, deleteBudget } = useBudgets();
@@ -34,7 +28,7 @@ export default function Budget() {
   const [editBudgetId, setEditBudgetId] = useState('');
   const [editAmount, setEditAmount] = useState('');
 
-  // Calculate the 18-month period ending at current date
+  // Calculate the 24-month period ending at current date
   const { startDate, endDate } = useMemo(() => {
     const end = new Date();
     const start = new Date();
@@ -42,31 +36,16 @@ export default function Budget() {
     return { startDate: start, endDate: end };
   }, []);
 
-  // Get median monthly spending for a category over the last 18 months
+  // Get median monthly spending for a category over the last 24 months
   const getMedianSpending = useMemo(() => {
     return (catId: string) => {
-      // Filter transactions for this category in the last 18 months
-      const categoryTransactions = transactions.filter(t => {
-        const txDate = new Date(t.date);
-        return t.category_id === catId &&
-               t.type === 'expense' &&
-               txDate >= startDate &&
-               txDate <= endDate;
+      return getMedianMonthlySpending({
+        transactions,
+        categoryId: catId,
+        months: MEDIAN_CALCULATION_MONTHS
       });
-
-      // Group by month (year-month key)
-      const monthlyTotals: Record<string, number> = {};
-      categoryTransactions.forEach(t => {
-        const date = new Date(t.date);
-        const key = `${date.getFullYear()}-${date.getMonth()}`;
-        monthlyTotals[key] = (monthlyTotals[key] || 0) + Number(t.amount);
-      });
-
-      // Get array of monthly totals and calculate median
-      const totalsArray = Object.values(monthlyTotals);
-      return calculateMedian(totalsArray);
     };
-  }, [transactions, startDate, endDate]);
+  }, [transactions]);
 
   // Sort budgets alphabetically by category name
   const sortedBudgets = useMemo(() => {

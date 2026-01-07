@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Trash2, Plus, Edit, Save, X, ArrowLeft } from 'lucide-react';
+import { calculateMedian } from '@/lib/utils';
 
 interface HourlyEarning {
   id: string;
@@ -124,11 +125,8 @@ export default function PokerHourlyEarnings() {
   }, []).sort((a, b) => b.year.localeCompare(a.year)).map(data => {
     // Calcola la mediana delle ore per ogni anno
     const yearEarnings = earnings.filter(e => new Date(e.date).getFullYear().toString() === data.year);
-    const sortedHours = yearEarnings.map(e => e.hours_played).sort((a, b) => a - b);
-    const mid = Math.floor(sortedHours.length / 2);
-    const medianHours = sortedHours.length % 2 !== 0
-      ? sortedHours[mid]
-      : (sortedHours[mid - 1] + sortedHours[mid]) / 2;
+    const hoursArray = yearEarnings.map(e => e.hours_played);
+    const medianHours = calculateMedian(hoursArray);
     
     return {
       ...data,

@@ -11,15 +11,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { useToast } from '@/hooks/use-toast';
 import { CURRENCY_SYMBOLS } from '@/lib/types';
 import MainLayout from '@/components/layout/MainLayout';
-
-
-// Calculate median of an array
-const calculateMedian = (arr: number[]): number => {
-  if (arr.length === 0) return 0;
-  const sorted = [...arr].sort((a, b) => a - b);
-  const mid = Math.floor(sorted.length / 2);
-  return sorted.length % 2 !== 0 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
-};
+import { getMedianMonthlySpending } from '@/lib/utils';
+import { MEDIAN_CALCULATION_MONTHS } from '@/lib/constants';
 
 export default function PokerNextCut() {
   const { budgets } = useBudgets();
@@ -43,41 +36,18 @@ export default function PokerNextCut() {
   const [editingExpense, setEditingExpense] = useState<{ id: string; name: string; amount: number } | null>(null);
   const [editingExpenseAmount, setEditingExpenseAmount] = useState('');
 
-  // Calculate the 18-month period ending at current date
-  const { startDate, endDate } = useMemo(() => {
-    const end = new Date();
-    const start = new Date();
-    start.setMonth(start.getMonth() - 24);
-    return { startDate: start, endDate: end };
-  }, []);
-
-  // Get median monthly spending for a category over the last 18 months
+  // Get median monthly spending for a category over the last 24 months
   const getMedianSpending = useMemo(() => {
     return (catId: string) => {
-      // Filter transactions for this category in the last 18 months
-      const categoryTransactions = transactions.filter(t => {
-        const txDate = new Date(t.date);
-        return t.category_id === catId &&
-               t.type === 'expense' &&
-               txDate >= startDate &&
-               txDate <= endDate;
+      return getMedianMonthlySpending({
+        transactions,
+        categoryId: catId,
+        months: MEDIAN_CALCULATION_MONTHS
       });
-
-      // Group by month (year-month key)
-      const monthlyTotals: Record<string, number> = {};
-      categoryTransactions.forEach(t => {
-        const date = new Date(t.date);
-        const key = `${date.getFullYear()}-${date.getMonth()}`;
-        monthlyTotals[key] = (monthlyTotals[key] || 0) + Number(t.amount);
-      });
-
-      // Get array of monthly totals and calculate median
-      const totalsArray = Object.values(monthlyTotals);
-      return calculateMedian(totalsArray);
     };
-  }, [transactions, startDate, endDate]);
+  }, [transactions]);
 
-  // Spesa mensile calcolata (dal Budget, basata su budget e transazioni ultimi 18 mesi)
+  // Spesa mensile calcolata (dal Budget, basata su budget e transazioni ultimi 24 mesi)
   // Questo valore è calcolato automaticamente e non modificabile dall'utente
   const budgetMonthlySpending = useMemo(() => {
     // Calculate total actual spending from categories WITH budget only
@@ -282,7 +252,7 @@ export default function PokerNextCut() {
                 <p className="text-2xl font-bold text-white">
                   {CURRENCY_SYMBOLS.EUR}{budgetMonthlySpending.toFixed(2)}
                 </p>
-                <p className="text-xs text-slate-500 mt-2">Calcolato automaticamente dagli ultimi 18 mesi di transazioni</p>
+                <p className="text-xs text-slate-500 mt-2">Calcolato automaticamente dagli ultimi 24 mesi di transazioni</p>
               </div>
 
               {/* Manual expenses list */}
@@ -334,6 +304,7 @@ export default function PokerNextCut() {
             <form onSubmit={updateManualExpense} className="space-y-4">
               <Input
                 type="number"
+                step="0.01"
                 placeholder="Nuovo importo"
                 value={editingExpenseAmount}
                 onChange={e => setEditingExpenseAmount(e.target.value)}
