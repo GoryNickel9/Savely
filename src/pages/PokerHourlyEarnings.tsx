@@ -8,6 +8,8 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Trash2, Plus, Edit, Save, X, ArrowLeft } from 'lucide-react';
 import { calculateMedian } from '@/lib/statistics';
+import { useSupabaseData } from '@/hooks/useSupabaseData';
+import { useYearlyData } from '@/hooks/useYearlyData';
 
 interface HourlyEarning {
   id: string;
@@ -38,7 +40,6 @@ export default function PokerHourlyEarnings() {
   
   const currentYear = new Date().getFullYear();
   
-  const [earnings, setEarnings] = useState<HourlyEarning[]>([]);
   const [deal, setDeal] = useState<number | null>(null);
   const [newMonth, setNewMonth] = useState('');
   const [newHours, setNewHours] = useState('');
@@ -50,86 +51,67 @@ export default function PokerHourlyEarnings() {
   const [editProfitLoss, setEditProfitLoss] = useState('');
   const [editNetWonEv, setEditNetWonEv] = useState('');
   
-  const [loading, setLoading] = useState(true);
-
-  // Carica i dati
-  const loadData = async () => {
-    if (!user?.id) return;
-    
-    setLoading(true);
-    try {
-      // Carica il deal dell'utente
-      const { data: dealData, error: dealError } = await supabase
-        .from('poker_next_cut' as any)
-        .select('deal')
-        .eq('user_id', user.id)
-        .maybeSingle();
+  // Usa useSupabaseData per caricare i guadagni orari
+  const { data: earnings, loading, reload } = useSupabaseData<HourlyEarning>({
+    tableName: 'poker_hourly_earnings',
+    orderBy: 'date',
+    ascending: false
+  });
+  
+  // Carica il deal dell'utente
+  useEffect(() => {
+    const loadDeal = async () => {
+      if (!user?.id) return;
       
-      if (!dealError && dealData && 'deal' in dealData) {
-        setDeal(dealData.deal as number);
-      } else {
-        // Se non c'è un deal, usa il default
+      try {
+        const { data: dealData, error: dealError } = await supabase
+          .from('poker_next_cut' as any)
+          .select('deal')
+          .eq('user_id', user.id)
+          .maybeSingle();
+        
+        if (!dealError && dealData && 'deal' in dealData) {
+          setDeal(dealData.deal as number);
+        } else {
+          setDeal(0.55);
+        }
+      } catch (error) {
+        console.error('Errore nel caricamento del deal:', error);
         setDeal(0.55);
       }
-      
-      // Carica i guadagni orari
-      const { data, error } = await supabase
-        .from('poker_hourly_earnings' as any)
-        .select('*')
-        .eq('user_id', user.id)
-        .order('date', { ascending: false });
-      
-      if (error) throw error;
-      
-      setEarnings((data as unknown as HourlyEarning[]) || []);
-    } catch (error) {
-      console.error('Errore nel caricamento dei dati:', error);
-      toast({
-        title: 'Errore',
-        description: 'Impossibile caricare i dati',
-        variant: 'destructive',
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadData();
+    };
+    
+    loadDeal();
   }, [user?.id]);
 
-  // Raggruppa i dati per anno
-  const yearlyData: YearlyData[] = earnings.reduce((acc: YearlyData[], earning) => {
-    const year = new Date(earning.date).getFullYear().toString();
-    const existing = acc.find(item => item.year === year);
-    
-    if (existing) {
-      existing.totalHours += earning.hours_played;
-      existing.totalProfitLoss += earning.profit_loss;
-      existing.totalNetWonEv += earning.net_won_ev;
-      existing.hourlyRate = existing.totalHours > 0 ? existing.totalProfitLoss / existing.totalHours : 0;
-      existing.hourlyRateEv = existing.totalHours > 0 ? existing.totalNetWonEv / existing.totalHours : 0;
-    } else {
-      acc.push({
-        year,
-        totalHours: earning.hours_played,
-        totalProfitLoss: earning.profit_loss,
-        hourlyRate: earning.hours_played > 0 ? earning.profit_loss / earning.hours_played : 0,
-        totalNetWonEv: earning.net_won_ev,
-        hourlyRateEv: earning.hours_played > 0 ? earning.net_won_ev / earning.hours_played : 0,
-        medianHours: 0
-      });
+  // Usa useYearlyData per raggruppare i dati per anno
+  const yearlyDataRaw = useYearlyData({
+    items: earnings,
+    getDate: (item) => item.date,
+    getValue: (item) => item.hours_played,
+    additionalFields: {
+      totalHours: (group) => group.reduce((sum, e) => sum + e.hours_played, 0),
+      totalProfitLoss: (group) => group.reduce((sum, e) => sum + e.profit_loss, 0),
+      totalNetWonEv: (group) => group.reduce((sum, e) => sum + e.net_won_ev, 0),
     }
-    
-    return acc;
-  }, []).sort((a, b) => b.year.localeCompare(a.year)).map(data => {
-    // Calcola la mediana delle ore per ogni anno
-    const yearEarnings = earnings.filter(e => new Date(e.date).getFullYear().toString() === data.year);
+  });
+  
+  // Calcola i campi derivati per ogni anno
+  const yearlyData: YearlyData[] = yearlyDataRaw.map(stat => {
+    const yearEarnings = earnings.filter(e => new Date(e.date).getFullYear().toString() === stat.year);
     const hoursArray = yearEarnings.map(e => e.hours_played);
     const medianHours = calculateMedian(hoursArray);
+    const totalHours = stat.totalHours || 0;
+    const totalProfitLoss = stat.totalProfitLoss || 0;
+    const totalNetWonEv = stat.totalNetWonEv || 0;
     
     return {
-      ...data,
+      year: stat.year,
+      totalHours,
+      totalProfitLoss,
+      hourlyRate: totalHours > 0 ? totalProfitLoss / totalHours : 0,
+      totalNetWonEv,
+      hourlyRateEv: totalHours > 0 ? totalNetWonEv / totalHours : 0,
       medianHours
     };
   });
@@ -197,7 +179,7 @@ export default function PokerHourlyEarnings() {
       setNewProfitLoss('');
       setNewNetWonEv('');
       toast({ title: 'Guadagno orario aggiunto' });
-      await loadData();
+      await reload();
     } catch (error) {
       console.error('Errore:', error);
       toast({ title: 'Errore', variant: 'destructive' });
@@ -213,7 +195,7 @@ export default function PokerHourlyEarnings() {
         .eq('id', id);
       if (error) throw error;
       toast({ title: 'Guadagno orario eliminato' });
-      await loadData();
+      await reload();
     } catch (error) {
       console.error('Errore:', error);
       toast({ title: 'Errore', variant: 'destructive' });
@@ -268,7 +250,7 @@ export default function PokerHourlyEarnings() {
       
       toast({ title: 'Guadagno orario aggiornato' });
       cancelEdit();
-      await loadData();
+      await reload();
     } catch (error) {
       console.error('Errore:', error);
       toast({ title: 'Errore', variant: 'destructive' });

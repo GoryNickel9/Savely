@@ -7,6 +7,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Trash2, Plus, Edit, Save, X, ArrowLeft } from 'lucide-react';
+import { useSupabaseData } from '@/hooks/useSupabaseData';
+import { useYearlyData } from '@/hooks/useYearlyData';
+import { useDialogManager } from '@/hooks/useDialogManager';
+import { DataTable, Column } from '@/components/ui/data-table';
 
 interface RakebackEntry {
   id: string;
@@ -31,47 +35,20 @@ export default function PokerRakeback() {
   
   const currentYear = new Date().getFullYear();
   
-  const [entries, setEntries] = useState<RakebackEntry[]>([]);
+  const { data: entries, loading, reload } = useSupabaseData<RakebackEntry>({
+    tableName: 'poker_rakeback',
+    orderBy: 'date',
+    ascending: false
+  });
+
   const [newMonth, setNewMonth] = useState('');
   const [newRakeGenerated, setNewRakeGenerated] = useState('');
   const [newRakebackReceived, setNewRakebackReceived] = useState('');
   
-  const [editingId, setEditingId] = useState<string | null>(null);
   const [editRakeGenerated, setEditRakeGenerated] = useState('');
   const [editRakebackReceived, setEditRakebackReceived] = useState('');
-  
-  const [loading, setLoading] = useState(true);
+  const { open: editOpen, editingItem, openEdit, close: closeEdit } = useDialogManager<RakebackEntry>();
 
-  // Carica i dati
-  const loadData = async () => {
-    if (!user?.id) return;
-    
-    setLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from('poker_rakeback' as any)
-        .select('*')
-        .eq('user_id', user.id)
-        .order('date', { ascending: false });
-      
-      if (error) throw error;
-      
-      setEntries((data as unknown as RakebackEntry[]) || []);
-    } catch (error) {
-      console.error('Errore nel caricamento dei dati:', error);
-      toast({
-        title: 'Errore',
-        description: 'Impossibile caricare i dati',
-        variant: 'destructive',
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadData();
-  }, [user?.id]);
 
   // Calcola il totale del rake generato
   const totalRakeGenerated = entries.reduce((sum, e) => sum + e.rake_generated, 0);
@@ -85,29 +62,19 @@ export default function PokerRakeback() {
     : 0;
 
   // Raggruppa i dati per anno
-  const yearlyData: YearlyData[] = entries.reduce((acc: YearlyData[], entry) => {
-    const year = new Date(entry.date).getFullYear().toString();
-    const existing = acc.find(item => item.year === year);
-    
-    if (existing) {
-      existing.totalRake += entry.rake_generated;
-      existing.totalRakeback += entry.rakeback_received;
-      existing.averagePercentage = existing.totalRake > 0
-        ? (existing.totalRakeback / existing.totalRake) * 100
-        : 0;
-    } else {
-      acc.push({
-        year,
-        totalRake: entry.rake_generated,
-        totalRakeback: entry.rakeback_received,
-        averagePercentage: entry.rake_generated > 0
-          ? (entry.rakeback_received / entry.rake_generated) * 100
-          : 0
-      });
+  const yearlyData = useYearlyData({
+    items: entries,
+    getDate: (entry) => entry.date,
+    getValue: (entry) => entry.rake_generated,
+    additionalFields: {
+      totalRakeback: (group) => group.reduce((sum, e) => sum + e.rakeback_received, 0)
     }
-    
-    return acc;
-  }, []).sort((a, b) => b.year.localeCompare(a.year));
+  }).map(stat => ({
+    year: stat.year,
+    totalRake: stat.total,
+    totalRakeback: stat.totalRakeback,
+    averagePercentage: stat.total > 0 ? (stat.totalRakeback / stat.total) * 100 : 0
+  }));
 
   // Aggiungi entry rakeback
   const addEntry = async () => {
@@ -164,7 +131,7 @@ export default function PokerRakeback() {
       setNewRakeGenerated('');
       setNewRakebackReceived('');
       toast({ title: 'Rakeback aggiunto' });
-      await loadData();
+      await reload();
     } catch (error) {
       console.error('Errore:', error);
       toast({ title: 'Errore', variant: 'destructive' });
@@ -180,24 +147,17 @@ export default function PokerRakeback() {
         .eq('id', id);
       if (error) throw error;
       toast({ title: 'Rakeback eliminato' });
-      await loadData();
+      await reload();
     } catch (error) {
       console.error('Errore:', error);
       toast({ title: 'Errore', variant: 'destructive' });
     }
   };
 
-  // Modifica entry rakeback
   const startEdit = (entry: RakebackEntry) => {
-    setEditingId(entry.id);
     setEditRakeGenerated(entry.rake_generated.toString());
     setEditRakebackReceived(entry.rakeback_received.toString());
-  };
-
-  const cancelEdit = () => {
-    setEditingId(null);
-    setEditRakeGenerated('');
-    setEditRakebackReceived('');
+    openEdit(entry);
   };
 
   const saveEdit = async (id: string) => {
@@ -225,23 +185,14 @@ export default function PokerRakeback() {
       if (error) throw error;
       
       toast({ title: 'Rakeback aggiornato' });
-      cancelEdit();
-      await loadData();
+      closeEdit();
+      await reload();
     } catch (error) {
       console.error('Errore:', error);
       toast({ title: 'Errore', variant: 'destructive' });
     }
   };
 
-  if (loading) {
-    return (
-      <MainLayout>
-        <div className="flex items-center justify-center py-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-        </div>
-      </MainLayout>
-    );
-  }
 
   return (
     <MainLayout>
@@ -349,113 +300,69 @@ export default function PokerRakeback() {
                 Nessun rakeback registrato
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className="bg-muted/50">
-                    <tr>
-                      <th className="text-left py-3 px-4 font-medium text-sm">Mese</th>
-                      <th className="text-right py-3 px-4 font-medium text-sm">Rake</th>
-                      <th className="text-right py-3 px-4 font-medium text-sm">Rake Back</th>
-                      <th className="text-right py-3 px-4 font-medium text-sm">Percentuale</th>
-                      <th className="text-center py-3 px-4 font-medium text-sm"></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {entries.filter(e => new Date(e.date).getFullYear() === currentYear).map((entry, index) => (
-                      <tr
-                        key={entry.id}
-                        className={`border-t ${index % 2 === 0 ? 'bg-background' : 'bg-muted/20'}`}
-                      >
-                        <td className="py-3 px-4 font-medium">
-                          {new Date(entry.date).toLocaleDateString('it-IT', {
-                            month: 'long',
-                            year: 'numeric'
-                          })}
-                        </td>
-                        {editingId === entry.id ? (
-                          <>
-                            <td className="py-3 px-4">
-                              <Input
-                                type="number"
-                                step="0.01"
-                                value={editRakeGenerated}
-                                onChange={(e) => setEditRakeGenerated(e.target.value)}
-                                className="w-24 text-right"
-                              />
-                            </td>
-                            <td className="py-3 px-4">
-                              <Input
-                                type="number"
-                                step="0.01"
-                                value={editRakebackReceived}
-                                onChange={(e) => setEditRakebackReceived(e.target.value)}
-                                className="w-24 text-right"
-                              />
-                            </td>
-                            <td className="text-right py-3 px-4 text-muted-foreground">
-                              {parseFloat(editRakebackReceived || '0') > 0 && parseFloat(editRakeGenerated || '0') > 0
-                                ? ((parseFloat(editRakebackReceived) / parseFloat(editRakeGenerated)) * 100).toFixed(1) + '%'
-                                : '0%'}
-                            </td>
-                            <td className="text-center py-3 px-4">
-                              <div className="flex justify-center gap-1">
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => saveEdit(entry.id)}
-                                  className="h-8 w-8 text-green-500 hover:text-green-600"
-                                >
-                                  <Save className="w-4 h-4" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={cancelEdit}
-                                  className="h-8 w-8"
-                                >
-                                  <X className="w-4 h-4" />
-                                </Button>
-                              </div>
-                            </td>
-                          </>
-                        ) : (
-                          <>
-                            <td className="text-right py-3 px-4 font-medium">
-                              €{entry.rake_generated.toFixed(2)}
-                            </td>
-                            <td className={`text-right py-3 px-4 font-medium ${entry.rakeback_received >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                              €{entry.rakeback_received.toFixed(2)}
-                            </td>
-                            <td className="text-right py-3 px-4 font-medium">
-                              {entry.rake_generated > 0 ? ((entry.rakeback_received / entry.rake_generated) * 100).toFixed(1) + '%' : '0%'}
-                            </td>
-                            <td className="text-center py-3 px-4">
-                              <div className="flex justify-center gap-1">
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => startEdit(entry)}
-                                  className="h-8 w-8"
-                                >
-                                  <Edit className="w-4 h-4" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => deleteEntry(entry.id)}
-                                  className="h-8 w-8"
-                                >
-                                  <Trash2 className="w-4 h-4 text-destructive" />
-                                </Button>
-                              </div>
-                            </td>
-                          </>
-                        )}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              <DataTable<RakebackEntry>
+                columns={[
+                  {
+                    key: 'date',
+                    header: 'Mese',
+                    render: (entry) => new Date(entry.date).toLocaleDateString('it-IT', {
+                      month: 'long',
+                      year: 'numeric'
+                    }),
+                    className: 'font-medium'
+                  },
+                  {
+                    key: 'rake_generated',
+                    header: 'Rake',
+                    render: (entry) => `€${entry.rake_generated.toFixed(2)}`,
+                    className: 'text-right'
+                  },
+                  {
+                    key: 'rakeback_received',
+                    header: 'Rake Back',
+                    render: (entry: any) => (
+                      <span className={`text-right font-medium ${entry.rakeback_received >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                        €{entry.rakeback_received.toFixed(2)}
+                      </span>
+                    ),
+                    className: 'text-right'
+                  },
+                  {
+                    key: 'percentage',
+                    header: 'Percentuale',
+                    render: (entry: any) => entry.rake_generated > 0 ? ((entry.rakeback_received / entry.rake_generated) * 100).toFixed(1) + '%' : '0%',
+                    className: 'text-right'
+                  },
+                  {
+                    key: 'actions',
+                    header: '',
+                    render: (entry) => (
+                      <div className="flex justify-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => startEdit(entry)}
+                          className="h-8 w-8"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => deleteEntry(entry.id)}
+                          className="h-8 w-8"
+                        >
+                          <Trash2 className="w-4 h-4 text-destructive" />
+                        </Button>
+                      </div>
+                    ),
+                    className: 'text-center'
+                  }
+                ]}
+                data={entries.filter(e => new Date(e.date).getFullYear() === currentYear)}
+                loading={loading}
+                emptyMessage="Nessun rakeback registrato"
+              />
             )}
           </CardContent>
         </Card>
@@ -471,39 +378,41 @@ export default function PokerRakeback() {
                 Nessun rakeback registrato
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className="bg-muted/50">
-                    <tr>
-                      <th className="text-left py-3 px-4 font-medium text-sm">Anno</th>
-                      <th className="text-right py-3 px-4 font-medium text-sm">Rake Totale</th>
-                      <th className="text-right py-3 px-4 font-medium text-sm">Rakeback Totale</th>
-                      <th className="text-right py-3 px-4 font-medium text-sm">Percentuale Media</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {yearlyData.map((data, index) => (
-                      <tr
-                        key={data.year}
-                        className={`border-t ${index % 2 === 0 ? 'bg-background' : 'bg-muted/20'}`}
-                      >
-                        <td className="py-3 px-4 font-medium">
-                          {data.year}
-                        </td>
-                        <td className="text-right py-3 px-4 font-medium">
-                          €{data.totalRake.toFixed(2)}
-                        </td>
-                        <td className={`text-right py-3 px-4 font-medium ${data.totalRakeback >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                          €{data.totalRakeback.toFixed(2)}
-                        </td>
-                        <td className="text-right py-3 px-4 font-medium">
-                          {data.averagePercentage.toFixed(1)}%
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              <DataTable<any>
+                columns={[
+                  {
+                    key: 'year',
+                    header: 'Anno',
+                    render: (data) => data.year,
+                    className: 'font-medium'
+                  },
+                  {
+                    key: 'totalRake',
+                    header: 'Rake Totale',
+                    render: (data) => `€${data.totalRake.toFixed(2)}`,
+                    className: 'text-right'
+                  },
+                  {
+                    key: 'totalRakeback',
+                    header: 'Rakeback Totale',
+                    render: (data: any) => (
+                      <span className={`text-right font-medium ${data.totalRakeback >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                        €{data.totalRakeback.toFixed(2)}
+                      </span>
+                    ),
+                    className: 'text-right'
+                  },
+                  {
+                    key: 'averagePercentage',
+                    header: 'Percentuale Media',
+                    render: (data: any) => `${data.averagePercentage.toFixed(1)}%`,
+                    className: 'text-right'
+                  }
+                ]}
+                data={yearlyData}
+                loading={loading}
+                emptyMessage="Nessun rakeback registrato"
+              />
             )}
           </CardContent>
         </Card>

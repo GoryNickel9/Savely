@@ -12,6 +12,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { CURRENCY_SYMBOLS } from '@/lib/types';
 import { Trash2, Edit2, ArrowLeft, Plus } from 'lucide-react';
 import { Link, Navigate } from 'react-router-dom';
+import { useSupabaseData } from '@/hooks/useSupabaseData';
+import { useYearlyData } from '@/hooks/useYearlyData';
+import { useDialogManager } from '@/hooks/useDialogManager';
+import { DataTable, Column } from '@/components/ui/data-table';
 
 interface LiquidoRecord {
   id: string;
@@ -54,58 +58,30 @@ export default function FumoLiquidoSigaretta() {
     return <Navigate to="/" replace />;
   }
   
-  const [records, setRecords] = useState<LiquidoRecord[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: records, loading, reload } = useSupabaseData<LiquidoRecord>({
+    tableName: 'liquido_sigaretta',
+    orderBy: 'data_arrivo',
+    ascending: false
+  });
 
   // Create dialog state
-  const [createOpen, setCreateOpen] = useState(false);
   const [newCosto, setNewCosto] = useState('');
   const [newMillilitri, setNewMillilitri] = useState('');
   const [newDataArrivo, setNewDataArrivo] = useState(new Date().toISOString().split('T')[0]);
   const [newDataFinito, setNewDataFinito] = useState('');
+  const { open: createOpen, openCreate, close: closeCreate } = useDialogManager();
 
   // Edit dialog state
-  const [editOpen, setEditOpen] = useState(false);
-  const [editingRecord, setEditingRecord] = useState<LiquidoRecord | null>(null);
   const [editCosto, setEditCosto] = useState('');
   const [editMillilitri, setEditMillilitri] = useState('');
   const [editDataArrivo, setEditDataArrivo] = useState('');
   const [editDataFinito, setEditDataFinito] = useState('');
-
-  const loadData = async () => {
-    if (!user?.id) return;
-    
-    setLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from('liquido_sigaretta' as any)
-        .select('*')
-        .eq('user_id', user.id)
-        .order('data_arrivo', { ascending: false });
-      
-      if (error) throw error;
-      
-      setRecords((data as unknown as LiquidoRecord[]) || []);
-    } catch (error) {
-      console.error('Errore nel caricamento dei dati:', error);
-      toast({
-        title: 'Errore',
-        description: 'Impossibile caricare i dati',
-        variant: 'destructive',
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadData();
-  }, [user?.id]);
+  const { open: editOpen, editingItem, openEdit, close: closeEdit } = useDialogManager<LiquidoRecord>();
 
   // Calcola campi derivati
   const calcolareCampi = (arrivo: string, finito: string | null, millilitri: number, costo: number) => {
     if (!finito) {
-      return { giorni_durata: null, millilitri_al_giorno: null, euro_al_giorno: null };
+      return { giorni_durata: null, millilitri_al_giorno: null, euro_al_giorno: null, costo_mensile: null };
     }
     
     const dataArrivo = new Date(arrivo);
@@ -124,45 +100,29 @@ export default function FumoLiquidoSigaretta() {
     return { giorni_durata: null, millilitri_al_giorno: null, euro_al_giorno: null, costo_mensile: null };
   };
 
-  // Raggruppa i dati per anno
-  const yearlyData: YearlyData[] = records
-    .filter(record => record.data_finito) // Solo record completati
-    .reduce((acc: YearlyData[], record) => {
-      const anno = new Date(record.data_arrivo).getFullYear();
-      const existing = acc.find(item => item.anno === anno);
-      
-      if (existing) {
-        existing.costoTotale += record.costo;
-        existing.millilitriTotali += record.millilitri;
-      } else {
-        acc.push({
-          anno,
-          costoTotale: record.costo,
-          millilitriTotali: record.millilitri,
-          millilitriMediaGiornalieri: 0,
-          costoMensile: 0
-        });
-      }
-      
-      return acc;
-    }, []);
-
-  // Calcola le medie per ogni anno
-  yearlyData.forEach(yearData => {
-    const recordsDellanno = records.filter(r => 
-      r.data_finito && new Date(r.data_arrivo).getFullYear() === yearData.anno
+  // Raggruppa i dati per anno (solo record completati)
+  const yearlyData = useYearlyData({
+    items: records.filter(record => record.data_finito),
+    getDate: (record) => record.data_arrivo,
+    getValue: (record) => record.costo,
+    additionalFields: {
+      millilitriTotali: (group) => group.reduce((sum, r) => sum + r.millilitri, 0)
+    }
+  }).map(stat => {
+    const recordsDellanno = records.filter(r =>
+      r.data_finito && new Date(r.data_arrivo).getFullYear() === parseInt(stat.year)
     );
     
     const totalGiorni = recordsDellanno.reduce((sum, r) => sum + (r.giorni_durata || 0), 0);
     
-    yearData.millilitriMediaGiornalieri = totalGiorni > 0 
-      ? yearData.millilitriTotali / totalGiorni 
-      : 0;
-    
-    yearData.costoMensile = yearData.costoTotale / 12;
+    return {
+      anno: parseInt(stat.year),
+      costoTotale: stat.total,
+      millilitriTotali: stat.millilitriTotali,
+      millilitriMediaGiornalieri: totalGiorni > 0 ? stat.millilitriTotali / totalGiorni : 0,
+      costoMensile: stat.total / 12
+    };
   });
-
-  yearlyData.sort((a, b) => b.anno - a.anno);
 
   // Calcola l'anno corrente
   const currentYear = new Date().getFullYear();
@@ -199,12 +159,12 @@ export default function FumoLiquidoSigaretta() {
       if (error) throw error;
       
       toast({ title: 'Nuova riga aggiunta' });
-      setCreateOpen(false);
+      closeCreate();
       setNewCosto('');
       setNewMillilitri('');
       setNewDataArrivo(new Date().toISOString().split('T')[0]);
       setNewDataFinito('');
-      await loadData();
+      await reload();
     } catch (error) {
       console.error('Errore:', error);
       toast({ title: 'Errore', variant: 'destructive' });
@@ -214,7 +174,7 @@ export default function FumoLiquidoSigaretta() {
   // Modifica record
   const updateRecord = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!editingRecord || !editCosto || !editMillilitri || !editDataArrivo) return;
+    if (!editingItem || !editCosto || !editMillilitri || !editDataArrivo) return;
     
     try {
       const campi = calcolareCampi(
@@ -233,14 +193,13 @@ export default function FumoLiquidoSigaretta() {
           data_finito: editDataFinito || null,
           ...campi,
         })
-        .eq('id', editingRecord.id);
+        .eq('id', editingItem.id);
       
       if (error) throw error;
       
       toast({ title: 'Record aggiornato' });
-      setEditOpen(false);
-      setEditingRecord(null);
-      await loadData();
+      closeEdit();
+      await reload();
     } catch (error) {
       console.error('Errore:', error);
       toast({ title: 'Errore nell\'aggiornamento', variant: 'destructive' });
@@ -256,7 +215,7 @@ export default function FumoLiquidoSigaretta() {
         .eq('id', id);
       if (error) throw error;
       toast({ title: 'Record eliminato' });
-      await loadData();
+      await reload();
     } catch (error) {
       console.error('Errore:', error);
       toast({ title: 'Errore', variant: 'destructive' });
@@ -264,12 +223,11 @@ export default function FumoLiquidoSigaretta() {
   };
 
   const openEditDialog = (record: LiquidoRecord) => {
-    setEditingRecord(record);
     setEditCosto(record.costo.toString());
     setEditMillilitri(record.millilitri.toString());
     setEditDataArrivo(record.data_arrivo);
     setEditDataFinito(record.data_finito || '');
-    setEditOpen(true);
+    openEdit(record);
   };
 
   if (loading) {
@@ -302,7 +260,7 @@ export default function FumoLiquidoSigaretta() {
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle>Spesa mensile per anno {currentYear}</CardTitle>
-              <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+              <Dialog open={createOpen} onOpenChange={(open) => open ? openCreate() : closeCreate()}>
                 <DialogTrigger asChild>
                   <Button>
                     <Plus className="w-4 h-4 mr-2" />
@@ -361,91 +319,108 @@ export default function FumoLiquidoSigaretta() {
             {currentYearRecords.length === 0 ? (
               <div className="text-center py-12">
                 <p className="text-muted-foreground mb-4">Nessun record registrato per l'anno {currentYear}</p>
-                <Button onClick={() => setCreateOpen(true)} className="bg-green-500 hover:bg-green-600">
+                <Button onClick={openCreate} className="bg-green-500 hover:bg-green-600">
                   Aggiungi prima riga
                 </Button>
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className="bg-muted/50">
-                    <tr>
-                      <th className="text-left py-3 px-4 font-medium text-sm">Costo</th>
-                      <th className="text-center py-3 px-4 font-medium text-sm">Millilitri</th>
-                      <th className="text-center py-3 px-4 font-medium text-sm">Arrivato</th>
-                      <th className="text-center py-3 px-4 font-medium text-sm">Finito</th>
-                      <th className="text-center py-3 px-4 font-medium text-sm">Giorni Durata</th>
-                      <th className="text-center py-3 px-4 font-medium text-sm">Millilitri/d</th>
-                      <th className="text-center py-3 px-4 font-medium text-sm">€/d</th>
-                      <th className="text-center py-3 px-4 font-medium text-sm">Costo Mensile</th>
-                      <th className="text-center py-3 px-4 font-medium text-sm w-24"></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {currentYearRecords.map((record, index) => (
-                      <tr 
-                        key={record.id} 
-                        className={`border-t ${index % 2 === 0 ? 'bg-background' : 'bg-muted/20'}`}
-                      >
-                        <td className="py-3 px-4 font-medium">
-                          {CURRENCY_SYMBOLS.EUR}{record.costo.toFixed(2)}
-                        </td>
-                        <td className="text-center py-3 px-4">
-                          {record.millilitri}
-                        </td>
-                        <td className="text-center py-3 px-4">
-                          {new Date(record.data_arrivo).toLocaleDateString('it-IT')}
-                        </td>
-                        <td className="text-center py-3 px-4">
-                          {record.data_finito ? new Date(record.data_finito).toLocaleDateString('it-IT') : 'In corso'}
-                        </td>
-                        <td className="text-center py-3 px-4">
-                          {record.giorni_durata || '-'}
-                        </td>
-                        <td className="text-center py-3 px-4">
-                          {record.millilitri_al_giorno?.toFixed(2) || '-'}
-                        </td>
-                        <td className="text-center py-3 px-4">
-                          {record.euro_al_giorno ? `${CURRENCY_SYMBOLS.EUR}${record.euro_al_giorno.toFixed(2)}` : '-'}
-                        </td>
-                        <td className="text-center py-3 px-4">
-                          {record.costo_mensile
-                            ? `${CURRENCY_SYMBOLS.EUR}${record.costo_mensile.toFixed(2)}`
-                            : record.giorni_durata && record.costo
-                              ? `${CURRENCY_SYMBOLS.EUR}${((record.costo / record.giorni_durata) * 30).toFixed(2)}`
-                              : '-'}
-                        </td>
-                        <td className="text-center py-3 px-4">
-                          <div className="flex items-center justify-center gap-1">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => openEditDialog(record)}
-                              className="h-8 w-8"
-                            >
-                              <Edit2 className="w-4 h-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => deleteRecord(record.id)}
-                              className="h-8 w-8"
-                            >
-                              <Trash2 className="w-4 h-4 text-destructive" />
-                            </Button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              <DataTable<LiquidoRecord>
+                columns={[
+                  {
+                    key: 'costo',
+                    header: 'Costo',
+                    render: (record) => `${CURRENCY_SYMBOLS.EUR}${record.costo.toFixed(2)}`,
+                    className: 'font-medium'
+                  },
+                  {
+                    key: 'millilitri',
+                    header: 'Millilitri',
+                    render: (record) => record.millilitri,
+                    className: 'text-center'
+                  },
+                  {
+                    key: 'data_arrivo',
+                    header: 'Arrivato',
+                    render: (record) => new Date(record.data_arrivo).toLocaleDateString('it-IT'),
+                    className: 'text-center'
+                  },
+                  {
+                    key: 'data_finito',
+                    header: 'Finito',
+                    render: (record) => record.data_finito ? new Date(record.data_finito).toLocaleDateString('it-IT') : 'In corso',
+                    className: 'text-center'
+                  },
+                  {
+                    key: 'giorni_durata',
+                    header: 'Giorni Durata',
+                    render: (record) => record.giorni_durata || '-',
+                    className: 'text-center'
+                  },
+                  {
+                    key: 'millilitri_al_giorno',
+                    header: 'Millilitri/d',
+                    render: (record) => record.millilitri_al_giorno?.toFixed(2) || '-',
+                    className: 'text-center'
+                  },
+                  {
+                    key: 'euro_al_giorno',
+                    header: '€/d',
+                    render: (record) => record.euro_al_giorno ? `${CURRENCY_SYMBOLS.EUR}${record.euro_al_giorno.toFixed(2)}` : '-',
+                    className: 'text-center'
+                  },
+                  {
+                    key: 'costo_mensile',
+                    header: 'Costo Mensile',
+                    render: (record) => record.costo_mensile
+                      ? `${CURRENCY_SYMBOLS.EUR}${record.costo_mensile.toFixed(2)}`
+                      : record.giorni_durata && record.costo
+                        ? `${CURRENCY_SYMBOLS.EUR}${((record.costo / record.giorni_durata) * 30).toFixed(2)}`
+                        : '-',
+                    className: 'text-center'
+                  },
+                  {
+                    key: 'actions',
+                    header: '',
+                    render: (record) => (
+                      <div className="flex items-center justify-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => openEditDialog(record)}
+                          className="h-8 w-8"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => deleteRecord(record.id)}
+                          className="h-8 w-8"
+                        >
+                          <Trash2 className="w-4 h-4 text-destructive" />
+                        </Button>
+                      </div>
+                    ),
+                    className: 'text-center'
+                  }
+                ]}
+                data={currentYearRecords}
+                loading={loading}
+                emptyMessage={
+                  <div className="text-center py-12">
+                    <p className="text-muted-foreground mb-4">Nessun record registrato per l'anno {currentYear}</p>
+                    <Button onClick={openCreate} className="bg-green-500 hover:bg-green-600">
+                      Aggiungi prima riga
+                    </Button>
+                  </div>
+                }
+              />
             )}
           </CardContent>
         </Card>
 
         {/* Edit Dialog */}
-        <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <Dialog open={editOpen} onOpenChange={(open) => open ? undefined : closeEdit()}>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Modifica riga</DialogTitle>

@@ -10,6 +10,8 @@ import {
 } from 'recharts';
 import { format, parseISO, isWithinInterval, eachDayOfInterval, startOfYear, endOfYear, startOfMonth, endOfMonth, min, max } from 'date-fns';
 import { it } from 'date-fns/locale';
+import { useFilteredTransactions } from '@/hooks/useFilteredTransactions';
+import { useMonthlyAggregation } from '@/hooks/useMonthlyAggregation';
 
 type FilterMode = 'all' | 'year' | 'month' | 'since' | 'between';
 
@@ -21,6 +23,19 @@ export default function Charts() {
   const [sinceDate, setSinceDate] = useState('');
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
+  
+  // Usa i nuovi hook per filtrare e aggregare
+  const filteredTransactions = useFilteredTransactions({
+    transactions,
+    filterMode,
+    selectedYear,
+    selectedMonth,
+    sinceDate,
+    fromDate,
+    toDate
+  });
+  
+  const monthlyData = useMonthlyAggregation(filteredTransactions);
 
   const years = useMemo(() => {
     const yearsSet = new Set(transactions.map(t => new Date(t.date).getFullYear()));
@@ -28,51 +43,6 @@ export default function Charts() {
     yearsSet.add(currentYear);
     return Array.from(yearsSet).sort((a, b) => b - a);
   }, [transactions]);
-
-  const filteredTransactions = useMemo(() => {
-    return transactions.filter(t => {
-      const date = parseISO(t.date);
-      switch (filterMode) {
-        case 'year':
-          return date.getFullYear() === parseInt(selectedYear);
-        case 'month':
-          return date.getFullYear() === parseInt(selectedYear) && (date.getMonth() + 1) === parseInt(selectedMonth);
-        case 'since':
-          if (!sinceDate) return true;
-          return date >= parseISO(sinceDate);
-        case 'between':
-          if (!fromDate || !toDate) return true;
-          return isWithinInterval(date, { start: parseISO(fromDate), end: parseISO(toDate) });
-        default:
-          return true;
-      }
-    });
-  }, [transactions, filterMode, selectedYear, selectedMonth, sinceDate, fromDate, toDate]);
-
-  // Monthly aggregation for chart
-  const monthlyData = useMemo(() => {
-    const grouped: Record<string, { month: string; income: number; expense: number }> = {};
-
-    filteredTransactions.forEach(t => {
-      const monthKey = format(parseISO(t.date), 'yyyy-MM');
-      if (!grouped[monthKey]) {
-        grouped[monthKey] = { month: monthKey, income: 0, expense: 0 };
-      }
-      if (t.type === 'income') {
-        grouped[monthKey].income += Number(t.amount);
-      } else {
-        grouped[monthKey].expense += Number(t.amount);
-      }
-    });
-
-    return Object.values(grouped)
-      .sort((a, b) => a.month.localeCompare(b.month))
-      .map(d => ({
-        ...d,
-        monthLabel: format(parseISO(d.month + '-01'), 'MMM yyyy', { locale: it }),
-        balance: d.income - d.expense,
-      }));
-  }, [filteredTransactions]);
 
   // Cumulative balance over time - day by day based on filter
   const cumulativeData = useMemo(() => {

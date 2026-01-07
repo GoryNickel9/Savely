@@ -12,6 +12,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { CURRENCY_SYMBOLS } from '@/lib/types';
 import { Plus, Trash2, ArrowLeft, Edit2 } from 'lucide-react';
 import { Link, Navigate } from 'react-router-dom';
+import { useSupabaseData } from '@/hooks/useSupabaseData';
+import { useYearlyData } from '@/hooks/useYearlyData';
+import { useDialogManager } from '@/hooks/useDialogManager';
+import { calculateDerivedFields, calculateDerivedFieldsForInsertion } from '@/lib/fumoCalculations';
+import { DataTable, Column } from '@/components/ui/data-table';
 
 interface THCEntry {
   id: string;
@@ -49,11 +54,33 @@ export default function FumoTHC() {
     return <Navigate to="/" replace />;
   }
 
-  const [entries, setEntries] = useState<THCEntry[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: rawEntries, loading, reload } = useSupabaseData<THCEntry>({
+    tableName: 'thc',
+    orderBy: 'data_acquisto',
+    ascending: false
+  });
+
+  const entries = rawEntries.map(entry => {
+    if (entry.data_finito && entry.grammi && entry.giorni_durata === null) {
+      const derived = calculateDerivedFields(
+        entry.data_acquisto,
+        entry.data_finito,
+        entry.grammi,
+        entry.costo
+      );
+      
+      return {
+        ...entry,
+        giorni_durata: derived.giorni_durata,
+        grammi_al_giorno: derived.quantita_al_giorno,
+        euro_al_giorno: derived.euro_al_giorno,
+        costo_mensile: derived.costo_mensile
+      };
+    }
+    return entry;
+  });
 
   // Create dialog state
-  const [createOpen, setCreateOpen] = useState(false);
   const [newCosto, setNewCosto] = useState('');
   const [newGrammi, setNewGrammi] = useState('');
   const [newDataArrivo, setNewDataArrivo] = useState(new Date().toISOString().split('T')[0]);
@@ -61,91 +88,14 @@ export default function FumoTHC() {
   const [newMarca, setNewMarca] = useState('');
   const [newThcContent, setNewThcContent] = useState('');
   const [newDescrizione, setNewDescrizione] = useState('');
+  const { open: createOpen, openCreate, close: closeCreate } = useDialogManager();
 
   // Edit dialog state
-  const [editOpen, setEditOpen] = useState(false);
-  const [editingEntry, setEditingEntry] = useState<THCEntry | null>(null);
   const [editCosto, setEditCosto] = useState('');
   const [editGrammi, setEditGrammi] = useState('');
   const [editDataArrivo, setEditDataArrivo] = useState('');
   const [editDataFinito, setEditDataFinito] = useState('');
-
-  // Calcola campi derivati per un nuovo record
-  const calcolareCampiPerInserimento = (arrivo: string, finito: string | null, grammi: number | null, costo: number) => {
-    if (!finito || !grammi || grammi === 0) {
-      return { giorni_durata: null, grammi_al_giorno: null, euro_al_giorno: null, costo_mensile: null };
-    }
-    
-    const dataArrivo = new Date(arrivo);
-    const dataFinito = new Date(finito);
-    const giorni = Math.ceil((dataFinito.getTime() - dataArrivo.getTime()) / (1000 * 60 * 60 * 24));
-    
-    if (giorni > 0) {
-      return {
-        giorni_durata: giorni,
-        grammi_al_giorno: grammi / giorni,
-        euro_al_giorno: costo / giorni,
-        costo_mensile: (costo / giorni) * 30
-      };
-    }
-    
-    return { giorni_durata: null, grammi_al_giorno: null, euro_al_giorno: null, costo_mensile: null };
-  };
-
-  // Calcola campi derivati per un record esistente
-  const calcolareCampi = (entry: THCEntry): THCEntry => {
-    if (!entry.data_finito || !entry.grammi || entry.grammi === 0) {
-      return entry;
-    }
-    
-    const dataArrivo = new Date(entry.data_acquisto);
-    const dataFinito = new Date(entry.data_finito);
-    const giorni = Math.ceil((dataFinito.getTime() - dataArrivo.getTime()) / (1000 * 60 * 60 * 24));
-    
-    if (giorni > 0) {
-      return {
-        ...entry,
-        giorni_durata: giorni,
-        grammi_al_giorno: entry.grammi / giorni,
-        euro_al_giorno: entry.costo / giorni,
-        costo_mensile: (entry.costo / giorni) * 30
-      };
-    }
-    
-    return entry;
-  };
-
-  const loadData = async () => {
-    if (!user?.id) return;
-    
-    setLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from('thc' as any)
-        .select('*')
-        .eq('user_id', user.id)
-        .order('data_acquisto', { ascending: false });
-      
-      if (error) throw error;
-      
-      // Calcola campi derivati per i record esistenti
-      const entriesWithCalculatedFields = (data as unknown as THCEntry[]).map(entry => calcolareCampi(entry));
-      setEntries(entriesWithCalculatedFields || []);
-    } catch (error) {
-      console.error('Errore nel caricamento dei dati:', error);
-      toast({
-        title: 'Errore',
-        description: 'Impossibile caricare i dati',
-        variant: 'destructive',
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadData();
-  }, [user?.id]);
+  const { open: editOpen, editingItem, openEdit, close: closeEdit } = useDialogManager<THCEntry>();
 
   // Calcola l'anno corrente
   const currentYear = new Date().getFullYear();
@@ -160,7 +110,7 @@ export default function FumoTHC() {
     if (!newCosto || !newDataArrivo) return;
     
     try {
-      const campi = calcolareCampiPerInserimento(
+      const campi = calculateDerivedFieldsForInsertion(
         newDataArrivo,
         newDataFinito || null,
         parseFloat(newGrammi),
@@ -184,7 +134,7 @@ export default function FumoTHC() {
       if (error) throw error;
       
       toast({ title: 'Nuova riga aggiunta' });
-      setCreateOpen(false);
+      closeCreate();
       setNewCosto('');
       setNewGrammi('');
       setNewDataArrivo(new Date().toISOString().split('T')[0]);
@@ -192,7 +142,7 @@ export default function FumoTHC() {
       setNewMarca('');
       setNewThcContent('');
       setNewDescrizione('');
-      await loadData();
+      await reload();
     } catch (error) {
       console.error('Errore:', error);
       toast({ title: 'Errore', variant: 'destructive' });
@@ -209,7 +159,7 @@ export default function FumoTHC() {
       if (error) throw error;
       
       toast({ title: 'THC eliminato!' });
-      await loadData();
+      await reload();
     } catch (error) {
       console.error('Errore:', error);
       toast({ title: 'Errore', variant: 'destructive' });
@@ -218,10 +168,10 @@ export default function FumoTHC() {
 
   const updateEntry = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!editingEntry || !editCosto || !editDataArrivo) return;
+    if (!editingItem || !editCosto || !editDataArrivo) return;
     
     try {
-      const campi = calcolareCampiPerInserimento(
+      const campi = calculateDerivedFieldsForInsertion(
         editDataArrivo,
         editDataFinito || null,
         parseFloat(editGrammi),
@@ -237,14 +187,13 @@ export default function FumoTHC() {
           data_finito: editDataFinito || null,
           ...campi,
         })
-        .eq('id', editingEntry.id);
+        .eq('id', editingItem.id);
       
       if (error) throw error;
       
       toast({ title: 'Record aggiornato' });
-      setEditOpen(false);
-      setEditingEntry(null);
-      await loadData();
+      closeEdit();
+      await reload();
     } catch (error) {
       console.error('Errore:', error);
       toast({ title: 'Errore nell\'aggiornamento', variant: 'destructive' });
@@ -252,12 +201,11 @@ export default function FumoTHC() {
   };
 
   const openEditDialog = (entry: THCEntry) => {
-    setEditingEntry(entry);
     setEditCosto(entry.costo.toString());
     setEditGrammi(entry.grammi?.toString() || '');
     setEditDataArrivo(entry.data_acquisto);
     setEditDataFinito(entry.data_finito || '');
-    setEditOpen(true);
+    openEdit(entry);
   };
 
   if (loading) {
@@ -290,7 +238,7 @@ export default function FumoTHC() {
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle>Spesa mensile per anno {currentYear}</CardTitle>
-              <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+              <Dialog open={createOpen} onOpenChange={(open) => open ? openCreate() : closeCreate()}>
                 <DialogTrigger asChild>
                   <Button>
                     <Plus className="w-4 h-4 mr-2" />
@@ -349,91 +297,108 @@ export default function FumoTHC() {
             {currentYearEntries.length === 0 ? (
               <div className="text-center py-12">
                 <p className="text-muted-foreground mb-4">Nessun record registrato per l'anno {currentYear}</p>
-                <Button onClick={() => setCreateOpen(true)} className="bg-green-500 hover:bg-green-600">
+                <Button onClick={openCreate} className="bg-green-500 hover:bg-green-600">
                   Aggiungi prima riga
                 </Button>
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className="bg-muted/50">
-                    <tr>
-                      <th className="text-left py-3 px-4 font-medium text-sm">Costo</th>
-                      <th className="text-center py-3 px-4 font-medium text-sm">Grammi</th>
-                      <th className="text-center py-3 px-4 font-medium text-sm">Arrivato</th>
-                      <th className="text-center py-3 px-4 font-medium text-sm">Finito</th>
-                      <th className="text-center py-3 px-4 font-medium text-sm">Giorni Durata</th>
-                      <th className="text-center py-3 px-4 font-medium text-sm">Grammi/d</th>
-                      <th className="text-center py-3 px-4 font-medium text-sm">€/d</th>
-                      <th className="text-center py-3 px-4 font-medium text-sm">Costo Mensile</th>
-                      <th className="text-center py-3 px-4 font-medium text-sm w-24"></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {currentYearEntries.map((entry, index) => (
-                      <tr
-                        key={entry.id}
-                        className={`border-t ${index % 2 === 0 ? 'bg-background' : 'bg-muted/20'}`}
-                      >
-                        <td className="py-3 px-4 font-medium">
-                          {CURRENCY_SYMBOLS.EUR}{entry.costo.toFixed(2)}
-                        </td>
-                        <td className="text-center py-3 px-4">
-                          {entry.grammi}
-                        </td>
-                        <td className="text-center py-3 px-4">
-                          {new Date(entry.data_acquisto).toLocaleDateString('it-IT')}
-                        </td>
-                        <td className="text-center py-3 px-4">
-                          {entry.data_finito ? new Date(entry.data_finito).toLocaleDateString('it-IT') : 'In corso'}
-                        </td>
-                        <td className="text-center py-3 px-4">
-                          {entry.giorni_durata || '-'}
-                        </td>
-                        <td className="text-center py-3 px-4">
-                          {entry.grammi_al_giorno?.toFixed(2) || '-'}
-                        </td>
-                        <td className="text-center py-3 px-4">
-                          {entry.euro_al_giorno ? `${CURRENCY_SYMBOLS.EUR}${entry.euro_al_giorno.toFixed(2)}` : '-'}
-                        </td>
-                        <td className="text-center py-3 px-4">
-                          {entry.costo_mensile
-                            ? `${CURRENCY_SYMBOLS.EUR}${entry.costo_mensile.toFixed(2)}`
-                            : entry.giorni_durata && entry.costo
-                              ? `${CURRENCY_SYMBOLS.EUR}${((entry.costo / entry.giorni_durata) * 30).toFixed(2)}`
-                              : '-'}
-                        </td>
-                        <td className="text-center py-3 px-4">
-                          <div className="flex items-center justify-center gap-1">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => openEditDialog(entry)}
-                              className="h-8 w-8"
-                            >
-                              <Edit2 className="w-4 h-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => deleteEntry(entry.id)}
-                              className="h-8 w-8"
-                            >
-                              <Trash2 className="w-4 h-4 text-destructive" />
-                            </Button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              <DataTable<THCEntry>
+                columns={[
+                  {
+                    key: 'costo',
+                    header: 'Costo',
+                    render: (entry) => `${CURRENCY_SYMBOLS.EUR}${entry.costo.toFixed(2)}`,
+                    className: 'font-medium'
+                  },
+                  {
+                    key: 'grammi',
+                    header: 'Grammi',
+                    render: (entry) => entry.grammi,
+                    className: 'text-center'
+                  },
+                  {
+                    key: 'data_acquisto',
+                    header: 'Arrivato',
+                    render: (entry) => new Date(entry.data_acquisto).toLocaleDateString('it-IT'),
+                    className: 'text-center'
+                  },
+                  {
+                    key: 'data_finito',
+                    header: 'Finito',
+                    render: (entry) => entry.data_finito ? new Date(entry.data_finito).toLocaleDateString('it-IT') : 'In corso',
+                    className: 'text-center'
+                  },
+                  {
+                    key: 'giorni_durata',
+                    header: 'Giorni Durata',
+                    render: (entry) => entry.giorni_durata || '-',
+                    className: 'text-center'
+                  },
+                  {
+                    key: 'grammi_al_giorno',
+                    header: 'Grammi/d',
+                    render: (entry) => entry.grammi_al_giorno?.toFixed(2) || '-',
+                    className: 'text-center'
+                  },
+                  {
+                    key: 'euro_al_giorno',
+                    header: '€/d',
+                    render: (entry) => entry.euro_al_giorno ? `${CURRENCY_SYMBOLS.EUR}${entry.euro_al_giorno.toFixed(2)}` : '-',
+                    className: 'text-center'
+                  },
+                  {
+                    key: 'costo_mensile',
+                    header: 'Costo Mensile',
+                    render: (entry) => entry.costo_mensile
+                      ? `${CURRENCY_SYMBOLS.EUR}${entry.costo_mensile.toFixed(2)}`
+                      : entry.giorni_durata && entry.costo
+                        ? `${CURRENCY_SYMBOLS.EUR}${((entry.costo / entry.giorni_durata) * 30).toFixed(2)}`
+                        : '-',
+                    className: 'text-center'
+                  },
+                  {
+                    key: 'actions',
+                    header: '',
+                    render: (entry) => (
+                      <div className="flex items-center justify-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => openEditDialog(entry)}
+                          className="h-8 w-8"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => deleteEntry(entry.id)}
+                          className="h-8 w-8"
+                        >
+                          <Trash2 className="w-4 h-4 text-destructive" />
+                        </Button>
+                      </div>
+                    ),
+                    className: 'text-center'
+                  }
+                ]}
+                data={currentYearEntries}
+                loading={loading}
+                emptyMessage={
+                  <div className="text-center py-12">
+                    <p className="text-muted-foreground mb-4">Nessun record registrato per l'anno {currentYear}</p>
+                    <Button onClick={openCreate} className="bg-green-500 hover:bg-green-600">
+                      Aggiungi prima riga
+                    </Button>
+                  </div>
+                }
+              />
             )}
           </CardContent>
         </Card>
 
         {/* Edit Dialog */}
-        <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <Dialog open={editOpen} onOpenChange={(open) => open ? undefined : closeEdit()}>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Modifica riga</DialogTitle>
@@ -500,30 +465,20 @@ export default function FumoTHC() {
               </thead>
               <tbody>
                 {(() => {
-                  const yearlyStats = entries.reduce((acc: any[], entry) => {
-                    const year = new Date(entry.data_acquisto).getFullYear();
-                    const existing = acc.find(item => item.anno === year);
-                    
-                    if (existing) {
-                      existing.costoTotale += Number(entry.costo);
-                      existing.grammiTotali += (entry.grammi || 0);
-                    } else {
-                      acc.push({
-                        anno: year,
-                        costoTotale: Number(entry.costo),
-                        grammiTotali: entry.grammi || 0,
-                      });
+                  const yearlyStats = useYearlyData({
+                    items: entries,
+                    getDate: (entry) => entry.data_acquisto,
+                    getValue: (entry) => Number(entry.costo),
+                    additionalFields: {
+                      grammiTotali: (group) => group.reduce((sum, e) => sum + (e.grammi || 0), 0)
                     }
-                    
-                    return acc;
-                  }, []);
-
-                  yearlyStats.forEach((stat: any) => {
-                    stat.costoAlGrammo = stat.grammiTotali > 0 ? stat.costoTotale / stat.grammiTotali : 0;
-                    stat.costoMensile = stat.costoTotale / 12;
-                  });
-
-                  yearlyStats.sort((a: any, b: any) => b.anno - a.anno);
+                  }).map(stat => ({
+                    anno: parseInt(stat.year),
+                    costoTotale: stat.total,
+                    grammiTotali: stat.grammiTotali,
+                    costoAlGrammo: stat.grammiTotali > 0 ? stat.total / stat.grammiTotali : 0,
+                    costoMensile: stat.total / 12
+                  }));
 
                   return yearlyStats.length === 0 ? (
                     <tr>
@@ -532,7 +487,7 @@ export default function FumoTHC() {
                       </td>
                     </tr>
                   ) : (
-                    yearlyStats.map((stat: any, index: number) => (
+                    yearlyStats.map((stat, index) => (
                       <tr
                         key={stat.anno}
                         className={`border-t ${index % 2 === 0 ? 'bg-background' : 'bg-muted/20'}`}
