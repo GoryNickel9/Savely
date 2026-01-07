@@ -17,6 +17,7 @@ export interface UserPermissions {
   admin: boolean;
   poker: boolean;
   fumo: boolean;
+  statistics_deep_dive: boolean;
 }
 
 export interface Category {

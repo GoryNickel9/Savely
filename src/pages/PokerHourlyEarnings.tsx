@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Trash2, Plus, Edit, Save, X, ArrowLeft } from 'lucide-react';
-import { calculateMedian } from '@/lib/utils';
+import { calculateMedian } from '@/lib/statistics';
 
 interface HourlyEarning {
   id: string;

@@ -11,8 +11,8 @@ import { CURRENCY_SYMBOLS } from '@/lib/types';
 import { Plus, Edit2, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { getMedianMonthlySpending } from '@/lib/utils';
-import { MEDIAN_CALCULATION_MONTHS } from '@/lib/constants';
+import { getMedianMonthlySpending, getGlobalMedianMonthlySpending } from '@/lib/utils';
+import { MEDIAN_CALCULATION_DAYS } from '@/lib/constants';
 
 export default function Budget() {
   const { budgets, createBudget, updateBudget, deleteBudget } = useBudgets();
@@ -32,7 +32,7 @@ export default function Budget() {
   const { startDate, endDate } = useMemo(() => {
     const end = new Date();
     const start = new Date();
-    start.setMonth(start.getMonth() - 24);
+    start.setDate(start.getDate() - 730);
     return { startDate: start, endDate: end };
   }, []);
 
@@ -42,7 +42,7 @@ export default function Budget() {
       return getMedianMonthlySpending({
         transactions,
         categoryId: catId,
-        months: MEDIAN_CALCULATION_MONTHS
+        days: MEDIAN_CALCULATION_DAYS
       });
     };
   }, [transactions]);
@@ -59,11 +59,11 @@ export default function Budget() {
   // Calculate totals
   const totals = useMemo(() => {
     const totalExpected = budgets.reduce((sum, b) => sum + Number(b.amount), 0);
-    // Calculate total actual spending from categories WITH budget only
-    const totalActual = budgets.reduce((sum, b) => sum + getMedianSpending(b.category_id), 0);
+    // Calculate global median monthly spending (all categories together)
+    const totalActual = getGlobalMedianMonthlySpending(transactions, MEDIAN_CALCULATION_DAYS);
     const difference = totalActual - totalExpected;
     return { totalExpected, totalActual, difference };
-  }, [budgets, getMedianSpending]);
+  }, [budgets, transactions]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -117,7 +117,7 @@ export default function Budget() {
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
             <h1 className="text-3xl font-display font-bold">Budget</h1>
-            <p className="text-muted-foreground">Mediana mensile ({periodLabel})</p>
+            <p className="text-muted-foreground">Mediana mensile (ultimi 730 giorni)</p>
           </div>
           <div className="flex gap-2">
             {/* Create Budget Dialog */}
@@ -142,7 +142,7 @@ export default function Budget() {
         {budgets.length > 0 && (
           <div className="grid gap-4 md:grid-cols-3">
             <div className="glass rounded-xl p-6">
-              <p className="text-sm text-muted-foreground mb-1">Spesa mediana mensile prevista</p>
+              <p className="text-sm text-muted-foreground mb-1">Spesa mensile prevista</p>
               <p className="text-2xl font-bold">{CURRENCY_SYMBOLS.EUR}{totals.totalExpected.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
             </div>
             <div className="glass rounded-xl p-6">

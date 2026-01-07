@@ -11,8 +11,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { useToast } from '@/hooks/use-toast';
 import { CURRENCY_SYMBOLS } from '@/lib/types';
 import MainLayout from '@/components/layout/MainLayout';
-import { getMedianMonthlySpending } from '@/lib/utils';
-import { MEDIAN_CALCULATION_MONTHS } from '@/lib/constants';
+import { getGlobalMedianMonthlySpending } from '@/lib/utils';
+import { MEDIAN_CALCULATION_DAYS } from '@/lib/constants';
 
 export default function PokerNextCut() {
   const { budgets } = useBudgets();
@@ -36,23 +36,12 @@ export default function PokerNextCut() {
   const [editingExpense, setEditingExpense] = useState<{ id: string; name: string; amount: number } | null>(null);
   const [editingExpenseAmount, setEditingExpenseAmount] = useState('');
 
-  // Get median monthly spending for a category over the last 24 months
-  const getMedianSpending = useMemo(() => {
-    return (catId: string) => {
-      return getMedianMonthlySpending({
-        transactions,
-        categoryId: catId,
-        months: MEDIAN_CALCULATION_MONTHS
-      });
-    };
-  }, [transactions]);
-
-  // Spesa mensile calcolata (dal Budget, basata su budget e transazioni ultimi 24 mesi)
+  // Spesa mensile calcolata (dal Budget, basata su transazioni ultimi 730 giorni)
   // Questo valore è calcolato automaticamente e non modificabile dall'utente
   const budgetMonthlySpending = useMemo(() => {
-    // Calculate total actual spending from categories WITH budget only
-    return budgets.reduce((sum, b) => sum + getMedianSpending(b.category_id), 0);
-  }, [budgets, getMedianSpending]);
+    // Calculate global median monthly spending (all categories together)
+    return getGlobalMedianMonthlySpending(transactions, MEDIAN_CALCULATION_DAYS);
+  }, [transactions]);
 
   // Calculate manual monthly spending
   const manualMonthlySpending = useMemo(() => {
@@ -252,7 +241,7 @@ export default function PokerNextCut() {
                 <p className="text-2xl font-bold text-white">
                   {CURRENCY_SYMBOLS.EUR}{budgetMonthlySpending.toFixed(2)}
                 </p>
-                <p className="text-xs text-slate-500 mt-2">Calcolato automaticamente dagli ultimi 24 mesi di transazioni</p>
+                <p className="text-xs text-slate-500 mt-2">Calcolato automaticamente dagli ultimi 730 giorni di transazioni</p>
               </div>
 
               {/* Manual expenses list */}

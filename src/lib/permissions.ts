@@ -22,6 +22,7 @@ export async function getUserPermissions(userId: string): Promise<UserPermission
       admin: permissions.admin || false,
       poker: permissions.poker || false,
       fumo: permissions.fumo || false,
+      statistics_deep_dive: permissions.statistics_deep_dive || false,
     };
   } catch (error) {
     console.error('Errore nel recupero dei permessi:', error);
@@ -37,6 +38,7 @@ export function getDefaultPermissions(): UserPermissions {
     admin: false,
     poker: false,
     fumo: false,
+    statistics_deep_dive: false,
   };
 }
 
