@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
@@ -18,6 +18,11 @@ const VALID_TABLES = [
   'price_update_logs',
   'poker_manual_expenses',
   'poker_next_cut',
+  'poker_hourly_earnings',
+  'poker_rakeback',
+  'cbd',
+  'liquido_sigaretta',
+  'thc',
 ] as const;
 
 interface UseSupabaseDataOptions {
@@ -41,22 +46,37 @@ export function useSupabaseData<T extends Record<string, any>>(
   const { toast } = useToast();
   const [data, setData] = useState<T[]>([]);
   const [loading, setLoading] = useState(true);
+  const isLoadingRef = useRef(false);
+  const hasLoadedRef = useRef(false);
 
   const loadData = useCallback(async () => {
-    if (!user?.id) return;
+    // Evita chiamate multiple concorrenti
+    if (isLoadingRef.current) {
+      console.log(`[useSupabaseData] Caricamento già in corso per ${tableName}, skip`);
+      return;
+    }
+    
+    if (!user?.id) {
+      console.log(`[useSupabaseData] Nessun user ID per ${tableName}, skip`);
+      return;
+    }
     
     // Valida il nome della tabella
     if (!VALID_TABLES.includes(tableName as any)) {
-      console.error(`Tabella non valida: ${tableName}`);
+      console.error(`[useSupabaseData] Tabella non valida: ${tableName}`);
       toast({
         title: 'Errore',
         description: 'Tabella non valida',
         variant: 'destructive',
       });
+      setLoading(false);
       return;
     }
     
+    console.log(`[useSupabaseData] Inizio caricamento da ${tableName}`);
+    isLoadingRef.current = true;
     setLoading(true);
+    
     try {
       let query = supabase
         .from(tableName as any)
@@ -73,25 +93,35 @@ export function useSupabaseData<T extends Record<string, any>>(
         });
       }
       
+      console.log(`[useSupabaseData] Esecuzione query su ${tableName}`);
       const { data: result, error } = await query;
       
-      if (error) throw error;
+      if (error) {
+        console.error(`[useSupabaseData] Errore query ${tableName}:`, error);
+        throw error;
+      }
       
+      console.log(`[useSupabaseData] Dati caricati da ${tableName}:`, result?.length || 0, 'record');
       setData((result as unknown as T[]) || []);
+      hasLoadedRef.current = true;
     } catch (error) {
-      console.error(`Errore nel caricamento dei dati da ${tableName}:`, error);
+      console.error(`[useSupabaseData] Errore nel caricamento dei dati da ${tableName}:`, error);
       toast({
         title: 'Errore',
         description: 'Impossibile caricare i dati',
         variant: 'destructive',
       });
     } finally {
+      console.log(`[useSupabaseData] Fine caricamento da ${tableName}, loading set a false`);
+      isLoadingRef.current = false;
       setLoading(false);
     }
-  }, [user?.id, tableName, orderBy, ascending, filter, toast]);
+  }, [user?.id, tableName, orderBy, ascending, filter]); // Rimuovo toast dalle dipendenze
 
   useEffect(() => {
-    loadData();
+    if (!hasLoadedRef.current) {
+      loadData();
+    }
   }, [loadData]);
 
   return { data, loading, reload: loadData };

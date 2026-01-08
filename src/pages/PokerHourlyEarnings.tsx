@@ -1,6 +1,6 @@
 import MainLayout from '@/components/layout/MainLayout';
 import { useAuth } from '@/hooks/useAuth';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
@@ -85,25 +85,27 @@ export default function PokerHourlyEarnings() {
   }, [user?.id]);
 
   // Usa useYearlyData per raggruppare i dati per anno
+  const additionalFields = useMemo(() => ({
+    totalHours: (group: HourlyEarning[]) => group.reduce((sum, e) => sum + e.hours_played, 0),
+    totalProfitLoss: (group: HourlyEarning[]) => group.reduce((sum, e) => sum + e.profit_loss, 0),
+    totalNetWonEv: (group: HourlyEarning[]) => group.reduce((sum, e) => sum + e.net_won_ev, 0),
+  }), []);
+  
   const yearlyDataRaw = useYearlyData({
     items: earnings,
     getDate: (item) => item.date,
     getValue: (item) => item.hours_played,
-    additionalFields: {
-      totalHours: (group) => group.reduce((sum, e) => sum + e.hours_played, 0),
-      totalProfitLoss: (group) => group.reduce((sum, e) => sum + e.profit_loss, 0),
-      totalNetWonEv: (group) => group.reduce((sum, e) => sum + e.net_won_ev, 0),
-    }
+    additionalFields
   });
   
   // Calcola i campi derivati per ogni anno
-  const yearlyData: YearlyData[] = yearlyDataRaw.map(stat => {
+  const yearlyData: YearlyData[] = yearlyDataRaw.map((stat): YearlyData => {
     const yearEarnings = earnings.filter(e => new Date(e.date).getFullYear().toString() === stat.year);
     const hoursArray = yearEarnings.map(e => e.hours_played);
     const medianHours = calculateMedian(hoursArray);
-    const totalHours = stat.totalHours || 0;
-    const totalProfitLoss = stat.totalProfitLoss || 0;
-    const totalNetWonEv = stat.totalNetWonEv || 0;
+    const totalHours = (stat.totalHours as number) || 0;
+    const totalProfitLoss = (stat.totalProfitLoss as number) || 0;
+    const totalNetWonEv = (stat.totalNetWonEv as number) || 0;
     
     return {
       year: stat.year,

@@ -109,5 +109,11 @@ export function usePokerNextCut() {
     },
   });
 
-  return { nextCut, loading: isLoading, updateDeal, updateProfitLoss, updateAmount };
+  return {
+    nextCut,
+    loading: isLoading,
+    updateDeal: updateDeal.mutateAsync,
+    updateProfitLoss: updateProfitLoss.mutateAsync,
+    updateAmount: updateAmount.mutateAsync
+  };
 }

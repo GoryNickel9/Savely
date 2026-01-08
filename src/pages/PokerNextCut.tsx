@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { ArrowLeft, RefreshCw, Edit2, Check, X, Plus, Trash2 } from 'lucide-react';
 import { useBudgets } from '@/hooks/useBudgets';
 import { useTransactions } from '@/hooks/useTransactions';
@@ -17,7 +17,7 @@ import { MEDIAN_CALCULATION_DAYS } from '@/lib/constants';
 export default function PokerNextCut() {
   const { budgets } = useBudgets();
   const { transactions } = useTransactions();
-  const { expenses: manualExpenses, addExpense, updateExpense, deleteExpense } = usePokerManualExpenses();
+  const { expenses: manualExpenses, addExpense: addExpenseMutation, updateExpense: updateExpenseMutation, deleteExpense: deleteExpenseMutation } = usePokerManualExpenses();
   const { nextCut, loading: nextCutLoading, updateDeal, updateProfitLoss, updateAmount } = usePokerNextCut();
   const { toast } = useToast();
   
@@ -52,7 +52,7 @@ export default function PokerNextCut() {
   const totalMonthlySpending = budgetMonthlySpending + manualMonthlySpending;
 
   // Update nextCut.amount in database when totalMonthlySpending changes
-  useMemo(() => {
+  useEffect(() => {
     if (nextCut && nextCut.amount !== totalMonthlySpending) {
       updateAmount(totalMonthlySpending);
     }
@@ -112,7 +112,7 @@ export default function PokerNextCut() {
     if (!newExpenseName || !newExpenseAmount) return;
     
     try {
-      await addExpense(newExpenseName, parseFloat(newExpenseAmount));
+      await addExpenseMutation.mutateAsync({ name: newExpenseName, amount: parseFloat(newExpenseAmount) });
       toast({ title: 'Spesa aggiunta!' });
       setCreateOpen(false);
       setNewExpenseName('');
@@ -132,7 +132,7 @@ export default function PokerNextCut() {
     if (!editingExpense || !editingExpenseAmount) return;
     
     try {
-      await updateExpense(editingExpense.id, parseFloat(editingExpenseAmount));
+      await updateExpenseMutation.mutateAsync({ id: editingExpense.id, amount: parseFloat(editingExpenseAmount) });
       toast({ title: 'Spesa aggiornata!' });
       setEditOpen(false);
       setEditingExpense(null);
@@ -149,7 +149,7 @@ export default function PokerNextCut() {
   // Delete manual expense
   const handleDeleteExpense = async (id: string) => {
     try {
-      await deleteExpense(id);
+      await deleteExpenseMutation.mutateAsync(id);
       toast({ title: 'Spesa eliminata!' });
     } catch (error) {
       toast({

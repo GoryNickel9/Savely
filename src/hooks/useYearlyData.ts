@@ -9,7 +9,7 @@ interface YearlyData<T> {
   year: string;
   total: number;
   data: T[];
-  [key: string]: number | string | T[]; // Per campi aggiuntivi dinamici
+  [key: string]: number | string | T[] | undefined; // Per campi aggiuntivi dinamici
 }
 
 interface UseYearlyDataOptions<T> {
@@ -39,7 +39,7 @@ interface UseYearlyDataOptions<T> {
  * });
  * ```
  */
-export function useYearlyData<T extends Record<string, unknown>>(
+export function useYearlyData<T>(
   options: UseYearlyDataOptions<T>
 ): YearlyData<T>[] {
   const { items, getDate, getValue, additionalFields = {} } = options;

@@ -1,7 +1,7 @@
 import MainLayout from '@/components/layout/MainLayout';
 import { useAuth } from '@/hooks/useAuth';
 import { usePermissions } from '@/hooks/usePermissions';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
@@ -101,13 +101,15 @@ export default function FumoLiquidoSigaretta() {
   };
 
   // Raggruppa i dati per anno (solo record completati)
+  const additionalFields = useMemo(() => ({
+    millilitriTotali: (group: LiquidoRecord[]) => group.reduce((sum, r) => sum + r.millilitri, 0)
+  }), []);
+  
   const yearlyData = useYearlyData({
     items: records.filter(record => record.data_finito),
     getDate: (record) => record.data_arrivo,
     getValue: (record) => record.costo,
-    additionalFields: {
-      millilitriTotali: (group) => group.reduce((sum, r) => sum + r.millilitri, 0)
-    }
+    additionalFields
   }).map(stat => {
     const recordsDellanno = records.filter(r =>
       r.data_finito && new Date(r.data_arrivo).getFullYear() === parseInt(stat.year)
@@ -118,8 +120,8 @@ export default function FumoLiquidoSigaretta() {
     return {
       anno: parseInt(stat.year),
       costoTotale: stat.total,
-      millilitriTotali: stat.millilitriTotali,
-      millilitriMediaGiornalieri: totalGiorni > 0 ? stat.millilitriTotali / totalGiorni : 0,
+      millilitriTotali: (stat.millilitriTotali as number),
+      millilitriMediaGiornalieri: totalGiorni > 0 ? (stat.millilitriTotali as number) / totalGiorni : 0,
       costoMensile: stat.total / 12
     };
   });

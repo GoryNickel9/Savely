@@ -1,6 +1,6 @@
 import MainLayout from '@/components/layout/MainLayout';
 import { useAuth } from '@/hooks/useAuth';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
@@ -62,18 +62,20 @@ export default function PokerRakeback() {
     : 0;
 
   // Raggruppa i dati per anno
+  const additionalFields = useMemo(() => ({
+    totalRakeback: (group: RakebackEntry[]) => group.reduce((sum, e) => sum + e.rakeback_received, 0)
+  }), []);
+  
   const yearlyData = useYearlyData({
     items: entries,
     getDate: (entry) => entry.date,
     getValue: (entry) => entry.rake_generated,
-    additionalFields: {
-      totalRakeback: (group) => group.reduce((sum, e) => sum + e.rakeback_received, 0)
-    }
+    additionalFields
   }).map(stat => ({
     year: stat.year,
     totalRake: stat.total,
-    totalRakeback: stat.totalRakeback,
-    averagePercentage: stat.total > 0 ? (stat.totalRakeback / stat.total) * 100 : 0
+    totalRakeback: stat.totalRakeback as number,
+    averagePercentage: stat.total > 0 ? ((stat.totalRakeback as number) / stat.total) * 100 : 0
   }));
 
   // Aggiungi entry rakeback

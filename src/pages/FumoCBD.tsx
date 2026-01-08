@@ -1,7 +1,7 @@
 import MainLayout from '@/components/layout/MainLayout';
 import { useAuth } from '@/hooks/useAuth';
 import { usePermissions } from '@/hooks/usePermissions';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
@@ -96,6 +96,25 @@ export default function FumoCBD() {
   const [editDataArrivo, setEditDataArrivo] = useState('');
   const [editDataFinito, setEditDataFinito] = useState('');
   const { open: editOpen, editingItem, openEdit, close: closeEdit } = useDialogManager<CBDEntry>();
+  
+  // Prepara additionalFields per useYearlyData (fuori dal JSX per evitare loop infinito)
+  const additionalFields = useMemo(() => ({
+    grammiTotali: (group: CBDEntry[]) => group.reduce((sum, e) => sum + (e.grammi || 0), 0)
+  }), []);
+  
+  // Calcola yearlyStats fuori dal JSX
+  const yearlyStats = useYearlyData({
+    items: entries,
+    getDate: (entry) => entry.data_acquisto,
+    getValue: (entry) => Number(entry.costo),
+    additionalFields
+  }).map(stat => ({
+    anno: parseInt(stat.year),
+    costoTotale: stat.total,
+    grammiTotali: (stat.grammiTotali as number),
+    costoAlGrammo: (stat.grammiTotali as number) > 0 ? stat.total / (stat.grammiTotali as number) : 0,
+    costoMensile: stat.total / 12
+  }));
 
   const addNewRecord = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -456,51 +475,34 @@ export default function FumoCBD() {
                 </tr>
               </thead>
               <tbody>
-                {(() => {
-                  const yearlyStats = useYearlyData({
-                    items: entries,
-                    getDate: (entry) => entry.data_acquisto,
-                    getValue: (entry) => Number(entry.costo),
-                    additionalFields: {
-                      grammiTotali: (group) => group.reduce((sum, e) => sum + (e.grammi || 0), 0)
-                    }
-                  }).map(stat => ({
-                    anno: parseInt(stat.year),
-                    costoTotale: stat.total,
-                    grammiTotali: stat.grammiTotali,
-                    costoAlGrammo: stat.grammiTotali > 0 ? stat.total / stat.grammiTotali : 0,
-                    costoMensile: stat.total / 12
-                  }));
-
-                  return yearlyStats.length === 0 ? (
-                    <tr>
-                      <td colSpan={5} className="text-center py-12 text-muted-foreground">
-                        Nessun dato annuale disponibile
+                {yearlyStats.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="text-center py-12 text-muted-foreground">
+                      Nessun dato annuale disponibile
+                    </td>
+                  </tr>
+                ) : (
+                  yearlyStats.map((stat, index) => (
+                    <tr
+                      key={stat.anno}
+                      className={`border-t ${index % 2 === 0 ? 'bg-background' : 'bg-muted/20'}`}
+                    >
+                      <td className="py-3 px-4 font-medium">{stat.anno}</td>
+                      <td className="text-center py-3 px-4">
+                        {CURRENCY_SYMBOLS.EUR}{stat.costoTotale.toFixed(2)}
+                      </td>
+                      <td className="text-center py-3 px-4">
+                        {stat.grammiTotali.toFixed(2)}g
+                      </td>
+                      <td className="text-center py-3 px-4">
+                        {CURRENCY_SYMBOLS.EUR}{stat.costoAlGrammo.toFixed(2)}
+                      </td>
+                      <td className="text-center py-3 px-4">
+                        {CURRENCY_SYMBOLS.EUR}{stat.costoMensile.toFixed(2)}
                       </td>
                     </tr>
-                  ) : (
-                    yearlyStats.map((stat, index) => (
-                      <tr
-                        key={stat.anno}
-                        className={`border-t ${index % 2 === 0 ? 'bg-background' : 'bg-muted/20'}`}
-                      >
-                        <td className="py-3 px-4 font-medium">{stat.anno}</td>
-                        <td className="text-center py-3 px-4">
-                          {CURRENCY_SYMBOLS.EUR}{stat.costoTotale.toFixed(2)}
-                        </td>
-                        <td className="text-center py-3 px-4">
-                          {stat.grammiTotali.toFixed(2)}g
-                        </td>
-                        <td className="text-center py-3 px-4">
-                          {CURRENCY_SYMBOLS.EUR}{stat.costoAlGrammo.toFixed(2)}
-                        </td>
-                        <td className="text-center py-3 px-4">
-                          {CURRENCY_SYMBOLS.EUR}{stat.costoMensile.toFixed(2)}
-                        </td>
-                      </tr>
-                    ))
-                  );
-                })()}
+                  ))
+                )}
               </tbody>
             </table>
             </div>
