@@ -4,11 +4,12 @@ import { useCategories } from '@/hooks/useCategories';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { LogOut, User, Download, Upload, FileSpreadsheet, Trash2, Settings2, Edit2, FolderPlus, Folder, FolderPen } from 'lucide-react';
+import { LogOut, User, Download, Upload, FileSpreadsheet, Trash2, Settings2, Edit2, FolderPlus, Folder, FolderPen, Check, X } from 'lucide-react';
 import { useState, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
+import { passwordSchema, confirmPasswordSchema, checkPasswordRequirements, passwordRequirementsList } from '@/lib/passwordValidation';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -348,11 +349,15 @@ export default function Settings() {
       
       // Update password if provided
       if (newPassword) {
+        // Validate password using the new schema
+        try {
+          passwordSchema.parse(newPassword);
+        } catch (error: any) {
+          throw new Error(error.errors?.[0]?.message || 'La password non soddisfa i requisiti di sicurezza');
+        }
+        
         if (newPassword !== confirmPassword) {
           throw new Error('Le password non coincidono');
-        }
-        if (newPassword.length < 6) {
-          throw new Error('La password deve avere almeno 6 caratteri');
         }
         if (newPassword === currentPassword) {
           throw new Error('La nuova password non può essere uguale a quella attuale');
@@ -508,6 +513,28 @@ export default function Settings() {
                         value={newPassword}
                         onChange={(e) => setNewPassword(e.target.value)}
                       />
+                      
+                      {/* Password Requirements Indicator */}
+                      {newPassword && (
+                        <div className="mt-3 space-y-2 p-3 bg-muted/50 rounded-lg">
+                          <p className="text-sm font-medium mb-2">Requisiti password:</p>
+                          {passwordRequirementsList.map((req) => {
+                            const isMet = checkPasswordRequirements(newPassword)[req.key];
+                            return (
+                              <div key={req.key} className="flex items-center gap-2 text-sm">
+                                {isMet ? (
+                                  <Check className="w-4 h-4 text-green-500 flex-shrink-0" />
+                                ) : (
+                                  <X className="w-4 h-4 text-red-500 flex-shrink-0" />
+                                )}
+                                <span className={isMet ? 'text-green-600' : 'text-muted-foreground'}>
+                                  {req.label}
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
                     </div>
                     {newPassword && (
                       <div>

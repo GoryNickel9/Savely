@@ -8,12 +8,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, TrendingUp, Shield, PieChart } from 'lucide-react';
+import { Loader2, TrendingUp, Shield, PieChart, Check, X } from 'lucide-react';
 import { z } from 'zod';
+import { passwordSchema, checkPasswordRequirements, passwordRequirementsList } from '@/lib/passwordValidation';
 
 const authSchema = z.object({
   email: z.string().email('Email non valida'),
-  password: z.string().min(6, 'La password deve essere di almeno 6 caratteri'),
+  password: passwordSchema,
   fullName: z.string().optional(),
 });
 
@@ -286,6 +287,28 @@ export default function Auth() {
                       className={errors.password ? 'border-destructive' : ''}
                     />
                     {errors.password && <p className="text-sm text-destructive">{errors.password}</p>}
+                    
+                    {/* Password Requirements Indicator */}
+                    {password && (
+                      <div className="mt-3 space-y-2 p-3 bg-muted/50 rounded-lg">
+                        <p className="text-sm font-medium mb-2">Requisiti password:</p>
+                        {passwordRequirementsList.map((req) => {
+                          const isMet = checkPasswordRequirements(password)[req.key];
+                          return (
+                            <div key={req.key} className="flex items-center gap-2 text-sm">
+                              {isMet ? (
+                                <Check className="w-4 h-4 text-green-500 flex-shrink-0" />
+                              ) : (
+                                <X className="w-4 h-4 text-red-500 flex-shrink-0" />
+                              )}
+                              <span className={isMet ? 'text-green-600' : 'text-muted-foreground'}>
+                                {req.label}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
                   <Button type="submit" className="w-full" disabled={loading}>
                     {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

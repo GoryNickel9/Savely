@@ -6,16 +6,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Lock } from 'lucide-react';
+import { Loader2, Lock, Check, X } from 'lucide-react';
 import { z } from 'zod';
-
-const passwordSchema = z.object({
-  password: z.string().min(6, 'La password deve essere di almeno 6 caratteri'),
-  confirmPassword: z.string(),
-}).refine(data => data.password === data.confirmPassword, {
-  message: 'Le password non corrispondono',
-  path: ['confirmPassword'],
-});
+import { confirmPasswordSchema, checkPasswordRequirements, passwordRequirementsList } from '@/lib/passwordValidation';
 
 export default function ResetPassword() {
   const [password, setPassword] = useState('');
@@ -49,7 +42,7 @@ export default function ResetPassword() {
     e.preventDefault();
 
     try {
-      passwordSchema.parse({ password, confirmPassword });
+      confirmPasswordSchema.parse({ password, confirmPassword });
       setErrors({});
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -125,6 +118,28 @@ export default function ResetPassword() {
                 className={errors.password ? 'border-destructive' : ''}
               />
               {errors.password && <p className="text-sm text-destructive">{errors.password}</p>}
+              
+              {/* Password Requirements Indicator */}
+              {password && (
+                <div className="mt-3 space-y-2 p-3 bg-muted/50 rounded-lg">
+                  <p className="text-sm font-medium mb-2">Requisiti password:</p>
+                  {passwordRequirementsList.map((req) => {
+                    const isMet = checkPasswordRequirements(password)[req.key];
+                    return (
+                      <div key={req.key} className="flex items-center gap-2 text-sm">
+                        {isMet ? (
+                          <Check className="w-4 h-4 text-green-500 flex-shrink-0" />
+                        ) : (
+                          <X className="w-4 h-4 text-red-500 flex-shrink-0" />
+                        )}
+                        <span className={isMet ? 'text-green-600' : 'text-muted-foreground'}>
+                          {req.label}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="confirmPassword">Conferma Password</Label>
