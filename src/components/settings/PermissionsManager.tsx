@@ -4,14 +4,14 @@ import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Shield, User as UserIcon, RefreshCw } from 'lucide-react';
-import { UserPermissions } from '@/lib/types';
+import { Permissions } from '@/lib/types';
 import { updateUserPermissions, getAllUsersWithPermissions } from '@/lib/permissions';
 
 interface UserProfile {
   id: string;
   user_id: string;
   full_name: string | null;
-  permissions: Record<string, boolean>;
+  permissions: Permissions;
 }
 
 interface PermissionsManagerProps {
@@ -27,7 +27,7 @@ export default function PermissionsManager({ currentUserId }: PermissionsManager
   const loadUsers = async () => {
     setLoading(true);
     try {
-      const { data, error } = await getAllUsersWithPermissions();
+      const { data, error } = await getAllUsersWithPermissions(currentUserId);
       if (error) throw error;
       setUsers(data || []);
     } catch (error) {
@@ -48,7 +48,7 @@ export default function PermissionsManager({ currentUserId }: PermissionsManager
 
   const handlePermissionToggle = async (
     userId: string,
-    permission: keyof UserPermissions,
+    permission: keyof Permissions,
     currentValue: boolean
   ) => {
     setUpdating(userId);
@@ -78,7 +78,7 @@ export default function PermissionsManager({ currentUserId }: PermissionsManager
     }
   };
 
-  const permissionLabels: { [K in keyof UserPermissions]?: string } = {
+  const permissionLabels: { [K in keyof Permissions]?: string } = {
     poker: 'Poker',
     fumo: 'Fumo',
   };
@@ -125,7 +125,7 @@ export default function PermissionsManager({ currentUserId }: PermissionsManager
             </div>
 
             <div className="grid grid-cols-2 gap-3 pt-3 border-t border-border">
-              {(Object.keys(permissionLabels) as Array<keyof UserPermissions>).filter(key => permissionLabels[key]).map((permission) => (
+              {(Object.keys(permissionLabels) as Array<keyof Permissions>).filter(key => permissionLabels[key]).map((permission) => (
                 <div key={permission} className="flex items-center justify-between">
                   <span className="text-sm text-muted-foreground">{permissionLabels[permission]}</span>
                   <Switch

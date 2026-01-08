@@ -31,7 +31,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { Switch } from '@/components/ui/switch';
-import { CURRENCY_SYMBOLS } from '@/lib/types';
+import { CURRENCY_SYMBOLS } from '@/lib/constants';
 import { Plus, Edit2, Trash2, RefreshCw, Calendar } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 

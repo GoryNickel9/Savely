@@ -7,7 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { CURRENCY_SYMBOLS, ASSET_TYPE_LABELS, AssetType, PortfolioAsset } from '@/lib/types';
+import { ASSET_TYPE_LABELS, CURRENCY_SYMBOLS } from '@/lib/constants';
+import { AssetType, PortfolioAsset } from '@/lib/types';
 import { Plus, Trash2, Clock, X } from 'lucide-react';
 import { useState, useMemo } from 'react';
 import { useToast } from '@/hooks/use-toast';
@@ -293,7 +294,7 @@ export default function Portfolio() {
                   <div><Label>Tipo</Label>
                     <Select value={type} onValueChange={v => setType(v as AssetType)}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>{Object.entries(ASSET_TYPE_LABELS).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}</SelectContent>
+                      <SelectContent>{Object.entries(ASSET_TYPE_LABELS).map(([k, v]) => <SelectItem key={k} value={k as AssetType}>{v}</SelectItem>)}</SelectContent>
                     </Select>
                   </div>
                   {type !== 'cash' && (

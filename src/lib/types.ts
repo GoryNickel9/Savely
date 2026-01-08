@@ -2,17 +2,35 @@ export type CurrencyCode = 'EUR' | 'USD' | 'GBP' | 'CHF' | 'JPY' | 'CAD' | 'AUD'
 export type TransactionType = 'income' | 'expense';
 export type AssetType = 'stock' | 'etf' | 'crypto' | 'bond' | 'cash' | 'real_estate';
 
+/**
+ * Chiavi dei permessi utente
+ */
+export type PermissionKey = 'admin' | 'poker' | 'fumo' | 'statistics_deep_dive';
+
+/**
+ * Struttura dei permessi utente
+ */
+export interface Permissions {
+  admin: boolean;
+  poker: boolean;
+  fumo: boolean;
+  statistics_deep_dive: boolean;
+}
+
 export interface Profile {
   id: string;
   user_id: string;
   full_name: string | null;
   avatar_url: string | null;
   default_currency: CurrencyCode;
-  permissions: Record<string, boolean>;
+  permissions: Permissions;
   created_at: string;
   updated_at: string;
 }
 
+/**
+ * @deprecated Usare Permissions invece
+ */
 export interface UserPermissions {
   admin: boolean;
   poker: boolean;
@@ -88,26 +106,6 @@ export interface SavingsGoal {
   created_at: string;
   updated_at: string;
 }
-
-export const CURRENCY_SYMBOLS: Record<CurrencyCode, string> = {
-  EUR: '€',
-  USD: '$',
-  GBP: '£',
-  CHF: 'CHF',
-  JPY: '¥',
-  CAD: 'C$',
-  AUD: 'A$',
-  CNY: '¥',
-};
-
-export const ASSET_TYPE_LABELS: Record<AssetType, string> = {
-  stock: 'Azioni',
-  etf: 'ETF',
-  crypto: 'Crypto',
-  bond: 'Obbligazioni',
-  cash: 'Liquidità',
-  real_estate: 'Immobili',
-};
 
 export interface PokerMonthlyExpense {
   id: string;

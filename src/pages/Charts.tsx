@@ -1,7 +1,7 @@
 import MainLayout from '@/components/layout/MainLayout';
 import { useTransactions } from '@/hooks/useTransactions';
 import { useState, useMemo } from 'react';
-import { CURRENCY_SYMBOLS } from '@/lib/types';
+import { CURRENCY_SYMBOLS } from '@/lib/constants';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';

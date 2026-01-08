@@ -1,10 +1,24 @@
 import { supabase } from '@/integrations/supabase/client';
-import { UserPermissions } from './types';
+import { Permissions, UserPermissions } from './types';
+
+/**
+ * Cache per i permessi utente
+ */
+const permissionsCache = new Map<string, { data: Permissions; timestamp: number }>();
+const CACHE_TTL = 5 * 60 * 1000; // 5 minuti
 
 /**
  * Recupera i permessi di un utente dal database
+ * @param userId ID dell'utente
+ * @returns Permessi dell'utente
  */
-export async function getUserPermissions(userId: string): Promise<UserPermissions> {
+export async function getUserPermissions(userId: string): Promise<Permissions> {
+  // Verifica cache
+  const cached = permissionsCache.get(userId);
+  if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+    return cached.data;
+  }
+
   try {
     const { data, error } = await supabase
       .from('profiles')
@@ -14,26 +28,51 @@ export async function getUserPermissions(userId: string): Promise<UserPermission
 
     if (error || !data) {
       // Se non ci sono permessi, restituisci i permessi di default
-      return getDefaultPermissions();
+      const defaultPermissions = getDefaultPermissions();
+      permissionsCache.set(userId, { data: defaultPermissions, timestamp: Date.now() });
+      return defaultPermissions;
     }
 
-    const permissions = (data as any).permissions || {};
-    return {
-      admin: permissions.admin || false,
-      poker: permissions.poker || false,
-      fumo: permissions.fumo || false,
-      statistics_deep_dive: permissions.statistics_deep_dive || false,
+    const dbPermissions = (data as any).permissions as Permissions | null;
+    const permissions: Permissions = {
+      admin: dbPermissions?.admin || false,
+      poker: dbPermissions?.poker || false,
+      fumo: dbPermissions?.fumo || false,
+      statistics_deep_dive: dbPermissions?.statistics_deep_dive || false,
     };
+
+    // Salva in cache
+    permissionsCache.set(userId, { data: permissions, timestamp: Date.now() });
+    
+    return permissions;
   } catch (error) {
     console.error('Errore nel recupero dei permessi:', error);
-    return getDefaultPermissions();
+    const defaultPermissions = getDefaultPermissions();
+    permissionsCache.set(userId, { data: defaultPermissions, timestamp: Date.now() });
+    return defaultPermissions;
   }
 }
 
 /**
- * Restituisce i permessi di default per un nuovo utente
+ * Pulisce la cache dei permessi per un utente specifico
+ * @param userId ID dell'utente
  */
-export function getDefaultPermissions(): UserPermissions {
+export function clearPermissionsCache(userId: string): void {
+  permissionsCache.delete(userId);
+}
+
+/**
+ * Pulisce tutta la cache dei permessi
+ */
+export function clearAllPermissionsCache(): void {
+  permissionsCache.clear();
+}
+
+/**
+ * Restituisce i permessi di default per un nuovo utente
+ * @returns Permessi di default
+ */
+export function getDefaultPermissions(): Permissions {
   return {
     admin: false,
     poker: false,
@@ -44,10 +83,13 @@ export function getDefaultPermissions(): UserPermissions {
 
 /**
  * Aggiorna i permessi di un utente
+ * @param userId ID dell'utente
+ * @param permissions Permessi da aggiornare (parziali)
+ * @returns Oggetto con eventuale errore
  */
 export async function updateUserPermissions(
   userId: string,
-  permissions: Partial<UserPermissions>
+  permissions: Partial<Permissions>
 ): Promise<{ error: Error | null }> {
   try {
     // Prima recupera i permessi attuali
@@ -62,8 +104,8 @@ export async function updateUserPermissions(
     }
 
     // Unisci i permessi esistenti con quelli nuovi
-    const currentPermissions = (currentData as any)?.permissions || {};
-    const updatedPermissions = {
+    const currentPermissions = ((currentData as any)?.permissions as Permissions) || getDefaultPermissions();
+    const updatedPermissions: Permissions = {
       ...currentPermissions,
       ...permissions,
     };
@@ -74,6 +116,11 @@ export async function updateUserPermissions(
       .update({ permissions: updatedPermissions } as any)
       .eq('user_id', userId);
 
+    // Pulisci la cache per questo utente
+    if (!error) {
+      clearPermissionsCache(userId);
+    }
+
     return { error: error as Error | null };
   } catch (error) {
     return { error: error as Error };
@@ -82,26 +129,42 @@ export async function updateUserPermissions(
 
 /**
  * Verifica se un utente ha un permesso specifico
+ * @param permissions Permessi dell'utente
+ * @param permission Chiave del permesso da verificare
+ * @returns true se l'utente ha il permesso
  */
 export function hasPermission(
-  permissions: UserPermissions,
-  permission: keyof UserPermissions
+  permissions: Permissions,
+  permission: keyof Permissions
 ): boolean {
   return permissions[permission] === true;
 }
 
 /**
  * Verifica se un utente è admin
+ * @param permissions Permessi dell'utente
+ * @returns true se l'utente è admin
  */
-export function isAdmin(permissions: UserPermissions): boolean {
+export function isAdmin(permissions: Permissions): boolean {
   return permissions.admin === true;
 }
 
 /**
  * Recupera tutti gli utenti con i loro permessi (solo per admin)
+ * @param requestUserId ID dell'utente che effettua la richiesta
+ * @returns Oggetto con dati o errore
  */
-export async function getAllUsersWithPermissions() {
+export async function getAllUsersWithPermissions(requestUserId: string) {
   try {
+    // Verifica che l'utente sia admin
+    const permissions = await getUserPermissions(requestUserId);
+    if (!isAdmin(permissions)) {
+      return {
+        data: null,
+        error: new Error('Unauthorized: Admin permissions required')
+      };
+    }
+
     const { data, error } = await supabase
       .from('profiles')
       .select('id, user_id, full_name, permissions')
@@ -116,3 +179,8 @@ export async function getAllUsersWithPermissions() {
     return { data: null, error: error as Error };
   }
 }
+
+/**
+ * @deprecated Usare Permissions invece
+ */
+export type UserPermissionsDeprecated = UserPermissions;

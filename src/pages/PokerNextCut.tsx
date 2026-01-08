@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
-import { CURRENCY_SYMBOLS } from '@/lib/types';
+import { CURRENCY_SYMBOLS } from '@/lib/constants';
 import MainLayout from '@/components/layout/MainLayout';
 import { getGlobalMedianMonthlySpending } from '@/lib/utils';
 import { MEDIAN_CALCULATION_DAYS } from '@/lib/constants';

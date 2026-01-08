@@ -9,13 +9,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { CURRENCY_SYMBOLS } from '@/lib/types';
+import { CURRENCY_SYMBOLS } from '@/lib/constants';
 import { Plus, Trash2, ArrowLeft, Edit2 } from 'lucide-react';
 import { Link, Navigate } from 'react-router-dom';
 import { useSupabaseData } from '@/hooks/useSupabaseData';
 import { useYearlyData } from '@/hooks/useYearlyData';
 import { useDialogManager } from '@/hooks/useDialogManager';
-import { calculateDerivedFields, calculateDerivedFieldsForInsertion } from '@/lib/fumoCalculations';
+import { calculateDerivedFields } from '@/lib/fumoCalculations';
 import { DataTable, Column } from '@/components/ui/data-table';
 
 interface CBDEntry {
@@ -102,10 +102,10 @@ export default function FumoCBD() {
     if (!newCosto || !newDataArrivo) return;
     
     try {
-      const campi = calculateDerivedFieldsForInsertion(
+      const campi = calculateDerivedFields(
         newDataArrivo,
         newDataFinito || null,
-        parseFloat(newGrammi),
+        newGrammi ? parseFloat(newGrammi) : null,
         parseFloat(newCosto)
       );
 
@@ -163,10 +163,10 @@ export default function FumoCBD() {
     if (!editingItem || !editCosto || !editDataArrivo) return;
     
     try {
-      const campi = calculateDerivedFieldsForInsertion(
+      const campi = calculateDerivedFields(
         editDataArrivo,
         editDataFinito || null,
-        parseFloat(editGrammi),
+        editGrammi ? parseFloat(editGrammi) : null,
         parseFloat(editCosto)
       );
 

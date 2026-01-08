@@ -1,7 +1,7 @@
 import { useTransactions } from '@/hooks/useTransactions';
 import { usePortfolio } from '@/hooks/usePortfolio';
 import { useBudgets } from '@/hooks/useBudgets';
-import { CURRENCY_SYMBOLS } from '@/lib/types';
+import { CURRENCY_SYMBOLS } from '@/lib/constants';
 import StatCard from '@/components/dashboard/StatCard';
 import MainLayout from '@/components/layout/MainLayout';
 import { Wallet, TrendingUp, TrendingDown, PieChart } from 'lucide-react';

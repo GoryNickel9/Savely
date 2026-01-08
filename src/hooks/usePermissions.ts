@@ -1,13 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from './useAuth';
-import { getUserPermissions } from '@/lib/permissions';
-import { UserPermissions } from '@/lib/types';
+import { getUserPermissions, clearPermissionsCache } from '@/lib/permissions';
+import { Permissions } from '@/lib/types';
 
 const PERMISSIONS_STORAGE_KEY = 'spendy_permissions';
 
 export function usePermissions() {
   const { user } = useAuth();
-  const [permissions, setPermissions] = useState<UserPermissions | null>(() => {
+  const [permissions, setPermissions] = useState<Permissions | null>(() => {
     // Carica i permessi dal localStorage all'inizializzazione
     if (typeof window !== 'undefined') {
       const stored = localStorage.getItem(PERMISSIONS_STORAGE_KEY);
@@ -47,6 +47,9 @@ export function usePermissions() {
         if (!cancelled) {
           setPermissions(null);
           localStorage.removeItem(PERMISSIONS_STORAGE_KEY);
+          if (user?.id) {
+            clearPermissionsCache(user.id);
+          }
           setLoading(false);
         }
       }
