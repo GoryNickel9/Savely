@@ -17,16 +17,10 @@ const validatePermissions = (data: unknown): data is Permissions => {
   
   // Verifica che almeno un campo di permesso esista
   const hasAnyPermission =
-    'can_view_fumo' in perm ||
-    'can_view_poker' in perm ||
-    'can_view_portfolio' in perm ||
-    'can_view_statistics' in perm ||
-    'can_view_transactions' in perm ||
-    'can_view_categories' in perm ||
-    'can_view_budgets' in perm ||
-    'can_view_savings_goals' in perm ||
-    'can_view_recurring_expenses' in perm ||
-    'can_view_admin' in perm;
+    'admin' in perm ||
+    'poker' in perm ||
+    'fumo' in perm ||
+    'statistics_deep_dive' in perm;
   
   return hasAnyPermission;
 };

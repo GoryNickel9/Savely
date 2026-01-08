@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { RefreshCw } from 'lucide-react';
 import MainLayout from '@/components/layout/MainLayout';
 import { Card, CardContent } from '@/components/ui/card';
@@ -26,6 +26,33 @@ export default function Admin() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [updating, setUpdating] = useState<string | null>(null);
 
+  const loadUsers = useCallback(async () => {
+    if (!user?.id) return;
+    
+    setLoading(true);
+    try {
+      const { data, error } = await getAllUsersWithPermissions(user.id);
+      if (error) throw error;
+      setUsers(data || []);
+    } catch (error) {
+      console.error('Errore nel caricamento degli utenti:', error);
+      toast({
+        title: 'Errore',
+        description: 'Impossibile caricare gli utenti',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, [toast, user?.id]);
+
+  useEffect(() => {
+    // Carica gli utenti solo quando l'utente è autenticato e ha i permessi admin
+    if (user?.id && permissions?.admin) {
+      loadUsers();
+    }
+  }, [loadUsers, user?.id, permissions?.admin]);
+
   if (permissionsLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -42,28 +69,6 @@ export default function Admin() {
   if (!user?.id) {
     return <Navigate to="/auth" replace />;
   }
-
-  const loadUsers = async () => {
-    setLoading(true);
-    try {
-      const { data, error } = await getAllUsersWithPermissions();
-      if (error) throw error;
-      setUsers(data || []);
-    } catch (error) {
-      console.error('Errore nel caricamento degli utenti:', error);
-      toast({
-        title: 'Errore',
-        description: 'Impossibile caricare gli utenti',
-        variant: 'destructive',
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadUsers();
-  }, []);
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
