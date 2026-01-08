@@ -459,19 +459,24 @@ export default function BBVAImportDialog({ open, onOpenChange, userId }: BBVAImp
     const total = allTransactions.length;
     let imported = 0;
 
-    for (const tx of allTransactions) {
-      const { error } = await supabase.from('transactions').insert({
-        user_id: userId,
-        type: tx.isIncome ? 'income' : 'expense',
-        amount: tx.amount,
-        currency: 'EUR',
-        category_id: tx.categoryId,
-        description: tx.editedNota,
-        date: tx.date,
-      });
+    // Use batch insert with chunking (max 1000 records per batch)
+    const BATCH_SIZE = 1000;
+    for (let i = 0; i < allTransactions.length; i += BATCH_SIZE) {
+      const batch = allTransactions.slice(i, i + BATCH_SIZE);
+      const { error } = await supabase.from('transactions').insert(
+        batch.map(tx => ({
+          user_id: userId,
+          type: (tx.isIncome ? 'income' : 'expense') as 'income' | 'expense',
+          amount: tx.amount,
+          currency: 'EUR' as const,
+          category_id: tx.categoryId,
+          description: tx.editedNota,
+          date: tx.date,
+        }))
+      );
 
       if (!error) {
-        imported++;
+        imported += batch.length;
       }
 
       setImportProgress(((imported) / total) * 100);
@@ -489,31 +494,38 @@ export default function BBVAImportDialog({ open, onOpenChange, userId }: BBVAImp
     const total = allTransactions.length;
     let imported = 0;
 
-    // Save new category mappings to database (SHARED across all banks)
-    for (const [keyword, categoryId] of Object.entries(categoryMappings)) {
-      await supabase.from('category_mappings').upsert({
-        user_id: userId,
-        description: keyword,
-        category_id: categoryId,
-        source: 'shared',
-      }, {
-        onConflict: 'user_id,description,source',
-      });
+    // Save new category mappings to database (SHARED across all banks) using batch upsert
+    const mappingEntries = Object.entries(categoryMappings);
+    if (mappingEntries.length > 0) {
+      await supabase.from('category_mappings').upsert(
+        mappingEntries.map(([keyword, categoryId]) => ({
+          user_id: userId,
+          description: keyword,
+          category_id: categoryId,
+          source: 'shared',
+        })),
+        { onConflict: 'user_id,description,source' }
+      );
     }
 
-    for (const tx of allTransactions) {
-      const { error } = await supabase.from('transactions').insert({
-        user_id: userId,
-        type: tx.isIncome ? 'income' : 'expense',
-        amount: tx.amount,
-        currency: 'EUR',
-        category_id: tx.categoryId,
-        description: tx.editedNota,
-        date: tx.date,
-      });
+    // Use batch insert with chunking (max 1000 records per batch)
+    const BATCH_SIZE = 1000;
+    for (let i = 0; i < allTransactions.length; i += BATCH_SIZE) {
+      const batch = allTransactions.slice(i, i + BATCH_SIZE);
+      const { error } = await supabase.from('transactions').insert(
+        batch.map(tx => ({
+          user_id: userId,
+          type: (tx.isIncome ? 'income' : 'expense') as 'income' | 'expense',
+          amount: tx.amount,
+          currency: 'EUR' as const,
+          category_id: tx.categoryId,
+          description: tx.editedNota,
+          date: tx.date,
+        }))
+      );
 
       if (!error) {
-        imported++;
+        imported += batch.length;
       }
 
       setImportProgress(((imported) / total) * 100);

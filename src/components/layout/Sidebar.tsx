@@ -20,6 +20,9 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 
+// Layout constants
+const SIDEBAR_WIDTH = 'w-72'; // 18rem = 288px
+
 const navigation = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
   { name: 'Transazioni', href: '/transactions', icon: ArrowLeftRight },
@@ -184,7 +187,7 @@ export default function Sidebar() {
       {/* Mobile sidebar */}
       <aside
         className={cn(
-          'lg:hidden fixed inset-y-0 left-0 z-40 w-72 bg-sidebar border-r border-sidebar-border transform transition-transform duration-300 flex flex-col',
+          `lg:hidden fixed inset-y-0 left-0 z-40 ${SIDEBAR_WIDTH} bg-sidebar border-r border-sidebar-border transform transition-transform duration-300 flex flex-col`,
           mobileOpen ? 'translate-x-0' : '-translate-x-full'
         )}
       >
@@ -192,7 +195,7 @@ export default function Sidebar() {
       </aside>
 
       {/* Desktop sidebar */}
-      <aside className="hidden lg:flex lg:w-72 lg:flex-col lg:fixed lg:inset-y-0 bg-sidebar border-r border-sidebar-border">
+      <aside className={`hidden lg:flex lg:${SIDEBAR_WIDTH} lg:flex-col lg:fixed lg:inset-y-0 bg-sidebar border-r border-sidebar-border`}>
         <NavContent />
       </aside>
     </>

@@ -192,6 +192,7 @@ export function useRecurringExpenses() {
 
 function calculateNextDueDate(currentDate: string, frequency: RecurringFrequency, weekInterval: number = 1): string {
   const date = new Date(currentDate);
+  const originalDay = date.getDate();
   
   switch (frequency) {
     case 'weekly':
@@ -199,12 +200,24 @@ function calculateNextDueDate(currentDate: string, frequency: RecurringFrequency
       break;
     case 'monthly':
       date.setMonth(date.getMonth() + 1);
+      // Correggi overflow: se il giorno è cambiato, significa che siamo andati oltre il mese
+      if (date.getDate() !== originalDay) {
+        date.setDate(0); // Ultimo giorno del mese precedente
+      }
       break;
     case 'quarterly':
       date.setMonth(date.getMonth() + 3);
+      // Correggi overflow
+      if (date.getDate() !== originalDay) {
+        date.setDate(0);
+      }
       break;
     case 'yearly':
       date.setFullYear(date.getFullYear() + 1);
+      // Correggi overflow (es. 29 febbraio in anno non bisestile)
+      if (date.getDate() !== originalDay) {
+        date.setDate(0);
+      }
       break;
   }
   

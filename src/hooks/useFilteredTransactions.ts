@@ -13,14 +13,38 @@ interface UseFilteredTransactionsOptions {
   toDate: string;
 }
 
+/**
+ * Helper per validare e parsare una data in modo sicuro
+ */
+function parseDate(dateString: string): Date | null {
+  if (!dateString) return null;
+  
+  const date = new Date(dateString);
+  // Verifica che la data sia valida
+  if (isNaN(date.getTime())) {
+    console.warn(`Data non valida: ${dateString}`);
+    return null;
+  }
+  
+  return date;
+}
+
 export function useFilteredTransactions(
   options: UseFilteredTransactionsOptions
 ): Transaction[] {
   const { transactions, filterMode, selectedYear, selectedMonth, sinceDate, fromDate, toDate } = options;
 
+  // Memoizza le date di filtro per evitare ripetuti parsing
+  const filterDates = useMemo(() => ({
+    since: parseDate(sinceDate),
+    from: parseDate(fromDate),
+    to: parseDate(toDate),
+  }), [sinceDate, fromDate, toDate]);
+
   return useMemo(() => {
     return transactions.filter(transaction => {
-      const transactionDate = new Date(transaction.date);
+      const transactionDate = parseDate(transaction.date);
+      if (!transactionDate) return false;
       
       switch (filterMode) {
         case 'all':
@@ -34,14 +58,16 @@ export function useFilteredTransactions(
                  transactionDate.getMonth().toString() === selectedMonth;
         
         case 'since':
-          return transactionDate >= new Date(sinceDate);
+          return filterDates.since ? transactionDate >= filterDates.since : true;
         
         case 'between':
-          return transactionDate >= new Date(fromDate) && transactionDate <= new Date(toDate);
+          return filterDates.from && filterDates.to
+            ? transactionDate >= filterDates.from && transactionDate <= filterDates.to
+            : true;
         
         default:
           return true;
       }
     });
-  }, [transactions, filterMode, selectedYear, selectedMonth, sinceDate, fromDate, toDate]);
+  }, [transactions, filterMode, selectedYear, selectedMonth, filterDates]);
 }

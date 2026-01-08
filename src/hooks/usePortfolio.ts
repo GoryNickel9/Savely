@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { PortfolioAsset, AssetType, CurrencyCode } from '@/lib/types';
 import { useAuth } from './useAuth';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 
 export function usePortfolio() {
   const { user } = useAuth();
@@ -107,25 +107,33 @@ export function usePortfolio() {
   const closedAssets = assets.filter(a => !!a.sold_at && a.sold_price !== null);
   const openAssets = assets.filter(a => !a.sold_at || a.sold_price === null);
 
-  // Calculate totals for OPEN positions only
-  const totalValue = openAssets.reduce((sum, asset) => {
-    const price = asset.current_price ?? asset.purchase_price;
-    return sum + (price * asset.quantity);
-  }, 0);
+  // Calculate totals for OPEN positions only (memoized)
+  const totalValue = useMemo(() =>
+    openAssets.reduce((sum, asset) => {
+      const price = asset.current_price ?? asset.purchase_price;
+      return sum + (price * asset.quantity);
+    }, 0), [openAssets]
+  );
 
-  const totalCost = openAssets.reduce((sum, asset) => {
-    return sum + (asset.purchase_price * asset.quantity);
-  }, 0);
+  const totalCost = useMemo(() =>
+    openAssets.reduce((sum, asset) => {
+      return sum + (asset.purchase_price * asset.quantity);
+    }, 0), [openAssets]
+  );
 
-  const totalGain = totalValue - totalCost;
-  const totalGainPercent = totalCost > 0 ? (totalGain / totalCost) * 100 : 0;
+  const totalGain = useMemo(() => totalValue - totalCost, [totalValue, totalCost]);
+  const totalGainPercent = useMemo(() =>
+    totalCost > 0 ? (totalGain / totalCost) * 100 : 0, [totalGain, totalCost]
+  );
 
-  // Calculate realized P/L from closed positions
-  const realizedGain = closedAssets.reduce((sum, asset) => {
-    const soldValue = (asset.sold_price ?? asset.purchase_price) * asset.quantity;
-    const costBasis = asset.purchase_price * asset.quantity;
-    return sum + (soldValue - costBasis);
-  }, 0);
+  // Calculate realized P/L from closed positions (memoized)
+  const realizedGain = useMemo(() =>
+    closedAssets.reduce((sum, asset) => {
+      const soldValue = (asset.sold_price ?? asset.purchase_price) * asset.quantity;
+      const costBasis = asset.purchase_price * asset.quantity;
+      return sum + (soldValue - costBasis);
+    }, 0), [closedAssets]
+  );
 
   return {
     assets,

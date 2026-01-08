@@ -1,10 +1,15 @@
 import { useMemo } from 'react';
 
+/**
+ * Tipo per campi aggiuntivi dinamici nei dati annuali
+ */
+type AdditionalFields = Record<string, number>;
+
 interface YearlyData<T> {
   year: string;
   total: number;
   data: T[];
-  [key: string]: any; // Per campi aggiuntivi dinamici
+  [key: string]: number | string | T[]; // Per campi aggiuntivi dinamici
 }
 
 interface UseYearlyDataOptions<T> {
@@ -14,7 +19,27 @@ interface UseYearlyDataOptions<T> {
   additionalFields?: Record<string, (group: T[]) => number>;
 }
 
-export function useYearlyData<T extends Record<string, any>>(
+/**
+ * Hook per raggruppare dati annuali con campi aggiuntivi calcolati
+ *
+ * @template T - Tipo degli item da raggruppare
+ * @param options - Opzioni di configurazione
+ * @returns Array di dati raggruppati per anno
+ *
+ * @example
+ * ```tsx
+ * const yearlyData = useYearlyData({
+ *   items: transactions,
+ *   getDate: (t) => t.date,
+ *   getValue: (t) => t.amount,
+ *   additionalFields: {
+ *     count: (group) => group.length,
+ *     avg: (group) => group.reduce((sum, t) => sum + t.amount, 0) / group.length
+ *   }
+ * });
+ * ```
+ */
+export function useYearlyData<T extends Record<string, unknown>>(
   options: UseYearlyDataOptions<T>
 ): YearlyData<T>[] {
   const { items, getDate, getValue, additionalFields = {} } = options;

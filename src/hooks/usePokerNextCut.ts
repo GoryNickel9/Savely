@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
-import { useAuth } from './useAuth';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from './useAuth';
 
 export interface PokerNextCut {
   id: string;
@@ -15,21 +15,11 @@ export interface PokerNextCut {
 
 export function usePokerNextCut() {
   const { user } = useAuth();
-  const [nextCut, setNextCut] = useState<PokerNextCut | null>(null);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    if (!user?.id) {
-      setNextCut(null);
-      setLoading(false);
-      return;
-    }
-
-    fetchNextCut();
-  }, [user?.id]);
-
-  const fetchNextCut = async () => {
-    try {
+  const { data: nextCut, isLoading } = useQuery({
+    queryKey: ['poker-next-cut', user?.id],
+    queryFn: async () => {
       const { data, error } = await supabase
         .from('poker_next_cut')
         .select('*')
@@ -54,21 +44,18 @@ export function usePokerNextCut() {
           .single();
 
         if (insertError) throw insertError;
-        setNextCut(newRecord);
-      } else {
-        setNextCut(data[0]);
+        return newRecord as PokerNextCut;
       }
-    } catch (error) {
-      console.error('Errore nel caricamento del Next Cut:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+      
+      return data[0] as PokerNextCut;
+    },
+    enabled: !!user,
+  });
 
-  const updateDeal = async (deal: number) => {
-    if (!nextCut) return;
+  const updateDeal = useMutation({
+    mutationFn: async (deal: number) => {
+      if (!nextCut) throw new Error('No next cut record found');
 
-    try {
       const { data, error } = await supabase
         .from('poker_next_cut')
         .update({ deal })
@@ -77,18 +64,17 @@ export function usePokerNextCut() {
         .single();
 
       if (error) throw error;
-      setNextCut(data);
-      return data;
-    } catch (error) {
-      console.error('Errore nell\'aggiornamento del deal:', error);
-      throw error;
-    }
-  };
+      return data as PokerNextCut;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['poker-next-cut'] });
+    },
+  });
 
-  const updateProfitLoss = async (profitLoss: number) => {
-    if (!nextCut) return;
+  const updateProfitLoss = useMutation({
+    mutationFn: async (profitLoss: number) => {
+      if (!nextCut) throw new Error('No next cut record found');
 
-    try {
       const { data, error } = await supabase
         .from('poker_next_cut')
         .update({ profit_loss: profitLoss })
@@ -97,18 +83,17 @@ export function usePokerNextCut() {
         .single();
 
       if (error) throw error;
-      setNextCut(data);
-      return data;
-    } catch (error) {
-      console.error('Errore nell\'aggiornamento del profit/loss:', error);
-      throw error;
-    }
-  };
+      return data as PokerNextCut;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['poker-next-cut'] });
+    },
+  });
 
-  const updateAmount = async (amount: number) => {
-    if (!nextCut) return;
+  const updateAmount = useMutation({
+    mutationFn: async (amount: number) => {
+      if (!nextCut) throw new Error('No next cut record found');
 
-    try {
       const { data, error } = await supabase
         .from('poker_next_cut')
         .update({ amount })
@@ -117,13 +102,12 @@ export function usePokerNextCut() {
         .single();
 
       if (error) throw error;
-      setNextCut(data);
-      return data;
-    } catch (error) {
-      console.error('Errore nell\'aggiornamento dell\'amount:', error);
-      throw error;
-    }
-  };
+      return data as PokerNextCut;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['poker-next-cut'] });
+    },
+  });
 
-  return { nextCut, loading, updateDeal, updateProfitLoss, updateAmount };
+  return { nextCut, loading: isLoading, updateDeal, updateProfitLoss, updateAmount };
 }

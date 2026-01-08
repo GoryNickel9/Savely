@@ -45,8 +45,10 @@ export function useMonthlyAggregation(
       monthData.net = monthData.income - monthData.expenses;
     });
 
-    return Array.from(monthlyMap.values()).sort((a, b) => 
-      b.month.localeCompare(a.month)
-    );
+    // Converti in array e ordina per mese (più recente prima)
+    const result = Array.from(monthlyMap.values());
+    result.sort((a, b) => b.month.localeCompare(a.month));
+    
+    return result;
   }, [transactions]);
 }

@@ -4,7 +4,7 @@ import { useTransactions } from './useTransactions';
 import { useBudgets } from './useBudgets';
 import { useCategories } from './useCategories';
 import { Transaction, Budget, Category } from '@/lib/types';
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import {
   calculateMean,
   calculateMedian,
@@ -48,18 +48,21 @@ export function useStatistics(winsorizedPercentile: number = 0.10, meanDays?: nu
 
   /**
    * Recupera le spese per un periodo specifico (in giorni)
+   * Memoizzato per evitare ripetuti calcoli
    */
-  const getExpensesByPeriod = (days: number): Transaction[] => {
-    if (!transactions.length) return [];
-    
-    const startDate = new Date();
-    startDate.setDate(startDate.getDate() - days);
-    
-    return transactions.filter(t => {
-      const txDate = new Date(t.date);
-      return t.type === 'expense' && txDate >= startDate;
-    });
-  };
+  const getExpensesByPeriod = useMemo(() => {
+    return (days: number): Transaction[] => {
+      if (!transactions.length) return [];
+      
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - days);
+      
+      return transactions.filter(t => {
+        const txDate = new Date(t.date);
+        return t.type === 'expense' && txDate >= startDate;
+      });
+    };
+  }, [transactions]);
 
   /**
    * Crea un array con tutti i mesi nel periodo specificato (in giorni)

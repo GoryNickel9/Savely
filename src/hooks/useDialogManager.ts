@@ -1,11 +1,17 @@
 import { useState, useCallback } from 'react';
 
+/**
+ * Opzioni per configurare il gestore di dialog
+ */
 interface UseDialogManagerOptions<T> {
   initialData?: T;
   onOpen?: () => void;
   onClose?: () => void;
 }
 
+/**
+ * Valori restituiti dal hook useDialogManager
+ */
 interface UseDialogManagerReturn<T> {
   open: boolean;
   editingItem: T | null;
@@ -15,7 +21,19 @@ interface UseDialogManagerReturn<T> {
   isOpen: boolean;
 }
 
-export function useDialogManager<T extends Record<string, any>>(
+/**
+ * Hook personalizzato per gestire lo stato dei dialog/modal
+ *
+ * @template T - Tipo di dati dell'item gestito dal dialog
+ * @param options - Opzioni di configurazione
+ * @returns Oggetto con metodi e stato per gestire il dialog
+ *
+ * @example
+ * ```tsx
+ * const { open, editingItem, openCreate, openEdit, close } = useDialogManager<User>();
+ * ```
+ */
+export function useDialogManager<T extends { id?: string }>(
   options?: UseDialogManagerOptions<T>
 ): UseDialogManagerReturn<T> {
   const { initialData, onOpen, onClose } = options || {};

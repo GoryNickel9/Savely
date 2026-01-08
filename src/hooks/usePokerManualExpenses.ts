@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
-import { useAuth } from './useAuth';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from './useAuth';
 
 export interface PokerManualExpense {
   id: string;
@@ -13,21 +13,11 @@ export interface PokerManualExpense {
 
 export function usePokerManualExpenses() {
   const { user } = useAuth();
-  const [expenses, setExpenses] = useState<PokerManualExpense[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    if (!user?.id) {
-      setExpenses([]);
-      setLoading(false);
-      return;
-    }
-
-    fetchExpenses();
-  }, [user?.id]);
-
-  const fetchExpenses = async () => {
-    try {
+  const { data: expenses = [], isLoading } = useQuery({
+    queryKey: ['poker-manual-expenses', user?.id],
+    queryFn: async () => {
       const { data, error } = await supabase
         .from('poker_manual_expenses')
         .select('*')
@@ -35,20 +25,17 @@ export function usePokerManualExpenses() {
         .order('created_at', { ascending: true });
 
       if (error) throw error;
-      setExpenses(data || []);
-    } catch (error) {
-      console.error('Errore nel caricamento delle spese manuali:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+      return data as PokerManualExpense[];
+    },
+    enabled: !!user,
+  });
 
-  const addExpense = async (name: string, amount: number) => {
-    try {
+  const addExpense = useMutation({
+    mutationFn: async ({ name, amount }: { name: string; amount: number }) => {
       const { data, error } = await supabase
         .from('poker_manual_expenses')
         .insert({
-          user_id: user.id,
+          user_id: user!.id,
           name,
           amount
         })
@@ -56,16 +43,15 @@ export function usePokerManualExpenses() {
         .single();
 
       if (error) throw error;
-      setExpenses([...expenses, data]);
-      return data;
-    } catch (error) {
-      console.error('Errore nell\'aggiunta della spesa:', error);
-      throw error;
-    }
-  };
+      return data as PokerManualExpense;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['poker-manual-expenses'] });
+    },
+  });
 
-  const updateExpense = async (id: string, amount: number) => {
-    try {
+  const updateExpense = useMutation({
+    mutationFn: async ({ id, amount }: { id: string; amount: number }) => {
       const { data, error } = await supabase
         .from('poker_manual_expenses')
         .update({ amount })
@@ -74,28 +60,26 @@ export function usePokerManualExpenses() {
         .single();
 
       if (error) throw error;
-      setExpenses(expenses.map(exp => exp.id === id ? data : exp));
-      return data;
-    } catch (error) {
-      console.error('Errore nell\'aggiornamento della spesa:', error);
-      throw error;
-    }
-  };
+      return data as PokerManualExpense;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['poker-manual-expenses'] });
+    },
+  });
 
-  const deleteExpense = async (id: string) => {
-    try {
+  const deleteExpense = useMutation({
+    mutationFn: async (id: string) => {
       const { error } = await supabase
         .from('poker_manual_expenses')
         .delete()
         .eq('id', id);
 
       if (error) throw error;
-      setExpenses(expenses.filter(exp => exp.id !== id));
-    } catch (error) {
-      console.error('Errore nell\'eliminazione della spesa:', error);
-      throw error;
-    }
-  };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['poker-manual-expenses'] });
+    },
+  });
 
-  return { expenses, loading, addExpense, updateExpense, deleteExpense };
+  return { expenses, loading: isLoading, addExpense, updateExpense, deleteExpense };
 }

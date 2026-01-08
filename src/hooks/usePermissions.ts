@@ -5,6 +5,32 @@ import { Permissions } from '@/lib/types';
 
 const PERMISSIONS_STORAGE_KEY = 'spendy_permissions';
 
+/**
+ * Type guard per validare che i dati siano un oggetto Permissions valido
+ */
+const validatePermissions = (data: unknown): data is Permissions => {
+  if (!data || typeof data !== 'object') {
+    return false;
+  }
+
+  const perm = data as Partial<Permissions>;
+  
+  // Verifica che almeno un campo di permesso esista
+  const hasAnyPermission =
+    'can_view_fumo' in perm ||
+    'can_view_poker' in perm ||
+    'can_view_portfolio' in perm ||
+    'can_view_statistics' in perm ||
+    'can_view_transactions' in perm ||
+    'can_view_categories' in perm ||
+    'can_view_budgets' in perm ||
+    'can_view_savings_goals' in perm ||
+    'can_view_recurring_expenses' in perm ||
+    'can_view_admin' in perm;
+  
+  return hasAnyPermission;
+};
+
 export function usePermissions() {
   const { user } = useAuth();
   const [permissions, setPermissions] = useState<Permissions | null>(() => {
@@ -13,9 +39,17 @@ export function usePermissions() {
       const stored = localStorage.getItem(PERMISSIONS_STORAGE_KEY);
       if (stored) {
         try {
-          return JSON.parse(stored);
+          const parsed = JSON.parse(stored);
+          // Valida i dati prima di usarli
+          if (validatePermissions(parsed)) {
+            return parsed;
+          } else {
+            console.warn('Dati permessi non validi nel localStorage, verranno ricaricati');
+            localStorage.removeItem(PERMISSIONS_STORAGE_KEY);
+          }
         } catch (e) {
           console.error('Errore nel parsing dei permessi dal localStorage:', e);
+          localStorage.removeItem(PERMISSIONS_STORAGE_KEY);
         }
       }
     }

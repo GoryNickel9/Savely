@@ -120,7 +120,6 @@ export default function PermissionsManager({ currentUserId }: PermissionsManager
                     </span>
                   )}
                 </div>
-                <div className="text-sm text-muted-foreground">{user.user_id}</div>
               </div>
             </div>
 

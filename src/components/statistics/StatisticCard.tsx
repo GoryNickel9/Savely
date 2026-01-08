@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowRight } from 'lucide-react';
 import { StatisticResult } from '@/hooks/useStatistics';
@@ -7,7 +8,7 @@ interface StatisticCardProps {
   onClick: () => void;
 }
 
-export function StatisticCard({ statistic, onClick }: StatisticCardProps) {
+export const StatisticCard = memo(function StatisticCard({ statistic, onClick }: StatisticCardProps) {
   return (
     <Card 
       className="cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-105 group"
@@ -36,4 +37,4 @@ export function StatisticCard({ statistic, onClick }: StatisticCardProps) {
       </CardContent>
     </Card>
   );
-}
+});

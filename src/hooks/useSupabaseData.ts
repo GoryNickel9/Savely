@@ -3,6 +3,23 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 
+/**
+ * Whitelist delle tabelle valide per prevenire SQL injection
+ * Nota: Le tabelle devono essere presenti nei tipi generati di Supabase
+ */
+const VALID_TABLES = [
+  'transactions',
+  'categories',
+  'budgets',
+  'savings_goals',
+  'recurring_expenses',
+  'portfolio_assets',
+  'asset_price_history',
+  'price_update_logs',
+  'poker_manual_expenses',
+  'poker_next_cut',
+] as const;
+
 interface UseSupabaseDataOptions {
   tableName: string;
   orderBy?: string;
@@ -27,6 +44,17 @@ export function useSupabaseData<T extends Record<string, any>>(
 
   const loadData = useCallback(async () => {
     if (!user?.id) return;
+    
+    // Valida il nome della tabella
+    if (!VALID_TABLES.includes(tableName as any)) {
+      console.error(`Tabella non valida: ${tableName}`);
+      toast({
+        title: 'Errore',
+        description: 'Tabella non valida',
+        variant: 'destructive',
+      });
+      return;
+    }
     
     setLoading(true);
     try {
