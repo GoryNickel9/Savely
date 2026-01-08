@@ -2,6 +2,7 @@ import MainLayout from '@/components/layout/MainLayout';
 import { usePortfolio } from '@/hooks/usePortfolio';
 import { usePriceHistory } from '@/hooks/usePriceHistory';
 import { useLastPriceUpdate } from '@/hooks/useLastPriceUpdate';
+import { useManualPriceUpdate } from '@/hooks/useManualPriceUpdate';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -25,6 +26,7 @@ const COLORS = ['#22c55e', '#8b5cf6', '#f59e0b', '#3b82f6', '#ec4899', '#14b8a6'
 
 export default function Portfolio() {
   const { openAssets, closedAssets, totalValue, totalGain, totalGainPercent, realizedGain, createAsset, updateAsset, deleteAsset } = usePortfolio();
+  const { canUpdate, isUpdating, updatePrices: manualUpdatePrices, timeUntilNextUpdate } = useManualPriceUpdate();
   const { historyByAsset, priceHistory } = usePriceHistory();
   const { lastUpdate } = useLastPriceUpdate();
   const { toast } = useToast();
@@ -41,6 +43,7 @@ export default function Portfolio() {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editingAsset, setEditingAsset] = useState<PortfolioAsset | null>(null);
   const [editValue, setEditValue] = useState('');
+
 
   // Combine all assets for instrument selection
   const allAssets = [...openAssets, ...closedAssets];
@@ -260,6 +263,28 @@ export default function Portfolio() {
             )}
           </div>
           <div className="flex gap-2">
+            <Button
+              onClick={() => manualUpdatePrices()}
+              disabled={!canUpdate || isUpdating}
+              variant="outline"
+            >
+              {isUpdating ? (
+                <>
+                  <Clock className="w-4 h-4 mr-2 animate-spin" />
+                  Aggiornamento...
+                </>
+              ) : !canUpdate && timeUntilNextUpdate ? (
+                <>
+                  <Clock className="w-4 h-4 mr-2" />
+                  Disponibile tra {timeUntilNextUpdate.hours}h {timeUntilNextUpdate.minutes}m
+                </>
+              ) : (
+                <>
+                  <Clock className="w-4 h-4 mr-2" />
+                  Aggiorna Prezzi
+                </>
+              )}
+            </Button>
             <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) resetForm(); }}>
               <DialogTrigger asChild><Button><Plus className="w-4 h-4 mr-2" />Aggiungi</Button></DialogTrigger>
               <DialogContent>

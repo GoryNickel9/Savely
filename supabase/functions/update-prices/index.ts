@@ -1,3 +1,4 @@
+// @ts-ignore - Supabase Edge Functions don't have complete type definitions
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const corsHeaders = {
@@ -179,10 +180,14 @@ async function fetchCryptoPrice(symbol: string): Promise<number | null> {
   }
 }
 
-Deno.serve(async (req) => {
+// @ts-ignore - Deno is available in Edge Functions
+Deno.serve(async (req: any) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response('ok', {
+      status: 200,
+      headers: corsHeaders
+    });
   }
 
   try {
