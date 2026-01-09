@@ -135,7 +135,8 @@ export function useStatistics(winsorizedPercentile: number = 0.10, meanDays?: nu
     const expenseCategories = categories.filter(c => c.type === 'expense');
     const allMonths = getAllMonthsInPeriod(days);
     
-    return expenseCategories.map(category => {
+    return expenseCategories
+      .map(category => {
       const categoryExpenses = expenses.filter(t => t.category_id === category.id);
       
       // Raggruppa le spese della categoria per mese
@@ -153,7 +154,7 @@ export function useStatistics(winsorizedPercentile: number = 0.10, meanDays?: nu
       // Trova il budget per questa categoria
       const budget = budgets.find(b => b.category_id === category.id);
       const budgetAmount = budget?.amount || null;
-      const budgetPercentage = budgetAmount ? (value / budgetAmount) * 100 : null;
+      const budgetPercentage = budgetAmount ? ((value - budgetAmount) / budgetAmount) * 100 : null;
       const isOverBudget = budgetAmount ? value > budgetAmount : false;
       
       return {
@@ -166,7 +167,8 @@ export function useStatistics(winsorizedPercentile: number = 0.10, meanDays?: nu
         budgetPercentage,
         isOverBudget,
       };
-    });
+    })
+    .filter(categoryStat => categoryStat.budget !== null);
   };
 
   /**

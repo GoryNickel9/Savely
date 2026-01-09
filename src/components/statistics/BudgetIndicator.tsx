@@ -23,7 +23,7 @@ export function BudgetIndicator({
 
   if (variant === 'badge') {
     return (
-      <Badge 
+      <Badge
         variant={isOverBudget ? 'destructive' : 'default'}
         className="flex items-center gap-1"
       >
@@ -32,7 +32,7 @@ export function BudgetIndicator({
         ) : (
           <CheckCircle2 className="w-3 h-3" />
         )}
-        {budgetPercentage?.toFixed(0)}%
+        {isOverBudget && budgetPercentage && budgetPercentage > 0 ? '+' : ''}{budgetPercentage?.toFixed(0)}%
       </Badge>
     );
   }
@@ -62,7 +62,7 @@ export function BudgetIndicator({
           <CheckCircle2 className="w-5 h-5 text-green-500" />
         )}
         <span className="text-sm">
-          {budgetPercentage?.toFixed(0)}% del budget
+          {isOverBudget && budgetPercentage && budgetPercentage > 0 ? '+' : ''}{budgetPercentage?.toFixed(0)}% del budget
         </span>
       </div>
     );

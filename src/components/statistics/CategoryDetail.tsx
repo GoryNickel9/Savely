@@ -16,7 +16,7 @@ export function CategoryDetail({ categoryStatistics, statisticName }: CategoryDe
       <CardContent>
         {categoryStatistics.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
-            Nessuna categoria trovata
+            Nessuna categoria con budget trovata
           </div>
         ) : (
           <div className="space-y-4">
@@ -47,12 +47,10 @@ export function CategoryDetail({ categoryStatistics, statisticName }: CategoryDe
                     isOverBudget={stat.isOverBudget}
                     variant="badge"
                   />
-                  {stat.budget && (
-                    <div className="text-right text-sm">
-                      <div className="text-muted-foreground">Budget</div>
-                      <div className="font-medium">€{stat.budget.toFixed(2)}</div>
-                    </div>
-                  )}
+                  <div className="text-right text-sm">
+                    <div className="text-muted-foreground">Budget</div>
+                    <div className="font-medium">€{stat.budget.toFixed(2)}</div>
+                  </div>
                 </div>
               </div>
             ))}
