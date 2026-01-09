@@ -12,6 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { CategorySelect } from '@/components/CategorySelect';
 import {
   Dialog,
   DialogContent,
@@ -192,18 +193,13 @@ export default function RecurringExpenses() {
                   </div>
                   <div>
                     <Label>Categoria</Label>
-                    <Select value={categoryId} onValueChange={setCategoryId}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Seleziona categoria" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {expenseCategories.map((cat) => (
-                          <SelectItem key={cat.id} value={cat.id}>
-                            {cat.icon} {cat.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <CategorySelect
+                      categories={expenseCategories}
+                      value={categoryId}
+                      onValueChange={setCategoryId}
+                      placeholder="Seleziona categoria"
+                      filterType="expense"
+                    />
                   </div>
                   <div>
                     <Label>Frequenza</Label>

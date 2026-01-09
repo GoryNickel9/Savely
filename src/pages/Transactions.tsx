@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { TransactionType, Transaction } from '@/lib/types';
+import { CategorySelect } from '@/components/CategorySelect';
 import { CURRENCY_SYMBOLS } from '@/lib/constants';
 import { Plus, Trash2, Pencil, Search, Calendar } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -177,10 +178,13 @@ export default function Transactions() {
                 </div>
                 <div><Label>Importo</Label><Input type="number" step="0.01" value={amount} onChange={e => setAmount(e.target.value)} required /></div>
                 <div><Label>Categoria</Label>
-                  <Select value={categoryId} onValueChange={setCategoryId}>
-                    <SelectTrigger><SelectValue placeholder="Seleziona" /></SelectTrigger>
-                    <SelectContent>{categories.map(c => <SelectItem key={c.id} value={c.id}>{c.icon} {c.name}</SelectItem>)}</SelectContent>
-                  </Select>
+                  <CategorySelect
+                    categories={allCategories}
+                    value={categoryId}
+                    onValueChange={setCategoryId}
+                    placeholder="Seleziona"
+                    filterType={type}
+                  />
                 </div>
                 <div><Label>Descrizione</Label><Input value={description} onChange={e => setDescription(e.target.value)} /></div>
                 <div><Label>Data</Label><Input type="date" value={date} onChange={e => setDate(e.target.value)} /></div>
@@ -231,15 +235,15 @@ export default function Transactions() {
             {/* Category filter */}
             <div>
               <Label className="text-xs text-muted-foreground">Categoria</Label>
-              <Select value={filterCategoryId} onValueChange={setFilterCategoryId}>
-                <SelectTrigger><SelectValue placeholder="Tutte" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Tutte le categorie</SelectItem>
-                  {allCategories.map(c => (
-                    <SelectItem key={c.id} value={c.id}>{c.icon} {c.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <CategorySelect
+                categories={allCategories}
+                value={filterCategoryId}
+                onValueChange={setFilterCategoryId}
+                placeholder="Tutte"
+                showAllOption={true}
+                allOptionLabel="Tutte le categorie"
+                allOptionValue="all"
+              />
             </div>
 
             {/* Custom date range */}

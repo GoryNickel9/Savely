@@ -13,6 +13,7 @@ import { useMemo, useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { getMedianMonthlySpending, getGlobalMedianMonthlySpending } from '@/lib/utils';
 import { MEDIAN_CALCULATION_DAYS } from '@/lib/constants';
+import { CategorySelect } from '@/components/CategorySelect';
 
 export default function Budget() {
   const { budgets, createBudget, updateBudget, deleteBudget } = useBudgets();
@@ -126,10 +127,13 @@ export default function Budget() {
               <DialogContent>
                 <DialogHeader><DialogTitle>Nuovo Budget</DialogTitle></DialogHeader>
                 <form onSubmit={handleSubmit} className="space-y-4">
-                  <Select value={categoryId} onValueChange={setCategoryId}>
-                    <SelectTrigger><SelectValue placeholder="Categoria" /></SelectTrigger>
-                    <SelectContent>{availableCategories.map(c => <SelectItem key={c.id} value={c.id}>{c.icon} {c.name}</SelectItem>)}</SelectContent>
-                  </Select>
+                  <CategorySelect
+                    categories={availableCategories}
+                    value={categoryId}
+                    onValueChange={setCategoryId}
+                    placeholder="Categoria"
+                    filterType="expense"
+                  />
                   <Input type="number" placeholder="Importo" value={amount} onChange={e => setAmount(e.target.value)} required />
                   <Button type="submit" className="w-full">Crea</Button>
                 </form>

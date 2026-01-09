@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Trash2, Plus, Edit, Save, X, ArrowLeft } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useSupabaseData } from '@/hooks/useSupabaseData';
 import { useYearlyData } from '@/hooks/useYearlyData';
 import { useDialogManager } from '@/hooks/useDialogManager';
@@ -419,6 +420,61 @@ export default function PokerRakeback() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Dialog Modifica Rakeback */}
+      <Dialog open={editOpen} onOpenChange={closeEdit}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Modifica Rakeback</DialogTitle>
+          </DialogHeader>
+          {editingItem && (
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-medium mb-2 block">Mese</label>
+                <Input
+                  type="text"
+                  value={new Date(editingItem.date).toLocaleDateString('it-IT', {
+                    month: 'long',
+                    year: 'numeric'
+                  })}
+                  disabled
+                  className="bg-muted"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-2 block">Rake (€)</label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  placeholder="Es. 100.00"
+                  value={editRakeGenerated}
+                  onChange={(e) => setEditRakeGenerated(e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-2 block">Rake Back (€)</label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  placeholder="Es. 30.00"
+                  value={editRakebackReceived}
+                  onChange={(e) => setEditRakebackReceived(e.target.value)}
+                />
+              </div>
+              <div className="flex gap-2 justify-end pt-4">
+                <Button variant="outline" onClick={closeEdit}>
+                  <X className="w-4 h-4 mr-2" />
+                  Annulla
+                </Button>
+                <Button onClick={() => saveEdit(editingItem.id)} className="bg-green-500 hover:bg-green-600">
+                  <Save className="w-4 h-4 mr-2" />
+                  Salva
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </MainLayout>
   );
 }
