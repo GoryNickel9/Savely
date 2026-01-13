@@ -46,6 +46,15 @@ export default function Dashboard() {
     .filter(t => t.type === 'expense' && new Date(t.date).getMonth() === currentMonth && new Date(t.date).getFullYear() === currentYear)
     .reduce((sum, t) => sum + Number(t.amount), 0);
 
+  // Yearly income/expenses
+  const yearlyIncome = transactions
+    .filter(t => t.type === 'income' && new Date(t.date).getFullYear() === currentYear)
+    .reduce((sum, t) => sum + Number(t.amount), 0);
+
+  const yearlyExpenses = transactions
+    .filter(t => t.type === 'expense' && new Date(t.date).getFullYear() === currentYear)
+    .reduce((sum, t) => sum + Number(t.amount), 0);
+
   // Total income/expenses for balance calculation (like in Charts page)
   const totalIncome = transactions
     .filter(t => t.type === 'income')
@@ -80,7 +89,7 @@ export default function Dashboard() {
           <p className="text-muted-foreground mt-1">Panoramica delle tue finanze</p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-6">
           <StatCard
             title="Patrimonio Netto"
             value={`${CURRENCY_SYMBOLS.EUR}${netWorth.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
@@ -97,6 +106,18 @@ export default function Dashboard() {
             value={`${CURRENCY_SYMBOLS.EUR}${monthlyExpenses.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
             icon={<TrendingDown className="w-6 h-6 text-destructive" />}
             className="border-l-4 border-l-destructive"
+          />
+          <StatCard
+            title="Cashflow Mensile"
+            value={`${CURRENCY_SYMBOLS.EUR}${(monthlyIncome - monthlyExpenses).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+            icon={<PieChart className="w-6 h-6" />}
+            className={`border-l-4 ${monthlyIncome - monthlyExpenses >= 0 ? 'border-l-success' : 'border-l-destructive'}`}
+          />
+          <StatCard
+            title="Cashflow Annuale"
+            value={`${CURRENCY_SYMBOLS.EUR}${(yearlyIncome - yearlyExpenses).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+            icon={<PieChart className="w-6 h-6" />}
+            className={`border-l-4 ${yearlyIncome - yearlyExpenses >= 0 ? 'border-l-success' : 'border-l-destructive'}`}
           />
           <StatCard
             title="Portfolio"

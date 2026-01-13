@@ -23,7 +23,7 @@ type FilterMode = 'all' | 'year' | 'month' | 'since' | 'between';
 
 export default function Charts() {
   const { transactions } = useTransactions();
-  const [filterMode, setFilterMode] = useState<FilterMode>('all');
+  const [filterMode, setFilterMode] = useState<FilterMode>('year');
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear().toString());
   const [selectedMonth, setSelectedMonth] = useState((new Date().getMonth() + 1).toString());
   const [sinceDate, setSinceDate] = useState('');
