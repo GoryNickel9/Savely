@@ -39,7 +39,7 @@ import { EMOJI_OPTIONS, COLOR_OPTIONS } from '@/lib/constants';
 
 export default function Settings() {
   const { user, signOut, updateEmail, updatePassword } = useAuth();
-  const { categories, updateCategory } = useCategories();
+  const { categories, createCategory, updateCategory } = useCategories();
   const { toast } = useToast();
   const navigate = useNavigate();
   const [isExporting, setIsExporting] = useState(false);
@@ -419,8 +419,7 @@ export default function Settings() {
     e.preventDefault();
     if (!newCatName.trim()) return;
     try {
-      await updateCategory.mutateAsync({
-        id: '',
+      await createCategory.mutateAsync({
         name: newCatName.trim(),
         icon: newCatIcon,
         color: newCatColor,
@@ -801,8 +800,8 @@ export default function Settings() {
                         <SelectItem value="income">Entrata</SelectItem>
                       </SelectContent>
                     </Select>
-                    <Button type="submit" className="w-full" disabled={updateCategory.isPending}>
-                      {updateCategory.isPending ? 'Creazione...' : 'Crea Categoria'}
+                    <Button type="submit" className="w-full" disabled={createCategory.isPending}>
+                      {createCategory.isPending ? 'Creazione...' : 'Crea Categoria'}
                     </Button>
                   </form>
                 </DialogContent>

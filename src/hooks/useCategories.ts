@@ -25,14 +25,20 @@ export function useCategories() {
   const createCategory = useMutation({
     mutationFn: async (category: { name: string; icon: string; color: string; type: TransactionType }) => {
       if (!user) throw new Error('Not authenticated');
-      const { error } = await supabase.from('categories').insert({
+      console.log('Creazione categoria:', { ...category, user_id: user.id });
+      const { error, data } = await supabase.from('categories').insert({
         ...category,
         user_id: user.id,
       });
-      if (error) throw error;
+      if (error) {
+        console.error('Errore creazione categoria:', error);
+        throw error;
+      }
+      console.log('Categoria creata con successo:', data);
+      return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['categories'] });
+      queryClient.invalidateQueries({ queryKey: ['categories', user?.id] });
     },
   });
 
@@ -47,7 +53,7 @@ export function useCategories() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['categories'] });
+      queryClient.invalidateQueries({ queryKey: ['categories', user?.id] });
     },
   });
 
@@ -62,7 +68,7 @@ export function useCategories() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['categories'] });
+      queryClient.invalidateQueries({ queryKey: ['categories', user?.id] });
     },
   });
 

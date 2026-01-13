@@ -13,6 +13,12 @@ import { it } from 'date-fns/locale';
 import { useFilteredTransactions } from '@/hooks/useFilteredTransactions';
 import { useMonthlyAggregation } from '@/hooks/useMonthlyAggregation';
 
+interface CumulativeDataPoint {
+  date: string;
+  dateLabel: string;
+  cumulative: number;
+}
+
 type FilterMode = 'all' | 'year' | 'month' | 'since' | 'between';
 
 export default function Charts() {
@@ -45,7 +51,7 @@ export default function Charts() {
   }, [transactions]);
 
   // Cumulative balance over time - day by day based on filter
-  const cumulativeData = useMemo(() => {
+  const cumulativeData = useMemo((): CumulativeDataPoint[] => {
     if (filteredTransactions.length === 0) return [];
 
     // Determine date range based on filter
@@ -244,6 +250,16 @@ export default function Charts() {
           {cumulativeData.length > 0 ? (
             <ResponsiveContainer width="100%" height={350}>
               <AreaChart data={cumulativeData}>
+                <defs>
+                  <linearGradient id="positiveGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                  </linearGradient>
+                  <linearGradient id="negativeGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="hsl(var(--destructive))" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="hsl(var(--destructive))" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                 <XAxis 
                   dataKey="dateLabel" 
@@ -259,7 +275,13 @@ export default function Charts() {
                   labelStyle={{ color: 'hsl(var(--foreground))' }}
                   formatter={(value: number) => `${CURRENCY_SYMBOLS.EUR}${value.toFixed(2)}`}
                 />
-                <Area type="monotone" dataKey="cumulative" name="Bilancio Cumulativo" stroke="hsl(var(--primary))" fill="hsl(var(--primary) / 0.3)" />
+                <Area 
+                  type="monotone" 
+                  dataKey="cumulative" 
+                  name="Bilancio Cumulativo" 
+                  stroke="hsl(var(--primary))"
+                  fill="hsl(var(--primary) / 0.3)"
+                />
               </AreaChart>
             </ResponsiveContainer>
           ) : (

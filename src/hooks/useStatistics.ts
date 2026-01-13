@@ -41,10 +41,10 @@ export function useStatistics(winsorizedPercentile: number = 0.10, meanDays?: nu
   const { categories } = useCategories();
   const queryClient = useQueryClient();
 
-  // Invalida il query quando cambiano i parametri
+  // Invalida il query quando cambiano i parametri o le transazioni
   useEffect(() => {
     queryClient.invalidateQueries({ queryKey: ['statistics'] });
-  }, [winsorizedPercentile, meanDays, medianDays, winsorizedDays, queryClient]);
+  }, [winsorizedPercentile, meanDays, medianDays, winsorizedDays, transactions.length, queryClient]);
 
   /**
    * Recupera le spese per un periodo specifico (in giorni)

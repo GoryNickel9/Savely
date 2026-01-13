@@ -55,7 +55,7 @@ export function useFilteredTransactions(
         
         case 'month':
           return transactionDate.getFullYear().toString() === selectedYear &&
-                 transactionDate.getMonth().toString() === selectedMonth;
+                 (transactionDate.getMonth() + 1).toString() === selectedMonth;
         
         case 'since':
           return filterDates.since ? transactionDate >= filterDates.since : true;

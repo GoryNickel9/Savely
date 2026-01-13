@@ -34,12 +34,12 @@ export function useMonthlyAggregation(
       }
 
       const monthData = monthlyMap.get(monthKey)!;
-      const amount = transaction.amount;
+      const amount = Number(transaction.amount);
 
-      if (amount > 0) {
+      if (transaction.type === 'income') {
         monthData.income += amount;
       } else {
-        monthData.expenses += Math.abs(amount);
+        monthData.expenses += amount;
       }
 
       monthData.net = monthData.income - monthData.expenses;
