@@ -142,7 +142,7 @@ export function useRecurringExpenses() {
           .from('transactions')
           .select('id')
           .eq('user_id', user!.id)
-          .eq('description', `[Ricorrente] ${expense.name}`)
+          .eq('description', expense.name)
           .gte('date', `${year}-${String(month).padStart(2, '0')}-01`)
           .lt('date', `${year}-${String(month).padStart(2, '0')}-32`)
           .maybeSingle();
@@ -157,7 +157,7 @@ export function useRecurringExpenses() {
               amount: expense.amount,
               currency: expense.currency,
               category_id: expense.category_id,
-              description: `[Ricorrente] ${expense.name}`,
+              description: expense.name,
               date: expense.next_due_date,
             });
           processed++;
