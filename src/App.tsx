@@ -13,7 +13,10 @@ import Transactions from "./pages/Transactions";
 import RecurringExpenses from "./pages/RecurringExpenses";
 import Budget from "./pages/Budget";
 import Categories from "./pages/Categories";
-import Charts from "./pages/Charts";
+import ChartsIndex from "./pages/ChartsIndex";
+import ChartsIncomeExpense from "./pages/ChartsIncomeExpense";
+import ChartsExpense from "./pages/ChartsExpense";
+import ChartsIncome from "./pages/ChartsIncome";
 import Portfolio from "./pages/Portfolio";
 import Settings from "./pages/Settings";
 import Admin from "./pages/Admin";
@@ -131,7 +134,10 @@ function AppRoutes() {
       <Route path="/recurring" element={<ProtectedRoute><RecurringExpenses /></ProtectedRoute>} />
       <Route path="/budget" element={<ProtectedRoute><Budget /></ProtectedRoute>} />
       <Route path="/categories" element={<ProtectedRoute><Categories /></ProtectedRoute>} />
-      <Route path="/charts" element={<ProtectedRoute><Charts /></ProtectedRoute>} />
+      <Route path="/charts" element={<ProtectedRoute><ChartsIndex /></ProtectedRoute>} />
+      <Route path="/charts/income-expense" element={<ProtectedRoute><ChartsIncomeExpense /></ProtectedRoute>} />
+      <Route path="/charts/expense" element={<ProtectedRoute><ChartsExpense /></ProtectedRoute>} />
+      <Route path="/charts/income" element={<ProtectedRoute><ChartsIncome /></ProtectedRoute>} />
       <Route path="/portfolio" element={<ProtectedRoute><Portfolio /></ProtectedRoute>} />
       <Route path="/fumo" element={<ProtectedRoute><Fumo /></ProtectedRoute>} />
       <Route path="/fumo/liquido-sigaretta" element={<ProtectedRoute><FumoLiquidoSigaretta /></ProtectedRoute>} />

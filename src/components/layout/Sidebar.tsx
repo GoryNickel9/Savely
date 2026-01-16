@@ -28,8 +28,8 @@ const navigation = [
   { name: 'Transazioni', href: '/transactions', icon: ArrowLeftRight },
   { name: 'Uscite Ricorrenti', href: '/recurring', icon: CalendarClock },
   { name: 'Budget', href: '/budget', icon: PiggyBank },
-  { name: 'Grafici', href: '/charts', icon: BarChart3 },
   { name: 'Portfolio', href: '/portfolio', icon: LineChart },
+  { name: 'Grafici', href: '/charts', icon: BarChart3 },
 ];
 
 export default function Sidebar() {

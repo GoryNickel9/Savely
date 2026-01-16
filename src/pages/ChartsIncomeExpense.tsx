@@ -5,6 +5,8 @@ import { CURRENCY_SYMBOLS } from '@/lib/constants';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Link } from 'react-router-dom';
+import { ArrowLeft } from 'lucide-react';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts';
@@ -21,7 +23,7 @@ interface CumulativeDataPoint {
 
 type FilterMode = 'all' | 'year' | 'month' | 'since' | 'between';
 
-export default function Charts() {
+export default function ChartsIncomeExpense() {
   const { transactions } = useTransactions();
   const [filterMode, setFilterMode] = useState<FilterMode>('year');
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear().toString());
@@ -150,9 +152,16 @@ export default function Charts() {
   return (
     <MainLayout>
       <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-display font-bold">Grafici</h1>
-          <p className="text-muted-foreground">Analisi entrate e uscite</p>
+        <div className="flex items-center gap-4">
+          <Link to="/charts">
+            <Button variant="outline" size="icon">
+              <ArrowLeft className="w-5 h-5" />
+            </Button>
+          </Link>
+          <div>
+            <h1 className="text-3xl font-display font-bold">Analisi Entrate e Uscite</h1>
+            <p className="text-muted-foreground">Andamento cumulativo del bilancio</p>
+          </div>
         </div>
 
         {/* Filters */}
@@ -272,7 +281,8 @@ export default function Charts() {
                 <YAxis tick={{ fill: 'hsl(var(--foreground))' }} />
                 <Tooltip
                   contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px' }}
-                  labelStyle={{ color: 'hsl(var(--foreground))' }}
+                  labelStyle={{ color: 'white' }}
+                  itemStyle={{ color: 'white' }}
                   formatter={(value: number) => `${CURRENCY_SYMBOLS.EUR}${value.toFixed(2)}`}
                 />
                 <Area 
