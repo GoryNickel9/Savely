@@ -388,12 +388,12 @@ export default function Portfolio() {
           <div className="glass rounded-xl p-6 text-center">
             <p className="text-sm text-muted-foreground">Valore Liquido</p>
             <p className="text-2xl font-display font-bold">{CURRENCY_SYMBOLS.EUR}{liquidValue.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-            <p className="text-xs text-muted-foreground mt-1">Azioni, ETF, Obbligazioni, Crypto, Liquidità</p>
+            <p className="text-xs text-muted-foreground mt-1"></p>
           </div>
           <div className="glass rounded-xl p-6 text-center">
             <p className="text-sm text-muted-foreground">Valore Illiquido</p>
             <p className="text-2xl font-display font-bold">{CURRENCY_SYMBOLS.EUR}{illiquidValue.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-            <p className="text-xs text-muted-foreground mt-1">Immobili, Altro</p>
+            <p className="text-xs text-muted-foreground mt-1"></p>
           </div>
           <div className="glass rounded-xl p-6 text-center">
             <p className="text-sm text-muted-foreground">Investito</p>
