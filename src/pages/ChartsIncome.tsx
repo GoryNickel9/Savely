@@ -1,4 +1,4 @@
-import MainLayout from '@/components/layout/MainLayout';
+ import MainLayout from '@/components/layout/MainLayout';
 import { useTransactions } from '@/hooks/useTransactions';
 import { useCategories } from '@/hooks/useCategories';
 import { useState, useMemo } from 'react';
