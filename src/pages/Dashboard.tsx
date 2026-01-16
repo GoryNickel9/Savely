@@ -11,26 +11,26 @@ export default function Dashboard() {
   const { totalValue, totalGainPercent, totalGain, openAssets } = usePortfolio();
   const { budgets } = useBudgets();
 
-  // Calcola valore del portfolio escludendo liquidità e immobili
+  // Calcola valore del portfolio escludendo liquidità, immobili e altro
   const portfolioValue = openAssets
-    .filter(a => a.type !== 'cash' && a.type !== 'real_estate')
+    .filter(a => a.type !== 'cash' && a.type !== 'real_estate' && a.type !== 'other')
     .reduce((sum, asset) => {
       const price = asset.current_price ?? asset.purchase_price;
       return sum + (price * asset.quantity);
     }, 0);
 
-  // Calcola P&L del portfolio escludendo liquidità e immobili
+  // Calcola P&L del portfolio escludendo liquidità, immobili e altro
   const portfolioPL = openAssets
-    .filter(a => a.type !== 'cash' && a.type !== 'real_estate')
+    .filter(a => a.type !== 'cash' && a.type !== 'real_estate' && a.type !== 'other')
     .reduce((sum, asset) => {
       const price = asset.current_price ?? asset.purchase_price;
       const cost = asset.purchase_price;
       return sum + ((price * asset.quantity) - (cost * asset.quantity));
     }, 0);
 
-  // Calcola P&L percentuale del portfolio (esclusi liquidità e immobili)
+  // Calcola P&L percentuale del portfolio (esclusi liquidità, immobili e altro)
   const portfolioCost = openAssets
-    .filter(a => a.type !== 'cash' && a.type !== 'real_estate')
+    .filter(a => a.type !== 'cash' && a.type !== 'real_estate' && a.type !== 'other')
     .reduce((sum, asset) => sum + (asset.purchase_price * asset.quantity), 0);
   const portfolioPLPercent = portfolioCost > 0 ? (portfolioPL / portfolioCost) * 100 : 0;
 

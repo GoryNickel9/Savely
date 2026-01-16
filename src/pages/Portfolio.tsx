@@ -86,14 +86,14 @@ export default function Portfolio() {
         type,
       };
 
-      if (type === 'cash' || type === 'real_estate') {
-        // Per cash e real_estate, non usiamo simbolo, quantità=1, prezzo=valore totale
+      if (type === 'cash' || type === 'real_estate' || type === 'other') {
+        // Per cash, real_estate e other, non usiamo simbolo, quantità=1, prezzo=valore totale
         assetData.symbol = null;
         assetData.quantity = 1;
         assetData.purchase_price = parseFloat(price);
         assetData.current_price = parseFloat(price);
-        // Per cash non impostiamo purchase_date
-        if (type !== 'cash') {
+        // Per cash e other non impostiamo purchase_date
+        if (type !== 'cash' && type !== 'other') {
           assetData.purchase_date = purchaseDate;
         }
       } else {
@@ -162,9 +162,9 @@ export default function Portfolio() {
     value: totalForPercentage > 0 ? (item.value / totalForPercentage) * 100 : 0,
   }));
 
-  // Performance chart using real price history when available (open positions only, excluding cash)
+  // Performance chart using real price history when available (open positions only, excluding cash and other)
   const performanceData = useMemo(() => {
-    const assetsForPerformance = openAssets.filter(a => a.type !== 'cash');
+    const assetsForPerformance = openAssets.filter(a => a.type !== 'cash' && a.type !== 'other');
     if (assetsForPerformance.length === 0) return [];
 
     // Find earliest purchase date
@@ -236,10 +236,10 @@ export default function Portfolio() {
     });
   }, [openAssets, priceHistory]);
 
-  const totalInvested = openAssets.filter(a => a.type !== 'cash').reduce((s, a) => s + a.purchase_price * a.quantity, 0);
+  const totalInvested = openAssets.filter(a => a.type !== 'cash' && a.type !== 'other').reduce((s, a) => s + a.purchase_price * a.quantity, 0);
 
-  // Calcola rendimento escludendo liquidità e immobili
-  const assetsForReturn = openAssets.filter(a => a.type !== 'cash' && a.type !== 'real_estate');
+  // Calcola rendimento escludendo liquidità, immobili e altro
+  const assetsForReturn = openAssets.filter(a => a.type !== 'cash' && a.type !== 'real_estate' && a.type !== 'other');
   const totalValueForReturn = assetsForReturn.reduce((sum, a) => {
     const price = a.current_price ?? a.purchase_price;
     return sum + (price * a.quantity);
@@ -247,6 +247,41 @@ export default function Portfolio() {
   const totalCostForReturn = assetsForReturn.reduce((sum, a) => sum + a.purchase_price * a.quantity, 0);
   const totalGainForReturn = totalValueForReturn - totalCostForReturn;
   const totalGainPercentExcludingCashAndRealEstate = totalCostForReturn > 0 ? (totalGainForReturn / totalCostForReturn) * 100 : 0;
+
+  // Calcola profitto/perdita escludendo liquidità e altro (come richiesto)
+  const assetsForGain = openAssets.filter(a => a.type !== 'cash' && a.type !== 'other');
+  const totalValueForGain = assetsForGain.reduce((sum, a) => {
+    const price = a.current_price ?? a.purchase_price;
+    return sum + (price * a.quantity);
+  }, 0);
+  const totalCostForGain = assetsForGain.reduce((sum, a) => sum + a.purchase_price * a.quantity, 0);
+  const totalGainExcludingCashAndOther = totalValueForGain - totalCostForGain;
+
+  // Calcola valore liquido (stock, etf, crypto, bond, cash)
+  const liquidAssets = openAssets.filter(a => ['stock', 'etf', 'crypto', 'bond', 'cash'].includes(a.type));
+  const liquidValue = liquidAssets.reduce((sum, a) => {
+    const price = a.current_price ?? a.purchase_price;
+    return sum + (price * a.quantity);
+  }, 0);
+
+  // Calcola valore illiquido (real_estate, other)
+  const illiquidAssets = openAssets.filter(a => ['real_estate', 'other'].includes(a.type));
+  const illiquidValue = illiquidAssets.reduce((sum, a) => {
+    const price = a.current_price ?? a.purchase_price;
+    return sum + (price * a.quantity);
+  }, 0);
+
+  // Dati per il grafico a torta liquido/illiquido
+  const liquidityData = [
+    { name: 'Valore Liquido', value: liquidValue },
+    { name: 'Valore Illiquido', value: illiquidValue },
+  ];
+
+  const totalLiquidity = liquidValue + illiquidValue;
+  const liquidityPercentage = liquidityData.map(item => ({
+    name: item.name,
+    value: totalLiquidity > 0 ? (item.value / totalLiquidity) * 100 : 0,
+  }));
 
   return (
     <MainLayout>
@@ -309,7 +344,7 @@ export default function Portfolio() {
                   )}
 
                   <div><Label>Nome</Label><Input value={name} onChange={e => setName(e.target.value)} required /></div>
-                  {type !== 'cash' && type !== 'real_estate' && (
+                  {type !== 'cash' && type !== 'real_estate' && type !== 'other' && (
                     <div>
                       <Label>Simbolo (per aggiornamento prezzi)</Label>
                       <Input value={symbol} onChange={e => setSymbol(e.target.value.toUpperCase())} placeholder="es. AAPL, BTC, VWCE.DE" />
@@ -322,10 +357,10 @@ export default function Portfolio() {
                       <SelectContent>{Object.entries(ASSET_TYPE_LABELS).map(([k, v]) => <SelectItem key={k} value={k as AssetType}>{v}</SelectItem>)}</SelectContent>
                     </Select>
                   </div>
-                  {type !== 'cash' && (
+                  {type !== 'cash' && type !== 'other' && (
                     <div><Label>Data Acquisto</Label><Input type="date" value={purchaseDate} onChange={e => setPurchaseDate(e.target.value)} required /></div>
                   )}
-                  {type !== 'cash' && type !== 'real_estate' ? (
+                  {type !== 'cash' && type !== 'real_estate' && type !== 'other' ? (
                     <div className="grid grid-cols-2 gap-4">
                       <div><Label>Quantità</Label><Input type="number" step="any" value={quantity} onChange={e => setQuantity(e.target.value)} required /></div>
                       <div><Label>Prezzo Acquisto (€)</Label><Input type="number" step="0.01" value={price} onChange={e => setPrice(e.target.value)} required /></div>
@@ -345,19 +380,29 @@ export default function Portfolio() {
         </div>
 
         {/* Summary cards */}
-        <div className="grid md:grid-cols-4 gap-4">
-          <div className="glass rounded-xl p-6 text-center">
-            <p className="text-sm text-muted-foreground">Investito</p>
-            <p className="text-2xl font-display font-bold">{CURRENCY_SYMBOLS.EUR}{totalInvested.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-          </div>
+        <div className="grid md:grid-cols-6 gap-4">
           <div className="glass rounded-xl p-6 text-center">
             <p className="text-sm text-muted-foreground">Valore Attuale</p>
             <p className="text-2xl font-display font-bold">{CURRENCY_SYMBOLS.EUR}{totalValue.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
           </div>
           <div className="glass rounded-xl p-6 text-center">
+            <p className="text-sm text-muted-foreground">Valore Liquido</p>
+            <p className="text-2xl font-display font-bold">{CURRENCY_SYMBOLS.EUR}{liquidValue.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+            <p className="text-xs text-muted-foreground mt-1">Azioni, ETF, Obbligazioni, Crypto, Liquidità</p>
+          </div>
+          <div className="glass rounded-xl p-6 text-center">
+            <p className="text-sm text-muted-foreground">Valore Illiquido</p>
+            <p className="text-2xl font-display font-bold">{CURRENCY_SYMBOLS.EUR}{illiquidValue.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+            <p className="text-xs text-muted-foreground mt-1">Immobili, Altro</p>
+          </div>
+          <div className="glass rounded-xl p-6 text-center">
+            <p className="text-sm text-muted-foreground">Investito</p>
+            <p className="text-2xl font-display font-bold">{CURRENCY_SYMBOLS.EUR}{totalInvested.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+          </div>
+          <div className="glass rounded-xl p-6 text-center">
             <p className="text-sm text-muted-foreground">Profitto/Perdita</p>
-            <p className={`text-2xl font-display font-bold ${totalGain >= 0 ? 'text-success' : 'text-destructive'}`}>
-              {totalGain >= 0 ? '+' : ''}{CURRENCY_SYMBOLS.EUR}{totalGain.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            <p className={`text-2xl font-display font-bold ${totalGainExcludingCashAndOther >= 0 ? 'text-success' : 'text-destructive'}`}>
+              {totalGainExcludingCashAndOther >= 0 ? '+' : ''}{CURRENCY_SYMBOLS.EUR}{totalGainExcludingCashAndOther.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </p>
           </div>
           <div className="glass rounded-xl p-6 text-center">
@@ -369,9 +414,24 @@ export default function Portfolio() {
         </div>
 
         {/* Charts row */}
-        <div className="grid lg:grid-cols-2 gap-6">
+        <div className="grid lg:grid-cols-5 gap-6">
+          {/* Liquidity pie chart */}
+          <div className="glass rounded-xl p-6 lg:col-span-1">
+            <h3 className="font-semibold mb-4">Distribuzione Liquido/Illiquido</h3>
+            {totalLiquidity > 0 ? (
+              <ResponsiveContainer width="100%" height={250}>
+                <PieChart>
+                  <Pie data={liquidityPercentage} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80}>
+                    {liquidityPercentage.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+                  </Pie>
+                  <Tooltip formatter={(v: number) => `${v.toFixed(1)}%`} />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : <p className="text-muted-foreground text-center py-8">Aggiungi asset per vedere la distribuzione liquido/illiquido</p>}
+          </div>
+
           {/* Pie chart */}
-          <div className="glass rounded-xl p-6">
+          <div className="glass rounded-xl p-6 lg:col-span-1">
             <h3 className="font-semibold mb-4">Asset Allocation</h3>
             {chartDataPercentage.length > 0 ? (
               <ResponsiveContainer width="100%" height={250}>
@@ -383,7 +443,7 @@ export default function Portfolio() {
           </div>
 
           {/* Performance chart */}
-          <div className="glass rounded-xl p-6">
+          <div className="glass rounded-xl p-6 lg:col-span-3">
             <h3 className="font-semibold mb-2">Andamento Investimenti</h3>
             {priceHistory.length === 0 && openAssets.length > 0 && (
               <p className="text-xs text-muted-foreground mb-2">
@@ -447,7 +507,7 @@ export default function Portfolio() {
                   <div>
                     <p className="font-medium">{first.name} {first.symbol && <span className="text-muted-foreground">({first.symbol})</span>}</p>
                     <p className="text-sm text-muted-foreground">
-                      {first.type === 'cash' ? (
+                      {first.type === 'cash' || first.type === 'other' ? (
                         <span>
                           {ASSET_TYPE_LABELS[first.type]}
                           <span className="ml-2 text-xs text-muted-foreground">
@@ -462,13 +522,13 @@ export default function Portfolio() {
                   <div className="flex items-center gap-4 text-right">
                     <div>
                       <p className="font-semibold">{CURRENCY_SYMBOLS.EUR}{totalValueGroup.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-                      {first.type !== 'cash' && (
+                      {first.type !== 'cash' && first.type !== 'other' && (
                         <p className={`text-sm ${totalGainVal >= 0 ? 'text-success' : 'text-destructive'}`}>
                           {totalGainVal >= 0 ? '+' : ''}{CURRENCY_SYMBOLS.EUR}{totalGainVal.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ({gainPercent >= 0 ? '+' : ''}{gainPercent.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%)
                         </p>
                       )}
                     </div>
-                    {first.type === 'cash' && (
+                    {(first.type === 'cash' || first.type === 'other') && (
                       <Button
                         variant="outline"
                         size="sm"
@@ -477,7 +537,7 @@ export default function Portfolio() {
                         Modifica
                       </Button>
                     )}
-                    {first.type !== 'cash' && (
+                    {first.type !== 'cash' && first.type !== 'other' && (
                       <Button
                         variant="outline"
                         size="sm"
@@ -545,7 +605,7 @@ export default function Portfolio() {
                     <div>
                       <p className="font-medium">{first.name} {first.symbol && <span className="text-muted-foreground">({first.symbol})</span>}</p>
                       <p className="text-sm text-muted-foreground">
-                        {first.type === 'cash' ? (
+                        {first.type === 'cash' || first.type === 'other' ? (
                           `${ASSET_TYPE_LABELS[first.type]} · Venduto ${soldDate}`
                         ) : (
                           `${ASSET_TYPE_LABELS[first.type]} · ${totalQuantity.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} unità · Venduto ${soldDate}`
@@ -555,7 +615,7 @@ export default function Portfolio() {
                     <div className="flex items-center gap-4 text-right">
                       <div>
                         <p className="font-semibold">{CURRENCY_SYMBOLS.EUR}{totalSoldValue.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-                        {first.type !== 'cash' && (
+                        {first.type !== 'cash' && first.type !== 'other' && (
                           <p className={`text-sm ${realizedPL >= 0 ? 'text-success' : 'text-destructive'}`}>
                             {realizedPL >= 0 ? '+' : ''}{CURRENCY_SYMBOLS.EUR}{realizedPL.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ({realizedPercent >= 0 ? '+' : ''}{realizedPercent.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%)
                           </p>

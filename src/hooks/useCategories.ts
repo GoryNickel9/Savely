@@ -39,6 +39,7 @@ export function useCategories() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['categories', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['statistics'] });
     },
   });
 
@@ -54,6 +55,7 @@ export function useCategories() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['categories', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['statistics'] });
     },
   });
 
@@ -69,6 +71,7 @@ export function useCategories() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['categories', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['statistics'] });
     },
   });
 

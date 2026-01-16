@@ -42,6 +42,7 @@ export const ASSET_TYPE_LABELS: Record<AssetType, string> = {
   bond: 'Obbligazioni',
   cash: 'Liquidità',
   real_estate: 'Immobili',
+  other: 'Altro',
 };
 
 /**

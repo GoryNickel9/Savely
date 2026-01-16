@@ -42,6 +42,7 @@ export function useBudgets() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['budgets'] });
+      queryClient.invalidateQueries({ queryKey: ['statistics'] });
     },
   });
 
@@ -56,6 +57,7 @@ export function useBudgets() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['budgets'] });
+      queryClient.invalidateQueries({ queryKey: ['statistics'] });
     },
   });
 
@@ -70,6 +72,7 @@ export function useBudgets() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['budgets'] });
+      queryClient.invalidateQueries({ queryKey: ['statistics'] });
     },
   });
 

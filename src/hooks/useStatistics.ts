@@ -1,10 +1,26 @@
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { useAuth } from './useAuth';
 import { useTransactions } from './useTransactions';
 import { useBudgets } from './useBudgets';
 import { useCategories } from './useCategories';
 import { Transaction, Budget, Category } from '@/lib/types';
-import { useEffect, useMemo } from 'react';
+import { useMemo } from 'react';
+
+/**
+ * Crea una chiave univoca basata sul contenuto delle transazioni
+ * Questa funzione evita che la query venga rieseguita quando l'array delle transazioni cambia
+ * ma il contenuto rimane lo stesso (ad esempio, quando React ri-renderizza il componente)
+ */
+const createTransactionsKey = (transactions: Transaction[]): string => {
+  return JSON.stringify(transactions.map(t => ({
+    id: t.id,
+    type: t.type,
+    amount: t.amount,
+    date: t.date,
+    category_id: t.category_id,
+    description: t.description
+  })));
+};
 import {
   calculateMean,
   calculateMedian,
@@ -39,12 +55,10 @@ export function useStatistics(winsorizedPercentile: number = 0.10, meanDays?: nu
   const { transactions } = useTransactions();
   const { budgets } = useBudgets();
   const { categories } = useCategories();
-  const queryClient = useQueryClient();
 
-  // Invalida il query quando cambiano i parametri o le transazioni
-  useEffect(() => {
-    queryClient.invalidateQueries({ queryKey: ['statistics'] });
-  }, [winsorizedPercentile, meanDays, medianDays, winsorizedDays, transactions.length, queryClient]);
+  // Nota: Non è necessario invalidare manualmente la query perché la queryKey include già i parametri.
+  // React Query eseguirà automaticamente la query quando cambiano i parametri.
+  // Inoltre, le transazioni vengono recuperate da useTransactions che gestisce già il caching.
 
   /**
    * Recupera le spese per un periodo specifico (in giorni)
@@ -174,8 +188,10 @@ export function useStatistics(winsorizedPercentile: number = 0.10, meanDays?: nu
   /**
    * Calcola le 4 statistiche principali
    */
+  const transactionsKey = useMemo(() => createTransactionsKey(transactions), [transactions]);
+  
   const { data: statistics, isLoading } = useQuery({
-    queryKey: ['statistics', user?.id, winsorizedPercentile, meanDays, medianDays, winsorizedDays],
+    queryKey: ['statistics', user?.id, winsorizedPercentile, meanDays, medianDays, winsorizedDays, transactionsKey],
     queryFn: (): StatisticResult[] => {
       const actualMeanDays = meanDays || MEAN_CALCULATION_DAYS;
       const actualMedianDays = medianDays || MEDIAN_CALCULATION_DAYS;

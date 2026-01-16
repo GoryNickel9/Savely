@@ -1,6 +1,6 @@
 export type CurrencyCode = 'EUR' | 'USD' | 'GBP' | 'CHF' | 'JPY' | 'CAD' | 'AUD' | 'CNY';
 export type TransactionType = 'income' | 'expense';
-export type AssetType = 'stock' | 'etf' | 'crypto' | 'bond' | 'cash' | 'real_estate';
+export type AssetType = 'stock' | 'etf' | 'crypto' | 'bond' | 'cash' | 'real_estate' | 'other';
 
 /**
  * Chiavi dei permessi utente

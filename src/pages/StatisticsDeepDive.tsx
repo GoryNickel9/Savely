@@ -31,7 +31,7 @@ interface StatisticDaysConfig {
 const DAYS_PER_MONTH = 30.41;
 
 export default function StatisticsDeepDive() {
-  const [selectedStatistic, setSelectedStatistic] = useState<StatisticConfig | null>(null);
+  const [selectedStatisticType, setSelectedStatisticType] = useState<StatisticType | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [config, setConfig] = useState<StatisticDaysConfig>({
     meanMonths: Math.round(MEAN_CALCULATION_DAYS / DAYS_PER_MONTH),
@@ -67,6 +67,11 @@ export default function StatisticsDeepDive() {
     { type: 'winsorized', name: `Media winsorizzata (${(config.winsorizedPercentile * 100).toFixed(0)}%)`, days: winsorizedDays },
   ];
 
+  // Calcola selectedStatistic basandosi sul tipo selezionato e sulla configurazione corrente
+  const selectedStatistic = selectedStatisticType 
+    ? STATISTIC_CONFIGS.find(c => c.type === selectedStatisticType) || null
+    : null;
+
   if (isLoading) {
     return (
       <MainLayout>
@@ -91,7 +96,7 @@ export default function StatisticsDeepDive() {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => setSelectedStatistic(null)}
+              onClick={() => setSelectedStatisticType(null)}
             >
               <ArrowLeft className="w-5 h-5" />
             </Button>
@@ -222,7 +227,7 @@ export default function StatisticsDeepDive() {
                 <StatisticCard
                   key={statistic.name}
                   statistic={statistic}
-                  onClick={() => config && setSelectedStatistic(config)}
+                  onClick={() => config && setSelectedStatisticType(config.type)}
                 />
               );
             })}
