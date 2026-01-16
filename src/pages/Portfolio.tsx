@@ -507,11 +507,11 @@ export default function Portfolio() {
                   <div>
                     <p className="font-medium">{first.name} {first.symbol && <span className="text-muted-foreground">({first.symbol})</span>}</p>
                     <p className="text-sm text-muted-foreground">
-                      {first.type === 'cash' || first.type === 'other' ? (
+                      {first.type === 'cash' || first.type === 'other' || first.type === 'real_estate' ? (
                         <span>
                           {ASSET_TYPE_LABELS[first.type]}
                           <span className="ml-2 text-xs text-muted-foreground">
-                            - Aggiornato al {format(parseISO(lastUpdate?.updated_at || first.updated_at), 'dd.MM.yy', { locale: it })}
+                            - Aggiornato al {format(parseISO(first.updated_at), 'dd.MM.yy', { locale: it })}
                           </span>
                         </span>
                       ) : (
