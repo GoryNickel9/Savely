@@ -17,6 +17,7 @@ import {
   Dices,
   Cigarette,
   TrendingUp,
+  Flame,
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -84,6 +85,23 @@ export default function Sidebar() {
           </Link>
         )}
 
+        {/* Sezione FIRE - visibile solo agli utenti con permesso fire */}
+        {permissions?.fire && (
+          <Link
+            to="/fire"
+            onClick={() => setMobileOpen(false)}
+            className={cn(
+              'flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200',
+              location.pathname.startsWith('/fire')
+                ? 'bg-primary text-primary-foreground shadow-lg glow-primary'
+                : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
+            )}
+          >
+            <Flame className="w-5 h-5" />
+            FIRE
+          </Link>
+        )}
+
         {/* Sezione Fumo - visibile solo agli utenti con permesso fumo */}
         {permissions?.fumo && (
           <Link
@@ -117,6 +135,7 @@ export default function Sidebar() {
             Statistiche Deep Dive
           </Link>
         )}
+
       </nav>
 
       <div className="p-4 border-t border-border flex-shrink-0">

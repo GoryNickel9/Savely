@@ -1,0 +1,219 @@
+import { useSearchParams } from 'react-router-dom'
+import { useCallback, useMemo, useRef } from 'react'
+
+const STORAGE_KEY = 'fire-calc-params'
+
+interface CalculatorParams {
+  currentAge: number
+  retirementAge: number
+  currentSavings: number
+  annualContribution: number
+  annualIncome: number
+  expectedReturn: number
+  inflationRate: number
+  withdrawalRate: number
+  annualExpenses: number
+  partTimeIncome: number
+  portfolioValue: number
+  retirementYears: number
+}
+
+const DEFAULTS: CalculatorParams = {
+  currentAge: 30,
+  retirementAge: 55,
+  currentSavings: 100000,
+  annualContribution: 24000,
+  annualIncome: 72000,
+  expectedReturn: 0.07,
+  inflationRate: 0.03,
+  withdrawalRate: 0.04,
+  annualExpenses: 48000,
+  partTimeIncome: 20000,
+  portfolioValue: 1000000,
+  retirementYears: 30,
+}
+
+const PARAM_KEYS: Record<keyof CalculatorParams, string> = {
+  currentAge: 'age',
+  retirementAge: 'retire',
+  currentSavings: 'savings',
+  annualContribution: 'contrib',
+  annualIncome: 'income',
+  expectedReturn: 'return',
+  inflationRate: 'inflation',
+  withdrawalRate: 'swr',
+  annualExpenses: 'expenses',
+  partTimeIncome: 'parttime',
+  portfolioValue: 'portfolio',
+  retirementYears: 'years',
+}
+
+// localStorage utilities
+function loadFromStorage(): Partial<CalculatorParams> | null {
+  if (typeof window === 'undefined') return null
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY)
+    if (!stored) return null
+    return JSON.parse(stored)
+  } catch {
+    return null
+  }
+}
+
+function saveToStorage(params: Partial<CalculatorParams>): void {
+  if (typeof window === 'undefined') return
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(params))
+  } catch {
+    // Silently fail if storage is unavailable
+  }
+}
+
+function clearStorage(): void {
+  if (typeof window === 'undefined') return
+  try {
+    localStorage.removeItem(STORAGE_KEY)
+  } catch {
+    // Silently fail if storage is unavailable
+  }
+}
+
+export function useFireCalculatorParams() {
+  const [searchParams, setSearchParams] = useSearchParams()
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // Load stored params immediately (synchronously) during initialization
+  const storedParamsRef = useRef<Partial<CalculatorParams> | null>(loadFromStorage())
+
+  const params = useMemo((): CalculatorParams => {
+    const getParam = (key: keyof CalculatorParams): any => {
+      const urlKey = PARAM_KEYS[key]
+      const urlValue = searchParams.get(urlKey)
+      
+      // Priority: URL params > localStorage > defaults
+      // If URL has a value, use it
+      if (urlValue !== null) {
+        const parsed = parseFloat(urlValue)
+        return isNaN(parsed) ? DEFAULTS[key] : parsed
+      }
+      
+      // If no URL value, try localStorage
+      if (storedParamsRef.current && key in storedParamsRef.current) {
+        const storedValue = storedParamsRef.current[key]
+        // Only use stored value if it's not undefined or null
+        if (storedValue !== undefined && storedValue !== null) {
+          return storedValue
+        }
+      }
+      
+      // Fall back to defaults
+      return DEFAULTS[key]
+    }
+
+    return {
+      currentAge: getParam('currentAge'),
+      retirementAge: getParam('retirementAge'),
+      currentSavings: getParam('currentSavings'),
+      annualContribution: getParam('annualContribution'),
+      annualIncome: getParam('annualIncome'),
+      expectedReturn: getParam('expectedReturn'),
+      inflationRate: getParam('inflationRate'),
+      withdrawalRate: getParam('withdrawalRate'),
+      annualExpenses: getParam('annualExpenses'),
+      partTimeIncome: getParam('partTimeIncome'),
+      portfolioValue: getParam('portfolioValue'),
+      retirementYears: getParam('retirementYears'),
+    }
+  }, [searchParams])
+
+  const setParam = useCallback((key: keyof CalculatorParams, value: any) => {
+    const urlKey = PARAM_KEYS[key]
+    setSearchParams(prev => {
+      const newParams = new URLSearchParams(prev)
+      const defaultValue = DEFAULTS[key]
+      
+      // Compare with defaults
+      const isDefault = value === defaultValue
+      
+      if (isDefault) {
+        newParams.delete(urlKey)
+      } else {
+        newParams.set(urlKey, value.toString())
+      }
+      return newParams
+    }, { replace: true })
+    
+    // Also save to localStorage
+    const currentStored = loadFromStorage() || {}
+    const updatedStored = { ...currentStored, [key]: value }
+    saveToStorage(updatedStored)
+    storedParamsRef.current = updatedStored
+  }, [setSearchParams])
+
+  // Debounced version of setParam for high-frequency updates (like slider inputs)
+  const setParamDebounced = useCallback((key: keyof CalculatorParams, value: any, delay = 300) => {
+    // Clear existing timer
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current)
+    }
+    
+    // Set new timer
+    debounceTimerRef.current = setTimeout(() => {
+      setParam(key, value)
+    }, delay)
+  }, [setParam])
+
+  const setParams = useCallback((updates: Partial<CalculatorParams>) => {
+    setSearchParams(prev => {
+      const newParams = new URLSearchParams(prev)
+      Object.entries(updates).forEach(([key, value]) => {
+        const typedKey = key as keyof CalculatorParams
+        const urlKey = PARAM_KEYS[typedKey]
+        const defaultValue = DEFAULTS[typedKey]
+        
+        const isDefault = value === defaultValue
+        
+        if (isDefault) {
+          newParams.delete(urlKey)
+        } else {
+          newParams.set(urlKey, value.toString())
+        }
+      })
+      return newParams
+    }, { replace: true })
+    
+    // Also save all updates to localStorage
+    const currentStored = loadFromStorage() || {}
+    const updatedStored = { ...currentStored, ...updates }
+    saveToStorage(updatedStored)
+    storedParamsRef.current = updatedStored
+  }, [setSearchParams])
+
+  const resetParams = useCallback(() => {
+    setSearchParams(new URLSearchParams(), { replace: true })
+    clearStorage()
+    storedParamsRef.current = null
+  }, [setSearchParams])
+
+  const copyUrl = useCallback(async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href)
+      return true
+    } catch {
+      return false
+    }
+  }, [])
+
+  const hasCustomParams = searchParams.toString().length > 0
+
+  return {
+    params,
+    setParam,
+    setParamDebounced,
+    setParams,
+    resetParams,
+    copyUrl,
+    hasCustomParams,
+  }
+}
+
+export type { CalculatorParams }

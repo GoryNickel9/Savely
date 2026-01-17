@@ -29,6 +29,9 @@ import FumoLiquidoSigaretta from "./pages/FumoLiquidoSigaretta";
 import FumoCBD from "./pages/FumoCBD";
 import FumoTHC from "./pages/FumoTHC";
 import StatisticsDeepDive from "./pages/StatisticsDeepDive";
+import FIREIndex from "./pages/fire/Index";
+import StandardFIRE from "./pages/fire/StandardFIRE";
+import BaristaFIRE from "./pages/fire/BaristaFIRE";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -123,6 +126,30 @@ function StatisticsDeepDiveRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+function FireRoute({ children }: { children: React.ReactNode }) {
+  const { user, loading } = useAuth();
+  const { permissions, loading: permissionsLoading } = usePermissions();
+  
+  if (loading || permissionsLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background dark">
+        <div className="animate-pulse text-muted-foreground">Caricamento...</div>
+      </div>
+    );
+  }
+  
+  if (!user) {
+    return <Navigate to="/auth" replace />;
+  }
+  
+  // Verifica se l'utente ha il permesso fire
+  if (!permissions?.fire) {
+    return <Navigate to="/" replace />;
+  }
+  
+  return <>{children}</>;
+}
+
 function AppRoutes() {
   return (
     <Routes>
@@ -148,6 +175,9 @@ function AppRoutes() {
       <Route path="/poker/hourly-earnings" element={<PokerRoute><PokerHourlyEarnings /></PokerRoute>} />
       <Route path="/poker/rakeback" element={<PokerRoute><PokerRakeback /></PokerRoute>} />
       <Route path="/statistics-deep-dive" element={<StatisticsDeepDiveRoute><StatisticsDeepDive /></StatisticsDeepDiveRoute>} />
+      <Route path="/fire" element={<FireRoute><FIREIndex /></FireRoute>} />
+      <Route path="/fire/standard" element={<FireRoute><StandardFIRE /></FireRoute>} />
+      <Route path="/fire/barista" element={<FireRoute><BaristaFIRE /></FireRoute>} />
       <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
       <Route path="/admin" element={<AdminRoute><Admin /></AdminRoute>} />
       <Route path="*" element={<NotFound />} />

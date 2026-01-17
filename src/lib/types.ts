@@ -5,7 +5,7 @@ export type AssetType = 'stock' | 'etf' | 'crypto' | 'bond' | 'cash' | 'real_est
 /**
  * Chiavi dei permessi utente
  */
-export type PermissionKey = 'admin' | 'poker' | 'fumo' | 'statistics_deep_dive';
+export type PermissionKey = 'admin' | 'poker' | 'fumo' | 'statistics_deep_dive' | 'fire';
 
 /**
  * Struttura dei permessi utente
@@ -15,6 +15,18 @@ export interface Permissions {
   poker: boolean;
   fumo: boolean;
   statistics_deep_dive: boolean;
+  fire: boolean;
+}
+
+/**
+ * @deprecated Usare Permissions invece
+ */
+export interface UserPermissions {
+  admin: boolean;
+  poker: boolean;
+  fumo: boolean;
+  statistics_deep_dive: boolean;
+  fire: boolean;
 }
 
 export interface Profile {
