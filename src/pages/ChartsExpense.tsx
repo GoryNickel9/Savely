@@ -66,9 +66,9 @@ export default function ChartsExpense() {
       categoryColorMap[cat.id] = cat.color;
     });
     
-    // Somma gli importi per categoria
+    // Somma gli importi per categoria, solo per categorie esistenti
     expenseTransactions.forEach(t => {
-      if (t.category_id) {
+      if (t.category_id && expenseCategories.some(c => c.id === t.category_id)) {
         categoryMap[t.category_id] = (categoryMap[t.category_id] || 0) + Number(t.amount);
       }
     });
@@ -150,7 +150,8 @@ export default function ChartsExpense() {
       if (!dateCategoryMap[dateKey]) {
         dateCategoryMap[dateKey] = {};
       }
-      if (t.category_id) {
+      // Aggiungi solo per categorie esistenti
+      if (t.category_id && expenseCategories.some(c => c.id === t.category_id)) {
         dateCategoryMap[dateKey][t.category_id] = (dateCategoryMap[dateKey][t.category_id] || 0) + Number(t.amount);
       }
     });
