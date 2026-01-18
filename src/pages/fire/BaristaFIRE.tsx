@@ -1,16 +1,19 @@
 import { useMemo } from 'react'
 import { useFireCalculatorParams } from '@/hooks/useFireCalculatorParams'
+import { useFireDefaultsFromDB } from '@/hooks/useFireDefaultsFromDB'
 import { calculateBaristaFIRE, formatCurrency } from '@/lib/fire/calculations'
 import { CurrencyInput, PercentageInput, AgeInput } from '@/components/fire/inputs'
 import { ResultCard, ProgressToFIRE, Disclaimer } from '@/components/fire/ui'
 import { ProjectionChart } from '@/components/fire/charts'
 import MainLayout from '@/components/layout/MainLayout'
 import { Card, CardHeader, CardContent } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
 import { Link } from 'react-router-dom'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, RotateCcw } from 'lucide-react'
 
 export default function BaristaFIRE() {
-  const { params, setParam } = useFireCalculatorParams()
+  const dbDefaults = useFireDefaultsFromDB()
+  const { params, setParam, resetToDBDefaults } = useFireCalculatorParams(dbDefaults || undefined)
 
   const results = useMemo(() => {
     return calculateBaristaFIRE(
@@ -78,7 +81,20 @@ export default function BaristaFIRE() {
         {/* Inputs */}
         <Card className="lg:col-span-1">
           <CardHeader>
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Le tue informazioni</h2>
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Le tue informazioni</h2>
+              {dbDefaults && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={resetToDBDefaults}
+                  className="text-xs"
+                >
+                  <RotateCcw className="w-3 h-3 mr-1" />
+                  Reset ai valori dal database
+                </Button>
+              )}
+            </div>
           </CardHeader>
           <CardContent className="space-y-4">
             <AgeInput
@@ -97,7 +113,7 @@ export default function BaristaFIRE() {
               onChange={(v) => setParam('annualContribution', v)}
             />
             <CurrencyInput
-              label="Annual Expenses"
+              label="Spese Annuali alla pensione"
               value={params.annualExpenses}
               onChange={(v) => setParam('annualExpenses', v)}
               tooltip="Total yearly spending needs"

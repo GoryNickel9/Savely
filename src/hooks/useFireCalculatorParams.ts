@@ -1,5 +1,7 @@
 import { useSearchParams } from 'react-router-dom'
 import { useCallback, useMemo, useRef } from 'react'
+import { useFireDefaultsFromDB } from './useFireDefaultsFromDB'
+import type { FireDefaults } from './useFireDefaultsFromDB'
 
 const STORAGE_KEY = 'fire-calc-params'
 
@@ -78,7 +80,7 @@ function clearStorage(): void {
   }
 }
 
-export function useFireCalculatorParams() {
+export function useFireCalculatorParams(dbDefaults?: FireDefaults) {
   const [searchParams, setSearchParams] = useSearchParams()
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   // Load stored params immediately (synchronously) during initialization
@@ -89,7 +91,7 @@ export function useFireCalculatorParams() {
       const urlKey = PARAM_KEYS[key]
       const urlValue = searchParams.get(urlKey)
       
-      // Priority: URL params > localStorage > defaults
+      // Priority: URL params > localStorage > DB defaults > hardcoded defaults
       // If URL has a value, use it
       if (urlValue !== null) {
         const parsed = parseFloat(urlValue)
@@ -105,7 +107,15 @@ export function useFireCalculatorParams() {
         }
       }
       
-      // Fall back to defaults
+      // If no localStorage value, try DB defaults (if available)
+      if (dbDefaults && key in dbDefaults) {
+        const dbValue = dbDefaults[key as keyof FireDefaults]
+        if (dbValue !== undefined && dbValue !== null) {
+          return dbValue
+        }
+      }
+      
+      // Fall back to hardcoded defaults
       return DEFAULTS[key]
     }
 
@@ -194,6 +204,50 @@ export function useFireCalculatorParams() {
     storedParamsRef.current = null
   }, [setSearchParams])
 
+  const resetToDBDefaults = useCallback(() => {
+    // Clear only URL params that are calculated from database
+    setSearchParams(prev => {
+      const newParams = new URLSearchParams(prev)
+      // Remove only params that come from database
+      newParams.delete('savings')
+      newParams.delete('income')
+      newParams.delete('contrib')
+      return newParams
+    }, { replace: true })
+    
+    // Remove only DB-calculated values from localStorage
+    const currentStored = loadFromStorage() || {}
+    const updatedStored = { ...currentStored }
+    delete updatedStored.currentSavings
+    delete updatedStored.annualIncome
+    delete updatedStored.annualContribution
+    saveToStorage(updatedStored)
+    storedParamsRef.current = updatedStored
+    
+    // If DB defaults are available, set them as new defaults
+    if (dbDefaults) {
+      const updates: Partial<CalculatorParams> = {}
+      
+      // Only set values that exist in dbDefaults
+      if (dbDefaults.currentSavings !== undefined) {
+        updates.currentSavings = dbDefaults.currentSavings
+      }
+      if (dbDefaults.annualIncome !== undefined) {
+        updates.annualIncome = dbDefaults.annualIncome
+      }
+      if (dbDefaults.annualContribution !== undefined) {
+        updates.annualContribution = dbDefaults.annualContribution
+      }
+      
+      // Save to localStorage
+      if (Object.keys(updates).length > 0) {
+        const finalStored = { ...updatedStored, ...updates }
+        saveToStorage(finalStored)
+        storedParamsRef.current = finalStored
+      }
+    }
+  }, [setSearchParams, dbDefaults])
+
   const copyUrl = useCallback(async () => {
     try {
       await navigator.clipboard.writeText(window.location.href)
@@ -211,6 +265,7 @@ export function useFireCalculatorParams() {
     setParamDebounced,
     setParams,
     resetParams,
+    resetToDBDefaults,
     copyUrl,
     hasCustomParams,
   }
