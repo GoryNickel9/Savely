@@ -18,19 +18,15 @@ export function calculateMean(values: number[]): number {
 }
 
 /**
- * Calcola la mediana dei valori (escludendo i valori zero)
+ * Calcola la mediana dei valori (inclusi i valori zero)
  * @param values Array di valori numerici
  * @returns Mediana
  */
 export function calculateMedian(values: number[]): number {
   if (values.length === 0) return 0;
   
-  // Filtra i valori zero prima di calcolare la mediana
-  const nonZeroValues = values.filter(val => val > 0);
-  
-  if (nonZeroValues.length === 0) return 0;
-  
-  const sorted = [...nonZeroValues].sort((a, b) => a - b);
+  // Ordina i valori (inclusi i valori zero)
+  const sorted = [...values].sort((a, b) => a - b);
   const mid = Math.floor(sorted.length / 2);
   return sorted.length % 2 !== 0 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
 }

@@ -70,7 +70,7 @@ interface GetMedianMonthlySpendingOptions {
 }
 
 /**
- * Calcola la mediana delle spese mensili per una categoria specifica
+ * Calcola la mediana delle spese mensili per una categoria specifica (inclusi i valori zero)
  * @param options Opzioni per il calcolo
  * @returns Mediana delle spese mensili
  */
@@ -92,7 +92,7 @@ export function getMedianMonthlySpending(options: GetMedianMonthlySpendingOption
 }
 
 /**
- * Calcola la mediana globale delle spese mensili (tutte le categorie insieme)
+ * Calcola la mediana globale delle spese mensili (tutte le categorie insieme, inclusi i valori zero)
  * @param transactions Array di transazioni
  * @param days Numero di giorni da considerare (default: MEDIAN_CALCULATION_DAYS)
  * @returns Mediana globale delle spese mensili
