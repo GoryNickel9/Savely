@@ -14,6 +14,7 @@ export function useCategories() {
         .from('categories')
         .select('*')
         .eq('user_id', user.id)
+        .is('deleted_at', null)
         .order('name');
       
       if (error) throw error;
@@ -62,15 +63,43 @@ export function useCategories() {
   const deleteCategory = useMutation({
     mutationFn: async (id: string) => {
       if (!user) throw new Error('Not authenticated');
-      const { error } = await supabase
+      
+      console.log('Eliminazione categoria:', id);
+      
+      // Prima aggiorna le transazioni associate per impostare category_id a NULL
+      const { error: transactionsError } = await supabase
+        .from('transactions')
+        .update({ category_id: null })
+        .eq('category_id', id)
+        .eq('user_id', user.id);
+      
+      if (transactionsError) {
+        console.error('Errore aggiornamento transazioni:', transactionsError);
+        throw transactionsError;
+      }
+      
+      // Poi fai soft delete della categoria
+      const updateData: Partial<Category> = { 
+        deleted_at: new Date().toISOString() 
+      };
+      
+      const { error, data } = await supabase
         .from('categories')
-        .delete()
+        .update(updateData)
         .eq('id', id)
         .eq('user_id', user.id);
-      if (error) throw error;
+      
+      if (error) {
+        console.error('Errore soft delete categoria:', error);
+        throw error;
+      }
+      
+      console.log('Categoria eliminata con successo:', data);
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['categories', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['transactions', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['statistics'] });
     },
   });

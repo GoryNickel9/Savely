@@ -58,6 +58,7 @@ export interface Category {
   color: string;
   type: TransactionType;
   created_at: string;
+  deleted_at: string | null;
 }
 
 export interface Transaction {
@@ -71,6 +72,7 @@ export interface Transaction {
   date: string;
   created_at: string;
   updated_at: string;
+  deleted_at: string | null;
   category?: Category;
 }
 

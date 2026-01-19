@@ -12,7 +12,8 @@ export function useBudgets() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('budgets')
-        .select('*, category:categories(*)');
+        .select('*, category:categories(*)')
+        .eq('user_id', user.id);
       
       if (error) throw error;
       return data as Budget[];

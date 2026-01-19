@@ -39,7 +39,7 @@ import { EMOJI_OPTIONS, COLOR_OPTIONS } from '@/lib/constants';
 
 export default function Settings() {
   const { user, signOut, updateEmail, updatePassword } = useAuth();
-  const { categories, createCategory, updateCategory } = useCategories();
+  const { categories, createCategory, updateCategory, deleteCategory } = useCategories();
   const { toast } = useToast();
   const navigate = useNavigate();
   const [isExporting, setIsExporting] = useState(false);
@@ -71,6 +71,8 @@ export default function Settings() {
   const [editCatIcon, setEditCatIcon] = useState('📦');
   const [editCatColor, setEditCatColor] = useState('#6b7280');
   const [editCatType, setEditCatType] = useState<TransactionType>('expense');
+  const [categoryDeleteOpen, setCategoryDeleteOpen] = useState(false);
+  const [deletingCategory, setDeletingCategory] = useState<string | null>(null);
   
   // New category dialog state
   const [newCatOpen, setNewCatOpen] = useState(false);
@@ -436,6 +438,23 @@ export default function Settings() {
     }
   };
 
+  const handleCategoryDelete = async () => {
+    if (!deletingCategory) return;
+    try {
+      await deleteCategory.mutateAsync(deletingCategory);
+      toast({ title: 'Categoria eliminata!' });
+      setCategoryDeleteOpen(false);
+      setDeletingCategory(null);
+    } catch {
+      toast({ title: 'Errore', variant: 'destructive' });
+    }
+  };
+
+  const openCategoryDelete = (category: any) => {
+    setDeletingCategory(category.id);
+    setCategoryDeleteOpen(true);
+  };
+
   const userName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Utente';
 
   return (
@@ -719,7 +738,7 @@ export default function Settings() {
                   <div className="space-y-4">
                     <div>
                       <p className="text-sm text-muted-foreground mb-2">
-                        Modifica le tue categorie, le loro emoji e i colori.
+                        Modifica o elimina le tue categorie, le loro emoji e i colori.
                       </p>
                     </div>
                     
@@ -743,6 +762,9 @@ export default function Settings() {
                               />
                               <Button variant="ghost" size="icon" onClick={() => openCategoryEdit(category)}>
                                 <Edit2 className="w-4 h-4" />
+                              </Button>
+                              <Button variant="ghost" size="icon" onClick={() => openCategoryDelete(category)} className="text-destructive hover:text-destructive hover:bg-destructive/10">
+                                <Trash2 className="w-4 h-4" />
                               </Button>
                             </div>
                           </div>
@@ -852,6 +874,28 @@ export default function Settings() {
               </form>
             </DialogContent>
           </Dialog>
+
+          {/* Category Delete Confirmation Dialog */}
+          <AlertDialog open={categoryDeleteOpen} onOpenChange={setCategoryDeleteOpen}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Eliminare la categoria?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Questa azione eliminerà la categoria. Le transazioni associate non verranno eliminate ma non avranno più una categoria assegnata.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Annulla</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={handleCategoryDelete}
+                  disabled={deleteCategory.isPending}
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                >
+                  {deleteCategory.isPending ? 'Eliminazione...' : 'Elimina'}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
 
           {/* Danger Zone */}
           <div className="border-t border-border pt-6 space-y-4">

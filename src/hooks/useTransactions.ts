@@ -13,6 +13,8 @@ export function useTransactions() {
       const { data, error } = await supabase
         .from('transactions')
         .select('*, category:categories(*)')
+        .eq('user_id', user.id)
+        .is('deleted_at', null)
         .order('date', { ascending: false });
       
       if (error) throw error;
@@ -78,8 +80,9 @@ export function useTransactions() {
     mutationFn: async (id: string) => {
       const { error } = await supabase
         .from('transactions')
-        .delete()
-        .eq('id', id);
+        .update({ deleted_at: new Date().toISOString() } as any)
+        .eq('id', id)
+        .eq('user_id', user!.id);
       
       if (error) throw error;
     },

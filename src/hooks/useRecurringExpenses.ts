@@ -18,6 +18,7 @@ export interface RecurringExpense {
   is_active: boolean;
   created_at: string;
   updated_at: string;
+  deleted_at: string | null;
   category?: Category;
 }
 
@@ -38,6 +39,8 @@ export function useRecurringExpenses() {
       const { data, error } = await supabase
         .from('recurring_expenses')
         .select('*, category:categories(*)')
+        .eq('user_id', user.id)
+        .is('deleted_at', null)
         .order('next_due_date', { ascending: true });
       
       if (error) throw error;
@@ -105,8 +108,9 @@ export function useRecurringExpenses() {
     mutationFn: async (id: string) => {
       const { error } = await supabase
         .from('recurring_expenses')
-        .delete()
-        .eq('id', id);
+        .update({ deleted_at: new Date().toISOString() } as any)
+        .eq('id', id)
+        .eq('user_id', user!.id);
       
       if (error) throw error;
     },
@@ -145,6 +149,7 @@ export function useRecurringExpenses() {
           .eq('description', expense.name)
           .gte('date', `${year}-${String(month).padStart(2, '0')}-01`)
           .lt('date', `${year}-${String(month).padStart(2, '0')}-32`)
+          .is('deleted_at', null)
           .maybeSingle();
 
         if (!existing) {
