@@ -80,9 +80,8 @@ export function useTransactions() {
     mutationFn: async (id: string) => {
       const { error } = await supabase
         .from('transactions')
-        .update({ deleted_at: new Date().toISOString() } as any)
-        .eq('id', id)
-        .eq('user_id', user!.id);
+        .delete()
+        .eq('id', id);
       
       if (error) throw error;
     },

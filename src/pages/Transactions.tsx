@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { TransactionType, Transaction } from '@/lib/types';
 import { CategorySelect } from '@/components/CategorySelect';
 import { CURRENCY_SYMBOLS } from '@/lib/constants';
@@ -24,6 +25,8 @@ export default function Transactions() {
   // Dialog states
   const [open, setOpen] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [transactionToDelete, setTransactionToDelete] = useState<Transaction | null>(null);
 
   // Form states
   const [type, setType] = useState<TransactionType>('expense');
@@ -64,6 +67,23 @@ export default function Transactions() {
     setDescription(t.description || '');
     setDate(t.date);
     setOpen(true);
+  };
+
+  const openDeleteConfirm = (t: Transaction) => {
+    setTransactionToDelete(t);
+    setDeleteConfirmOpen(true);
+  };
+
+  const handleDelete = async () => {
+    if (!transactionToDelete) return;
+    try {
+      await deleteTransaction.mutateAsync(transactionToDelete.id);
+      toast({ title: 'Transazione eliminata!' });
+      setDeleteConfirmOpen(false);
+      setTransactionToDelete(null);
+    } catch {
+      toast({ title: 'Errore durante l\'eliminazione', variant: 'destructive' });
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -302,13 +322,29 @@ export default function Transactions() {
                 <Button variant="ghost" size="icon" onClick={() => openEditDialog(t)}>
                   <Pencil className="w-4 h-4" />
                 </Button>
-                <Button variant="ghost" size="icon" onClick={() => deleteTransaction.mutate(t.id)}>
+                <Button variant="ghost" size="icon" onClick={() => openDeleteConfirm(t)}>
                   <Trash2 className="w-4 h-4" />
                 </Button>
               </div>
             </div>
           ))}
         </div>
+
+        {/* Delete confirmation dialog */}
+        <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Conferma eliminazione</AlertDialogTitle>
+              <AlertDialogDescription>
+                Sei sicuro di voler eliminare questa transazione? Questa azione non può essere annullata.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Annulla</AlertDialogCancel>
+              <AlertDialogAction onClick={handleDelete}>Elimina</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </MainLayout>
   );
