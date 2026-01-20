@@ -597,7 +597,16 @@ export default function Settings() {
                   {/* Import from Spendy Desktop */}
                   <div>
                     <p className="text-sm text-muted-foreground mb-2">
-                      Importa dati esportati da Spendy Desktop.
+                      Importa dati esportati da{' '}
+                      <a 
+                        href="https://drive.proton.me/urls/SPM33FR67W#etoWUuO4WeBe" 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-primary hover:underline"
+                      >
+                        Spendy Desktop
+                      </a>
+                      .
                     </p>
                     <Button
                       variant="outline"
