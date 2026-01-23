@@ -599,7 +599,7 @@ export default function Settings() {
                     <p className="text-sm text-muted-foreground mb-2">
                       Importa dati esportati da{' '}
                       <a 
-                        href="https://drive.proton.me/urls/SPM33FR67W#etoWUuO4WeBe" 
+                        href="https://drive.proton.me/urls/BAP9T2DZ4R#xeUPYTXklGaD" 
                         target="_blank" 
                         rel="noopener noreferrer"
                         className="text-primary hover:underline"
