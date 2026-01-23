@@ -64,11 +64,11 @@ export default function PokerNextCut() {
   };
 
   // Calculate "Quanto manca per il prossimo cut"
-  const calculateNeed = () => {
+  const need = useMemo(() => {
     if (!nextCut) return 0;
     const gross = calculateNextCutGross(nextCut.deal);
     return gross - nextCut.profit_loss;
-  };
+  }, [nextCut?.deal, nextCut?.profit_loss, totalMonthlySpending]);
 
   // Update Profit/Loss
   const handleUpdateProfitLoss = async () => {
@@ -175,8 +175,6 @@ export default function PokerNextCut() {
       </div>
     );
   }
-
-  const need = calculateNeed();
 
   return (
     <MainLayout>
