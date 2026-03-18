@@ -2,13 +2,14 @@ import { useState, useMemo } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { useTransactions } from '@/hooks/useTransactions';
 import { useCategories } from '@/hooks/useCategories';
+import { useProfile } from '@/hooks/useProfile';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { TransactionType, Transaction } from '@/lib/types';
+import { TransactionType, Transaction, CurrencyCode } from '@/lib/types';
 import { CategorySelect } from '@/components/CategorySelect';
 import { CURRENCY_SYMBOLS } from '@/lib/constants';
 import { Plus, Trash2, Pencil, Search, Calendar } from 'lucide-react';
@@ -20,6 +21,7 @@ type FilterPeriod = 'this_month' | 'last_month' | 'last_semester' | 'last_year' 
 export default function Transactions() {
   const { transactions, createTransaction, updateTransaction, deleteTransaction } = useTransactions();
   const { incomeCategories, expenseCategories, categories: allCategories } = useCategories();
+  const { defaultCurrency } = useProfile();
   const { toast } = useToast();
 
   // Dialog states
@@ -31,9 +33,11 @@ export default function Transactions() {
   // Form states
   const [type, setType] = useState<TransactionType>('expense');
   const [amount, setAmount] = useState('');
+  const [currency, setCurrency] = useState<CurrencyCode>(defaultCurrency);
   const [categoryId, setCategoryId] = useState('');
   const [description, setDescription] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [isFetchingRate, setIsFetchingRate] = useState(false);
 
   // Filter states
   const [filterPeriod, setFilterPeriod] = useState<FilterPeriod>('this_month');
@@ -48,6 +52,7 @@ export default function Transactions() {
   const resetForm = () => {
     setType('expense');
     setAmount('');
+    setCurrency(defaultCurrency);
     setCategoryId('');
     setDescription('');
     setDate(new Date().toISOString().split('T')[0]);
@@ -63,6 +68,7 @@ export default function Transactions() {
     setEditingTransaction(t);
     setType(t.type);
     setAmount(String(t.amount));
+    setCurrency((t.currency || defaultCurrency) as CurrencyCode);
     setCategoryId(t.category_id || '');
     setDescription(t.description || '');
     setDate(t.date);
@@ -86,14 +92,30 @@ export default function Transactions() {
     }
   };
 
+  const fetchExchangeRate = async (from: CurrencyCode): Promise<number> => {
+    if (from === 'EUR') return 1;
+    try {
+      const resp = await fetch(`https://api.frankfurter.app/latest?from=${from}&to=EUR`);
+      if (!resp.ok) return 1;
+      const data = await resp.json();
+      return data.rates?.EUR ?? 1;
+    } catch {
+      return 1;
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsFetchingRate(true);
     try {
+      const exchange_rate_eur = await fetchExchangeRate(currency);
       if (editingTransaction) {
         await updateTransaction.mutateAsync({
           id: editingTransaction.id,
           type,
-          amount: parseFloat(amount),
+          amount: Number.parseFloat(amount),
+          currency,
+          exchange_rate_eur,
           category_id: categoryId || undefined,
           description: description || undefined,
           date,
@@ -102,7 +124,9 @@ export default function Transactions() {
       } else {
         await createTransaction.mutateAsync({
           type,
-          amount: parseFloat(amount),
+          amount: Number.parseFloat(amount),
+          currency,
+          exchange_rate_eur,
           category_id: categoryId || undefined,
           description: description || undefined,
           date,
@@ -113,6 +137,8 @@ export default function Transactions() {
       resetForm();
     } catch {
       toast({ title: 'Errore', variant: 'destructive' });
+    } finally {
+      setIsFetchingRate(false);
     }
   };
 
@@ -196,7 +222,26 @@ export default function Transactions() {
                   <Button type="button" variant={type === 'expense' ? 'default' : 'outline'} onClick={() => setType('expense')}>Uscita</Button>
                   <Button type="button" variant={type === 'income' ? 'default' : 'outline'} onClick={() => setType('income')}>Entrata</Button>
                 </div>
-                <div><Label>Importo</Label><Input type="number" step="0.01" value={amount} onChange={e => setAmount(e.target.value)} required /></div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <Label>Importo</Label>
+                    <Input type="number" step="0.01" value={amount} onChange={e => setAmount(e.target.value)} required />
+                  </div>
+                  <div>
+                    <Label>Valuta</Label>
+                    <Select value={currency} onValueChange={v => setCurrency(v as CurrencyCode)}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {(Object.keys(CURRENCY_SYMBOLS) as CurrencyCode[]).map(code => (
+                          <SelectItem key={code} value={code}>{code} ({CURRENCY_SYMBOLS[code]})</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {currency !== 'EUR' && (
+                      <p className="text-xs text-muted-foreground mt-1">Il cambio EUR viene salvato al momento del salvataggio</p>
+                    )}
+                  </div>
+                </div>
                 <div><Label>Categoria</Label>
                   <CategorySelect
                     categories={allCategories}
@@ -208,7 +253,12 @@ export default function Transactions() {
                 </div>
                 <div><Label>Descrizione</Label><Input value={description} onChange={e => setDescription(e.target.value)} /></div>
                 <div><Label>Data</Label><Input type="date" value={date} onChange={e => setDate(e.target.value)} /></div>
-                <Button type="submit" className="w-full">{editingTransaction ? 'Aggiorna' : 'Salva'}</Button>
+                <Button type="submit" className="w-full" disabled={isFetchingRate}>
+                  {(() => {
+                    if (isFetchingRate) return 'Recupero cambio...';
+                    return editingTransaction ? 'Aggiorna' : 'Salva';
+                  })()}
+                </Button>
               </form>
             </DialogContent>
           </Dialog>
@@ -316,9 +366,32 @@ export default function Transactions() {
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <span className={t.type === 'income' ? 'text-success font-semibold' : 'text-destructive font-semibold'}>
-                  {t.type === 'income' ? '+' : '-'}{CURRENCY_SYMBOLS.EUR}{Number(t.amount).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                </span>
+                <div className="text-right">
+                  {(() => {
+                    const txCurrency = (t.currency || 'EUR') as CurrencyCode;
+                    const rateEur = t.exchange_rate_eur ?? 1;
+                    const amountInEur = t.amount * rateEur;
+                    const sign = t.type === 'income' ? '+' : '-';
+                    const colorClass = t.type === 'income' ? 'text-success font-semibold' : 'text-destructive font-semibold';
+                    if (txCurrency === defaultCurrency) {
+                      return (
+                        <span className={colorClass}>
+                          {sign}{CURRENCY_SYMBOLS[defaultCurrency]}{Number(t.amount).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </span>
+                      );
+                    }
+                    const mainSymbol = CURRENCY_SYMBOLS[defaultCurrency] || defaultCurrency;
+                    const origSymbol = CURRENCY_SYMBOLS[txCurrency] || txCurrency;
+                    return (
+                      <div>
+                        <span className={colorClass}>
+                          {sign}{mainSymbol}{amountInEur.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </span>
+                        <p className="text-xs text-muted-foreground">{sign}{origSymbol}{Number(t.amount).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {txCurrency}</p>
+                      </div>
+                    );
+                  })()}
+                </div>
                 <Button variant="ghost" size="icon" onClick={() => openEditDialog(t)}>
                   <Pencil className="w-4 h-4" />
                 </Button>

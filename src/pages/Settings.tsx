@@ -34,12 +34,14 @@ import RevolutImportDialog from '@/components/settings/RevolutImportDialog';
 import BBVAImportDialog from '@/components/settings/BBVAImportDialog';
 import TradeRepublicImportDialog from '@/components/settings/TradeRepublicImportDialog';
 import ISINMappingsDialog from '@/components/settings/ISINMappingsDialog';
-import { TransactionType } from '@/lib/types';
-import { EMOJI_OPTIONS, COLOR_OPTIONS } from '@/lib/constants';
+import { TransactionType, CurrencyCode } from '@/lib/types';
+import { EMOJI_OPTIONS, COLOR_OPTIONS, CURRENCY_SYMBOLS } from '@/lib/constants';
+import { useProfile } from '@/hooks/useProfile';
 
 export default function Settings() {
   const { user, signOut, updateEmail, updatePassword } = useAuth();
   const { categories, createCategory, updateCategory, deleteCategory } = useCategories();
+  const { defaultCurrency, updateDefaultCurrency } = useProfile();
   const { toast } = useToast();
   const navigate = useNavigate();
   const [isExporting, setIsExporting] = useState(false);
@@ -573,6 +575,39 @@ export default function Settings() {
                 </DialogContent>
               </Dialog>
             </div>
+          </div>
+
+          {/* Main Currency Section */}
+          <div className="border-t border-border pt-6">
+            <h3 className="font-medium mb-4 flex items-center gap-2">
+              <Settings2 className="w-5 h-5" />
+              Valuta Principale
+            </h3>
+            <p className="text-sm text-muted-foreground mb-3">
+              Le transazioni vengono visualizzate in questa valuta. Il controvalore viene calcolato al cambio del momento dell'inserimento.
+            </p>
+            <Select
+              value={defaultCurrency}
+              onValueChange={async (v) => {
+                try {
+                  await updateDefaultCurrency.mutateAsync(v as CurrencyCode);
+                  toast({ title: 'Valuta principale aggiornata!' });
+                } catch {
+                  toast({ title: 'Errore', variant: 'destructive' });
+                }
+              }}
+            >
+              <SelectTrigger className="w-full sm:w-64">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {(Object.keys(CURRENCY_SYMBOLS) as CurrencyCode[]).map(code => (
+                  <SelectItem key={code} value={code}>
+                    {code} — {CURRENCY_SYMBOLS[code]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Import/Export Section */}

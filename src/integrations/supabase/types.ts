@@ -462,6 +462,7 @@ export type Database = {
           currency: Database["public"]["Enums"]["currency_code"] | null
           date: string
           description: string | null
+          exchange_rate_eur: number
           id: string
           type: Database["public"]["Enums"]["transaction_type"]
           updated_at: string
@@ -474,6 +475,7 @@ export type Database = {
           currency?: Database["public"]["Enums"]["currency_code"] | null
           date?: string
           description?: string | null
+          exchange_rate_eur?: number
           id?: string
           type: Database["public"]["Enums"]["transaction_type"]
           updated_at?: string
@@ -486,6 +488,7 @@ export type Database = {
           currency?: Database["public"]["Enums"]["currency_code"] | null
           date?: string
           description?: string | null
+          exchange_rate_eur?: number
           id?: string
           type?: Database["public"]["Enums"]["transaction_type"]
           updated_at?: string
@@ -523,9 +526,8 @@ export type Database = {
         | "GBP"
         | "CHF"
         | "JPY"
-        | "CAD"
-        | "AUD"
         | "CNY"
+        | "IDR"
       transaction_type: "income" | "expense"
     }
     CompositeTypes: {

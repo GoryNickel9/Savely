@@ -1,4 +1,4 @@
-export type CurrencyCode = 'EUR' | 'USD' | 'GBP' | 'CHF' | 'JPY' | 'CAD' | 'AUD' | 'CNY';
+export type CurrencyCode = 'EUR' | 'USD' | 'GBP' | 'CHF' | 'JPY' | 'CNY' | 'IDR';
 export type TransactionType = 'income' | 'expense';
 export type AssetType = 'stock' | 'etf' | 'crypto' | 'bond' | 'cash' | 'real_estate' | 'other';
 
@@ -70,6 +70,7 @@ export interface Transaction {
   currency: CurrencyCode;
   description: string | null;
   date: string;
+  exchange_rate_eur: number;
   created_at: string;
   updated_at: string;
   deleted_at: string | null;

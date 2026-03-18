@@ -28,6 +28,7 @@ export function useTransactions() {
       type: TransactionType;
       amount: number;
       currency?: CurrencyCode;
+      exchange_rate_eur?: number;
       category_id?: string;
       description?: string;
       date?: string;
@@ -56,6 +57,7 @@ export function useTransactions() {
       type?: TransactionType;
       amount?: number;
       currency?: CurrencyCode;
+      exchange_rate_eur?: number;
       category_id?: string;
       description?: string;
       date?: string;

@@ -27,9 +27,8 @@ export const CURRENCY_SYMBOLS: Record<CurrencyCode, string> = {
   GBP: '£',
   CHF: 'CHF',
   JPY: '¥',
-  CAD: 'C$',
-  AUD: 'A$',
   CNY: '¥',
+  IDR: 'Rp',
 };
 
 /**
