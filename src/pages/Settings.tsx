@@ -31,8 +31,7 @@ import {
 import * as XLSX from 'xlsx';
 import SpendyImportDialog from '@/components/settings/SpendyImportDialog';
 import RevolutImportDialog from '@/components/settings/RevolutImportDialog';
-import BBVAImportDialog from '@/components/settings/BBVAImportDialog';
-import TradeRepublicImportDialog from '@/components/settings/TradeRepublicImportDialog';
+import BankImportDialog from '@/components/settings/BankImportDialog';
 import ISINMappingsDialog from '@/components/settings/ISINMappingsDialog';
 import { TransactionType, CurrencyCode } from '@/lib/types';
 import { EMOJI_OPTIONS, COLOR_OPTIONS, CURRENCY_SYMBOLS } from '@/lib/constants';
@@ -49,8 +48,7 @@ export default function Settings() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [spendyDialogOpen, setSpendyDialogOpen] = useState(false);
   const [revolutDialogOpen, setRevolutDialogOpen] = useState(false);
-  const [bbvaDialogOpen, setBbvaDialogOpen] = useState(false);
-  const [tradeRepublicDialogOpen, setTradeRepublicDialogOpen] = useState(false);
+  const [bankImportDialogOpen, setBankImportDialogOpen] = useState(false);
   const [isinMappingsDialogOpen, setIsinMappingsDialogOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
@@ -663,7 +661,16 @@ export default function Settings() {
                   {/* Import from Banks */}
                   <div>
                     <p className="text-sm text-muted-foreground mb-2">
-                      Importa transazioni dalla tua banca.
+                      Importa transazioni dalla tua banca.{' '}
+                      Non hai file CSV?{' '}
+                      <a
+                        href="https://bank2-csv-khaki.vercel.app/"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-primary hover:underline"
+                      >
+                        Clicca qui.
+                      </a>
                     </p>
                     <div className="flex flex-wrap gap-2">
                       <Button
@@ -676,19 +683,11 @@ export default function Settings() {
                       </Button>
                       <Button
                         variant="outline"
-                        onClick={() => setTradeRepublicDialogOpen(true)}
+                        onClick={() => setBankImportDialogOpen(true)}
                         className="w-full sm:w-auto"
                       >
                         <Upload className="w-5 h-5 mr-2" />
-                        Trade Republic
-                      </Button>
-                      <Button
-                        variant="outline"
-                        onClick={() => setBbvaDialogOpen(true)}
-                        className="w-full sm:w-auto"
-                      >
-                        <Upload className="w-5 h-5 mr-2" />
-                        BBVA
+                        BBVA / Trade Republic
                       </Button>
                     </div>
                     {user && (
@@ -698,14 +697,9 @@ export default function Settings() {
                           onOpenChange={setRevolutDialogOpen}
                           userId={user.id}
                         />
-                        <BBVAImportDialog
-                          open={bbvaDialogOpen}
-                          onOpenChange={setBbvaDialogOpen}
-                          userId={user.id}
-                        />
-                        <TradeRepublicImportDialog
-                          open={tradeRepublicDialogOpen}
-                          onOpenChange={setTradeRepublicDialogOpen}
+                        <BankImportDialog
+                          open={bankImportDialogOpen}
+                          onOpenChange={setBankImportDialogOpen}
                           userId={user.id}
                         />
                         <ISINMappingsDialog

@@ -1,6 +1,6 @@
 /**
  * Tipi condivisi per i dialog di import
- * Questi tipi vengono utilizzati da BBVAImportDialog, RevolutImportDialog e SpendyImportDialog
+ * Questi tipi vengono utilizzati da BankImportDialog, RevolutImportDialog e SpendyImportDialog
  */
 
 /**
