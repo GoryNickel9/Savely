@@ -12,6 +12,12 @@ dist
 dist-ssr
 *.local
 
+# Local dev files
+.env
+ISTRUZIONI_AVVIO.txt
+start_dev_server.py
+plans/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
