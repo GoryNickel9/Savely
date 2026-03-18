@@ -302,6 +302,57 @@ Deno.serve(async (req: any) => {
       }
     }
 
+    // Update forex rates for non-EUR cash assets
+    let cashQuery = supabase
+      .from('portfolio_assets')
+      .select('id, user_id, currency, quantity')
+      .eq('type', 'cash')
+      .not('currency', 'is', null)
+      .neq('currency', 'EUR')
+      .is('sold_at', null);
+
+    if (userId) {
+      cashQuery = cashQuery.eq('user_id', userId);
+    }
+
+    const { data: cashAssets } = await cashQuery;
+
+    if (cashAssets && cashAssets.length > 0) {
+      const uniqueCurrencies = [...new Set(cashAssets.map((a: any) => a.currency as string))];
+      const forexRates: Record<string, number> = {};
+
+      for (const currency of uniqueCurrencies) {
+        try {
+          const url = `https://api.frankfurter.app/latest?from=${currency}&to=EUR`;
+          const resp = await fetch(url, { headers: { 'Accept': 'application/json' } });
+          if (resp.ok) {
+            const data = await resp.json();
+            const rate = data.rates?.EUR;
+            if (rate && rate > 0) {
+              forexRates[currency] = rate;
+              console.log(`✓ Forex ${currency}/EUR: ${rate}`);
+            }
+          }
+        } catch (err) {
+          console.error(`Error fetching forex for ${currency}:`, err);
+        }
+      }
+
+      for (const asset of cashAssets as any[]) {
+        const rate = forexRates[asset.currency];
+        if (rate) {
+          const { error: fxError } = await supabase
+            .from('portfolio_assets')
+            .update({ current_price: rate, updated_at: new Date().toISOString() })
+            .eq('id', asset.id);
+          if (!fxError) {
+            updatedCount++;
+            console.log(`Updated cash ${asset.currency} rate to €${rate}`);
+          }
+        }
+      }
+    }
+
     // Log the price update
     const { error: logError } = await supabase.from('price_update_logs').insert({
       assets_checked: assets.length,

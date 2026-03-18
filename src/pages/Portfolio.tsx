@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { ASSET_TYPE_LABELS, CURRENCY_SYMBOLS } from '@/lib/constants';
-import { AssetType, PortfolioAsset } from '@/lib/types';
+import { AssetType, CurrencyCode, PortfolioAsset } from '@/lib/types';
 import { Plus, Trash2, Clock, X } from 'lucide-react';
 import { useState, useMemo } from 'react';
 import { useToast } from '@/hooks/use-toast';
@@ -43,6 +43,7 @@ export default function Portfolio() {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editingAsset, setEditingAsset] = useState<PortfolioAsset | null>(null);
   const [editValue, setEditValue] = useState('');
+  const [cashCurrency, setCashCurrency] = useState<CurrencyCode>('EUR');
 
 
   // Combine all assets for instrument selection
@@ -87,11 +88,19 @@ export default function Portfolio() {
       };
 
       if (type === 'cash' || type === 'real_estate' || type === 'other') {
-        // Per cash, real_estate e other, non usiamo simbolo, quantità=1, prezzo=valore totale
         assetData.symbol = null;
-        assetData.quantity = 1;
-        assetData.purchase_price = parseFloat(price);
-        assetData.current_price = parseFloat(price);
+        if (type === 'cash' && cashCurrency !== 'EUR') {
+          // Multi-currency cash: quantity = importo nativo, current_price = tasso EUR aggiornato dall'Edge Function
+          assetData.quantity = parseFloat(price);
+          assetData.purchase_price = 1;
+          assetData.current_price = 1;
+          assetData.currency = cashCurrency;
+        } else {
+          // EUR cash / real_estate / other: quantity=1, price=valore totale
+          assetData.quantity = 1;
+          assetData.purchase_price = parseFloat(price);
+          assetData.current_price = parseFloat(price);
+        }
         // Per cash e other non impostiamo purchase_date
         if (type !== 'cash' && type !== 'other') {
           assetData.purchase_date = purchaseDate;
@@ -121,22 +130,28 @@ export default function Portfolio() {
     setPrice('');
     setPurchaseDate(format(new Date(), 'yyyy-MM-dd'));
     setSelectedExisting('');
+    setCashCurrency('EUR');
   };
 
   const handleEditCash = (asset: PortfolioAsset) => {
     setEditingAsset(asset);
-    setEditValue((asset.current_price ?? asset.purchase_price).toString());
+    if (asset.currency && asset.currency !== 'EUR') {
+      // Per liquidità non-EUR, modifica l'importo nativo (quantità)
+      setEditValue(asset.quantity.toString());
+    } else {
+      setEditValue((asset.current_price ?? asset.purchase_price).toString());
+    }
     setEditDialogOpen(true);
   };
 
   const handleSaveEdit = async () => {
     if (!editingAsset) return;
     try {
-      await updateAsset.mutateAsync({
-        id: editingAsset.id,
-        purchase_price: parseFloat(editValue),
-        current_price: parseFloat(editValue),
-      });
+      const isMultiCurrency = editingAsset.currency && editingAsset.currency !== 'EUR';
+      const updates = isMultiCurrency
+        ? { id: editingAsset.id, quantity: parseFloat(editValue) }
+        : { id: editingAsset.id, purchase_price: parseFloat(editValue), current_price: parseFloat(editValue) };
+      await updateAsset.mutateAsync(updates);
       toast({ title: 'Liquidità aggiornata!' });
       setEditDialogOpen(false);
       setEditingAsset(null);
@@ -357,6 +372,18 @@ export default function Portfolio() {
                       <SelectContent>{Object.entries(ASSET_TYPE_LABELS).map(([k, v]) => <SelectItem key={k} value={k as AssetType}>{v}</SelectItem>)}</SelectContent>
                     </Select>
                   </div>
+                  {type === 'cash' && (
+                    <div><Label>Valuta</Label>
+                      <Select value={cashCurrency} onValueChange={v => setCashCurrency(v as CurrencyCode)}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {Object.entries(CURRENCY_SYMBOLS).map(([code, sym]) => (
+                            <SelectItem key={code} value={code}>{code} ({sym})</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
                   {type !== 'cash' && type !== 'other' && (
                     <div><Label>Data Acquisto</Label><Input type="date" value={purchaseDate} onChange={e => setPurchaseDate(e.target.value)} required /></div>
                   )}
@@ -367,9 +394,13 @@ export default function Portfolio() {
                     </div>
                   ) : (
                     <div>
-                      <Label>Valore (€)</Label>
+                      <Label>{type === 'cash' && cashCurrency !== 'EUR' ? `Importo (${cashCurrency})` : 'Valore (€)'}</Label>
                       <Input type="number" step="0.01" value={price} onChange={e => setPrice(e.target.value)} required />
-                      <p className="text-xs text-muted-foreground mt-1">Inserisci il valore totale dell'asset</p>
+                      {type === 'cash' && cashCurrency !== 'EUR' ? (
+                        <p className="text-xs text-muted-foreground mt-1">Il tasso EUR/{cashCurrency} verrà aggiornato automaticamente alla prossima sincronizzazione prezzi</p>
+                      ) : (
+                        <p className="text-xs text-muted-foreground mt-1">Inserisci il valore totale dell'asset</p>
+                      )}
                     </div>
                   )}
                   <Button type="submit" className="w-full">Salva</Button>
@@ -510,6 +541,11 @@ export default function Portfolio() {
                       {first.type === 'cash' || first.type === 'other' || first.type === 'real_estate' ? (
                         <span>
                           {ASSET_TYPE_LABELS[first.type]}
+                          {first.type === 'cash' && first.currency && first.currency !== 'EUR' && (
+                            <span className="ml-2 text-xs font-medium text-foreground">
+                              {totalQuantity.toLocaleString('it-IT', { maximumFractionDigits: 2 })} {first.currency}
+                            </span>
+                          )}
                           <span className="ml-2 text-xs text-muted-foreground">
                             - Aggiornato al {format(parseISO(first.updated_at), 'dd.MM.yy', { locale: it })}
                           </span>
@@ -676,7 +712,7 @@ export default function Portfolio() {
                 <Input value={editingAsset?.name || ''} disabled />
               </div>
               <div>
-                <Label>Valore (€)</Label>
+                <Label>{editingAsset?.currency && editingAsset.currency !== 'EUR' ? `Importo (${editingAsset.currency})` : 'Valore (€)'}</Label>
                 <Input
                   type="number"
                   step="0.01"
@@ -684,6 +720,11 @@ export default function Portfolio() {
                   onChange={e => setEditValue(e.target.value)}
                   autoFocus
                 />
+                {editingAsset?.currency && editingAsset.currency !== 'EUR' && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Equivalente attuale: ~{CURRENCY_SYMBOLS.EUR}{(parseFloat(editValue || '0') * (editingAsset.current_price ?? 1)).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </p>
+                )}
               </div>
               <Button onClick={handleSaveEdit} className="w-full">Salva</Button>
             </div>
