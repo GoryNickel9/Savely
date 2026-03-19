@@ -28,3 +28,4 @@ plans/
 *.njsproj
 *.sln
 *.sw?
+.env
