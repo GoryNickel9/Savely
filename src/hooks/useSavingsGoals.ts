@@ -54,7 +54,8 @@ export function useSavingsGoals() {
       const { error } = await supabase
         .from('savings_goals')
         .update(updates)
-        .eq('id', id);
+        .eq('id', id)
+        .eq('user_id', user!.id);
       
       if (error) throw error;
     },
@@ -68,7 +69,8 @@ export function useSavingsGoals() {
       const { error } = await supabase
         .from('savings_goals')
         .delete()
-        .eq('id', id);
+        .eq('id', id)
+        .eq('user_id', user!.id);
       
       if (error) throw error;
     },

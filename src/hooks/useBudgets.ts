@@ -52,7 +52,8 @@ export function useBudgets() {
       const { error } = await supabase
         .from('budgets')
         .update({ amount })
-        .eq('id', id);
+        .eq('id', id)
+        .eq('user_id', user!.id);
       
       if (error) throw error;
     },
@@ -67,7 +68,8 @@ export function useBudgets() {
       const { error } = await supabase
         .from('budgets')
         .delete()
-        .eq('id', id);
+        .eq('id', id)
+        .eq('user_id', user!.id);
       
       if (error) throw error;
     },

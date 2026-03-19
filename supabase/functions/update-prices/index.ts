@@ -1,8 +1,10 @@
 // @ts-ignore - Supabase Edge Functions don't have complete type definitions
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
+const ALLOWED_ORIGIN = Deno.env.get('ALLOWED_ORIGIN') || '';
+
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Origin': ALLOWED_ORIGIN,
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
@@ -34,7 +36,13 @@ const EXCHANGE_SUFFIXES = [
 async function fetchStockPrice(symbol: string): Promise<number | null> {
   // Remove any existing suffix to get base symbol
   const baseSymbol = symbol.replace(/\.[A-Z]{1,2}$/i, '').toUpperCase();
-  
+
+  // Validate: only allow safe ticker characters to prevent URL injection
+  if (!/^[A-Z0-9\-]{1,12}$/.test(baseSymbol)) {
+    console.log(`✗ Invalid symbol format: ${symbol}`);
+    return null;
+  }
+
   // If user already specified a suffix, try that first
   const userSuffix = symbol.match(/\.[A-Z]{1,2}$/i)?.[0] || '';
   const suffixesToTry = userSuffix 
@@ -44,7 +52,7 @@ async function fetchStockPrice(symbol: string): Promise<number | null> {
   for (const suffix of suffixesToTry) {
     const trySymbol = baseSymbol + suffix;
     try {
-      const url = `https://query1.finance.yahoo.com/v8/finance/chart/${trySymbol}?interval=1d&range=1d`;
+      const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(trySymbol)}?interval=1d&range=1d`;
       const response = await fetch(url, {
         headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' }
       });
@@ -128,8 +136,14 @@ async function fetchCryptoPrice(symbol: string): Promise<number | null> {
     // Clean up symbol
     const cleanSymbol = symbol.toUpperCase().replace(/[-\/].*/, '').trim();
     const coinId = CRYPTO_ID_MAP[cleanSymbol] || cleanSymbol.toLowerCase();
-    
-    const url = `https://api.coingecko.com/api/v3/simple/price?ids=${coinId}&vs_currencies=eur`;
+
+    // Validate: only allow safe characters for CoinGecko IDs/symbols
+    if (!/^[a-z0-9\-]{1,64}$/.test(coinId)) {
+      console.log(`✗ Invalid coin ID format: ${coinId}`);
+      return null;
+    }
+
+    const url = `https://api.coingecko.com/api/v3/simple/price?ids=${encodeURIComponent(coinId)}&vs_currencies=eur`;
     
     const response = await fetch(url, {
       headers: { 'Accept': 'application/json' }
@@ -139,7 +153,7 @@ async function fetchCryptoPrice(symbol: string): Promise<number | null> {
       console.log(`CoinGecko error for ${symbol}: ${response.status}`);
       
       // Try searching by symbol if ID lookup failed
-      const searchUrl = `https://api.coingecko.com/api/v3/search?query=${cleanSymbol}`;
+      const searchUrl = `https://api.coingecko.com/api/v3/search?query=${encodeURIComponent(cleanSymbol)}`;
       const searchResponse = await fetch(searchUrl);
       
       if (searchResponse.ok) {
@@ -148,7 +162,7 @@ async function fetchCryptoPrice(symbol: string): Promise<number | null> {
         
         if (coin?.id) {
           await new Promise(resolve => setTimeout(resolve, 200));
-          const priceUrl = `https://api.coingecko.com/api/v3/simple/price?ids=${coin.id}&vs_currencies=eur`;
+          const priceUrl = `https://api.coingecko.com/api/v3/simple/price?ids=${encodeURIComponent(coin.id)}&vs_currencies=eur`;
           const priceResponse = await fetch(priceUrl);
           
           if (priceResponse.ok) {
@@ -192,16 +206,39 @@ Deno.serve(async (req: any) => {
 
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Get user_id from request body (optional)
+    // Authenticate the caller
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Distinguish user JWT from service_role JWT.
+    // For user JWTs: restrict updates to caller's own assets (prevents IDOR).
+    // For service_role (cron): allow optional user_id filter from body.
+    const userClient = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const { data: { user } } = await userClient.auth.getUser();
+
     let userId: string | null = null;
-    try {
-      const body = await req.json();
-      userId = body.user_id || null;
-    } catch {
-      // No body provided
+    if (user) {
+      // Authenticated user: only allow updating their own assets
+      userId = user.id;
+    } else {
+      // Service role call (e.g. cron job): allow optional body filter
+      try {
+        const body = await req.json();
+        userId = body.user_id || null;
+      } catch {
+        // No body — update all assets
+      }
     }
 
     // Fetch assets that need price updates
@@ -227,6 +264,7 @@ Deno.serve(async (req: any) => {
       
       // Log the update attempt
       await supabase.from('price_update_logs').insert({
+        user_id: userId,
         assets_checked: 0,
         assets_updated: 0,
         errors: [],
@@ -318,12 +356,15 @@ Deno.serve(async (req: any) => {
     const { data: cashAssets } = await cashQuery;
 
     if (cashAssets && cashAssets.length > 0) {
-      const uniqueCurrencies = [...new Set(cashAssets.map((a: any) => a.currency as string))];
+      const uniqueCurrencies = [...new Set(cashAssets.map((a: any) => a.currency as string))] as string[];
       const forexRates: Record<string, number> = {};
 
-      for (const currency of uniqueCurrencies) {
+      // Validate ISO 4217 currency codes before using in URL
+      const validCurrencies = uniqueCurrencies.filter(c => /^[A-Z]{3}$/.test(c));
+
+      for (const currency of validCurrencies) {
         try {
-          const url = `https://api.frankfurter.app/latest?from=${currency}&to=EUR`;
+          const url = `https://api.frankfurter.app/latest?from=${encodeURIComponent(currency)}&to=EUR`;
           const resp = await fetch(url, { headers: { 'Accept': 'application/json' } });
           if (resp.ok) {
             const data = await resp.json();
@@ -355,6 +396,7 @@ Deno.serve(async (req: any) => {
 
     // Log the price update
     const { error: logError } = await supabase.from('price_update_logs').insert({
+      user_id: userId,
       assets_checked: assets.length,
       assets_updated: updatedCount,
       errors: errors,

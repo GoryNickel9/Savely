@@ -17,6 +17,7 @@ export function usePriceHistory() {
       const { data, error } = await supabase
         .from('asset_price_history')
         .select('asset_id, price, recorded_at')
+        .eq('user_id', user!.id)
         .order('recorded_at', { ascending: true });
 
       if (error) throw error;

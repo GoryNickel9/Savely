@@ -1,4 +1,4 @@
-project_id = "pkxoqgynkralwwrlxbah"
+project_id = "crqnfbahytzenisospcx"
 
 [functions.update-prices]
-verify_jwt = false
+verify_jwt = true

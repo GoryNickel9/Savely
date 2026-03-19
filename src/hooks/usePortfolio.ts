@@ -15,6 +15,7 @@ export function usePortfolio() {
       const { data, error } = await supabase
         .from('portfolio_assets')
         .select('*')
+        .eq('user_id', user!.id)
         .order('created_at', { ascending: false });
       
       if (error) throw error;
@@ -58,7 +59,8 @@ export function usePortfolio() {
       const { error } = await supabase
         .from('portfolio_assets')
         .update(updates)
-        .eq('id', id);
+        .eq('id', id)
+        .eq('user_id', user!.id);
       
       if (error) throw error;
     },
@@ -72,7 +74,8 @@ export function usePortfolio() {
       const { error } = await supabase
         .from('portfolio_assets')
         .delete()
-        .eq('id', id);
+        .eq('id', id)
+        .eq('user_id', user!.id);
       
       if (error) throw error;
     },

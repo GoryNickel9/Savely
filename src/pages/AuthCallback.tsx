@@ -16,6 +16,11 @@ export default function AuthCallback() {
         const refreshToken = searchParams.get('refresh_token');
         const type = searchParams.get('type');
 
+        // Strip tokens from URL to prevent leakage via browser history/referrer
+        if (accessToken || refreshToken) {
+          globalThis.history.replaceState({}, '', globalThis.location.pathname);
+        }
+
         if (type === 'signup' || type === 'email_change') {
           // Per signup o cambio email, Supabase gestisce automaticamente la sessione
           // Dobbiamo solo aspettare che la sessione venga aggiornata
