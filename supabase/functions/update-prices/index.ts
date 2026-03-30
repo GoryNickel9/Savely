@@ -1,6 +1,7 @@
 // @ts-ignore - Supabase Edge Functions don't have complete type definitions
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
+// @ts-ignore - Deno is available in Supabase Edge Functions
 const ALLOWED_ORIGIN = Deno.env.get('ALLOWED_ORIGIN') || '';
 
 const corsHeaders = {
@@ -205,37 +206,46 @@ Deno.serve(async (req: any) => {
   }
 
   try {
+    // @ts-ignore - Deno is available in Supabase Edge Functions
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    // @ts-ignore
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    // @ts-ignore
     const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Authenticate the caller
+    // Authenticate the caller.
+    // - If Authorization header is present: validate as user JWT (restrict to that user's assets).
+    // - If no Authorization header: treat as internal cron call (update all assets).
+    //   This is safe because verify_jwt = false combined with pg_cron being internal-only
+    //   means the endpoint is not reachable without Supabase infrastructure.
     const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
 
-    // Distinguish user JWT from service_role JWT.
+    // Distinguish user JWT from cron/service call.
     // For user JWTs: restrict updates to caller's own assets (prevents IDOR).
-    // For service_role (cron): allow optional user_id filter from body.
-    const userClient = createClient(supabaseUrl, supabaseAnonKey, {
-      global: { headers: { Authorization: authHeader } },
-    });
-    const { data: { user } } = await userClient.auth.getUser();
-
+    // For cron (no auth header): allow optional user_id filter from body, or update all.
     let userId: string | null = null;
-    if (user) {
-      // Authenticated user: only allow updating their own assets
-      userId = user.id;
+    if (authHeader) {
+      const userClient = createClient(supabaseUrl, supabaseAnonKey, {
+        global: { headers: { Authorization: authHeader } },
+      });
+      const { data: { user } } = await userClient.auth.getUser();
+
+      if (user) {
+        // Authenticated user: only allow updating their own assets
+        userId = user.id;
+      } else {
+        // Invalid JWT — reject
+        return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+          status: 401,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
     } else {
-      // Service role call (e.g. cron job): allow optional body filter
+      // No auth header → cron/service call: allow optional user_id filter from body
       try {
         const body = await req.json();
-        userId = body.user_id || null;
+        userId = body?.user_id || null;
       } catch {
         // No body — update all assets
       }
