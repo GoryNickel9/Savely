@@ -1,5 +1,6 @@
 import MainLayout from '@/components/layout/MainLayout';
 import { usePortfolio } from '@/hooks/usePortfolio';
+import { useTcgCards } from '@/hooks/useTcgCards';
 import { usePriceHistory } from '@/hooks/usePriceHistory';
 import { useLastPriceUpdate } from '@/hooks/useLastPriceUpdate';
 import { useManualPriceUpdate } from '@/hooks/useManualPriceUpdate';
@@ -9,8 +10,8 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { ASSET_TYPE_LABELS, CURRENCY_SYMBOLS } from '@/lib/constants';
-import { AssetType, CurrencyCode, PortfolioAsset } from '@/lib/types';
-import { Plus, Trash2, Clock, X } from 'lucide-react';
+import { AssetType, CurrencyCode, PortfolioAsset, TCG_GAME_LABELS } from '@/lib/types';
+import { Plus, Trash2, Clock, X, Library } from 'lucide-react';
 import { useState, useMemo } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -45,6 +46,12 @@ export default function Portfolio() {
   const [editValue, setEditValue] = useState('');
   const [cashCurrency, setCashCurrency] = useState<CurrencyCode>('EUR');
 
+  // TCG collection integration for portfolio
+  const { cards: allTcgCards } = useTcgCards();
+  const tcgPortfolioCards = allTcgCards.filter(c => (c.current_price ?? 0) > 0);
+  const tcgTotalValue = tcgPortfolioCards.reduce((sum, c) => sum + c.current_price! * c.quantity, 0);
+  const tcgTotalCost = tcgPortfolioCards.reduce((sum, c) => sum + c.purchase_price * c.quantity, 0);
+  const tcgTotalGain = tcgTotalValue - tcgTotalCost;
 
   // Combine all assets for instrument selection
   const allAssets = [...openAssets, ...closedAssets];
@@ -161,13 +168,14 @@ export default function Portfolio() {
     }
   };
 
-  const chartData = Object.entries(
+  const chartDataRaw = Object.entries(
     openAssets.reduce((acc, a) => {
       const value = (a.current_price ?? a.purchase_price) * a.quantity;
       acc[a.type] = (acc[a.type] || 0) + value;
       return acc;
     }, {} as Record<string, number>)
   ).map(([type, value]) => ({ name: ASSET_TYPE_LABELS[type as AssetType], value }));
+  const chartData = tcgTotalValue > 0 ? [...chartDataRaw, { name: 'TCG', value: tcgTotalValue }] : chartDataRaw;
 
   // Calcola il totale per le percentuali (incluso cash)
   const totalForPercentage = chartData.reduce((sum, item) => sum + item.value, 0);
@@ -261,7 +269,7 @@ export default function Portfolio() {
   }, 0);
   const totalCostForReturn = assetsForReturn.reduce((sum, a) => sum + a.purchase_price * a.quantity, 0);
   const totalGainForReturn = totalValueForReturn - totalCostForReturn;
-  const totalGainPercentExcludingCashAndRealEstate = totalCostForReturn > 0 ? (totalGainForReturn / totalCostForReturn) * 100 : 0;
+  const totalGainPercentExcludingCashAndRealEstate = (totalCostForReturn + tcgTotalCost) > 0 ? ((totalGainForReturn + tcgTotalGain) / (totalCostForReturn + tcgTotalCost)) * 100 : 0;
 
   // Calcola profitto/perdita escludendo liquidità e altro (come richiesto)
   const assetsForGain = openAssets.filter(a => a.type !== 'cash' && a.type !== 'other');
@@ -270,7 +278,7 @@ export default function Portfolio() {
     return sum + (price * a.quantity);
   }, 0);
   const totalCostForGain = assetsForGain.reduce((sum, a) => sum + a.purchase_price * a.quantity, 0);
-  const totalGainExcludingCashAndOther = totalValueForGain - totalCostForGain;
+  const totalGainExcludingCashAndOther = totalValueForGain - totalCostForGain + tcgTotalGain;
 
   // Calcola valore liquido (stock, etf, crypto, bond, cash)
   const liquidAssets = openAssets.filter(a => ['stock', 'etf', 'crypto', 'bond', 'cash'].includes(a.type));
@@ -279,12 +287,12 @@ export default function Portfolio() {
     return sum + (price * a.quantity);
   }, 0);
 
-  // Calcola valore illiquido (real_estate, other)
+  // Calcola valore illiquido (real_estate, other, TCG)
   const illiquidAssets = openAssets.filter(a => ['real_estate', 'other'].includes(a.type));
   const illiquidValue = illiquidAssets.reduce((sum, a) => {
     const price = a.current_price ?? a.purchase_price;
     return sum + (price * a.quantity);
-  }, 0);
+  }, 0) + tcgTotalValue;
 
   // Dati per il grafico a torta liquido/illiquido
   const liquidityData = [
@@ -414,7 +422,7 @@ export default function Portfolio() {
         <div className="grid md:grid-cols-6 gap-4">
           <div className="glass rounded-xl p-6 text-center">
             <p className="text-sm text-muted-foreground">Valore Attuale</p>
-            <p className="text-2xl font-display font-bold">{CURRENCY_SYMBOLS.EUR}{totalValue.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+            <p className="text-2xl font-display font-bold">{CURRENCY_SYMBOLS.EUR}{(totalValue + tcgTotalValue).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
           </div>
           <div className="glass rounded-xl p-6 text-center">
             <p className="text-sm text-muted-foreground">Valore Liquido</p>
@@ -506,9 +514,11 @@ export default function Portfolio() {
         {/* Open positions - grouped by symbol */}
         <div className="glass rounded-xl divide-y divide-border">
           <h3 className="font-semibold p-4 border-b border-border">Posizioni Aperte</h3>
-          {openAssets.length === 0 ? (
+          {(openAssets.length === 0 && tcgPortfolioCards.length === 0) ? (
             <p className="text-muted-foreground text-center py-12">Nessuna posizione aperta</p>
-          ) : (() => {
+          ) : (
+            <>
+            {openAssets.length > 0 && (() => {
             // Group assets by symbol (or by id if no symbol)
             const grouped = openAssets.reduce((acc, a) => {
               const key = a.symbol?.toUpperCase() || a.id;
@@ -604,7 +614,38 @@ export default function Portfolio() {
                 </div>
               );
             });
-          })()}
+            })()}
+            {(['magic', 'pokemon', 'yugioh'] as const).map(game => {
+              const gameCards = tcgPortfolioCards.filter(c => c.category === game);
+              if (gameCards.length === 0) return null;
+              const gameValue = gameCards.reduce((s, c) => s + c.current_price! * c.quantity, 0);
+              const gameCost = gameCards.reduce((s, c) => s + c.purchase_price * c.quantity, 0);
+              const gameGain = gameValue - gameCost;
+              const gameGainPct = gameCost > 0 ? (gameGain / gameCost) * 100 : 0;
+              const totalCards = gameCards.reduce((s, c) => s + c.quantity, 0);
+              return (
+                <div key={game} className="flex items-center justify-between p-4">
+                  <div>
+                    <p className="font-medium flex items-center gap-1">
+                      <Library className="w-4 h-4 text-muted-foreground" />
+                      {TCG_GAME_LABELS[game]}
+                      <span className="text-muted-foreground text-xs font-normal ml-1">(TCG)</span>
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      Carte da gioco · {totalCards} carte totali
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-semibold">{CURRENCY_SYMBOLS.EUR}{gameValue.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                    <p className={`text-sm ${gameGain >= 0 ? 'text-success' : 'text-destructive'}`}>
+                      {gameGain >= 0 ? '+' : ''}{CURRENCY_SYMBOLS.EUR}{gameGain.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ({gameGainPct >= 0 ? '+' : ''}{gameGainPct.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%)
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
+            </>
+          )}
         </div>
 
         {/* Closed positions */}

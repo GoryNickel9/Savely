@@ -5,7 +5,7 @@ export type AssetType = 'stock' | 'etf' | 'crypto' | 'bond' | 'cash' | 'real_est
 /**
  * Chiavi dei permessi utente
  */
-export type PermissionKey = 'admin' | 'poker' | 'fumo' | 'statistics_deep_dive' | 'fire';
+export type PermissionKey = 'admin' | 'poker' | 'fumo' | 'statistics_deep_dive' | 'fire' | 'tcg';
 
 /**
  * Struttura dei permessi utente
@@ -16,6 +16,7 @@ export interface Permissions {
   fumo: boolean;
   statistics_deep_dive: boolean;
   fire: boolean;
+  tcg: boolean;
 }
 
 /**
@@ -27,6 +28,45 @@ export interface UserPermissions {
   fumo: boolean;
   statistics_deep_dive: boolean;
   fire: boolean;
+  tcg: boolean;
+}
+
+export type TcgGame = 'magic' | 'pokemon' | 'yugioh';
+
+export type CardCondition = 'near_mint' | 'lightly_played' | 'moderately_played' | 'heavily_played' | 'damaged';
+
+export const CARD_CONDITION_LABELS: Record<CardCondition, string> = {
+  near_mint: 'Near Mint',
+  lightly_played: 'Lightly Played',
+  moderately_played: 'Moderately Played',
+  heavily_played: 'Heavily Played',
+  damaged: 'Damaged',
+};
+
+export const TCG_GAME_LABELS: Record<TcgGame, string> = {
+  magic: 'Magic: The Gathering',
+  pokemon: 'Pokémon TCG',
+  yugioh: 'Yu-Gi-Oh!',
+};
+
+export interface TcgCard {
+  id: string;
+  user_id: string;
+  name: string;
+  category: TcgGame;
+  card_id: string | null;
+  set_code: string | null;
+  collector_number: string | null;
+  condition: CardCondition;
+  language: string;
+  quantity: number;
+  purchase_price: number;
+  purchase_date: string;
+  current_price: number | null;
+  image_url: string | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface Profile {

@@ -40,6 +40,7 @@ export async function getUserPermissions(userId: string): Promise<Permissions> {
       fumo: dbPermissions?.fumo || false,
       statistics_deep_dive: dbPermissions?.statistics_deep_dive || false,
       fire: dbPermissions?.fire || false,
+      tcg: dbPermissions?.tcg || false,
     };
 
     // Salva in cache
@@ -80,6 +81,7 @@ export function getDefaultPermissions(): Permissions {
     fumo: false,
     statistics_deep_dive: false,
     fire: false,
+    tcg: false,
   };
 }
 

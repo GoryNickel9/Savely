@@ -2,3 +2,9 @@ project_id = "crqnfbahytzenisospcx"
 
 [functions.update-prices]
 verify_jwt = false
+
+[functions.update-tcg-prices]
+verify_jwt = false
+
+[functions.cardtrader-proxy]
+verify_jwt = false
