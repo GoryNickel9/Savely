@@ -19,6 +19,7 @@ import {
   TrendingUp,
   Flame,
   Library,
+  BookOpen,
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -100,6 +101,23 @@ export default function Sidebar() {
           >
             <Library className="w-5 h-5" />
             TCG
+          </Link>
+        )}
+
+        {/* Sezione Libreria - visibile solo agli utenti con permesso libreria */}
+        {permissions?.libreria && (
+          <Link
+            to="/libreria"
+            onClick={() => setMobileOpen(false)}
+            className={cn(
+              'flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200',
+              location.pathname.startsWith('/libreria')
+                ? 'bg-primary text-primary-foreground shadow-lg glow-primary'
+                : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
+            )}
+          >
+            <BookOpen className="w-5 h-5" />
+            Libreria
           </Link>
         )}
 

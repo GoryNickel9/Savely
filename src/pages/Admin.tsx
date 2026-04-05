@@ -214,6 +214,14 @@ export default function Admin() {
                             disabled={updating === userProfile.user_id}
                           />
                         </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm text-muted-foreground w-16">Libreria</span>
+                          <Switch
+                            checked={userProfile.permissions.libreria || false}
+                            onCheckedChange={() => togglePermission(userProfile.user_id, 'libreria', userProfile.permissions.libreria || false)}
+                            disabled={updating === userProfile.user_id}
+                          />
+                        </div>
                       </div>
                     </div>
                   </div>

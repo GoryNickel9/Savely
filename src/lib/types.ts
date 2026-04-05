@@ -5,7 +5,7 @@ export type AssetType = 'stock' | 'etf' | 'crypto' | 'bond' | 'cash' | 'real_est
 /**
  * Chiavi dei permessi utente
  */
-export type PermissionKey = 'admin' | 'poker' | 'fumo' | 'statistics_deep_dive' | 'fire' | 'tcg';
+export type PermissionKey = 'admin' | 'poker' | 'fumo' | 'statistics_deep_dive' | 'fire' | 'tcg' | 'libreria';
 
 /**
  * Struttura dei permessi utente
@@ -17,6 +17,7 @@ export interface Permissions {
   statistics_deep_dive: boolean;
   fire: boolean;
   tcg: boolean;
+  libreria: boolean;
 }
 
 /**
@@ -48,6 +49,32 @@ export const TCG_GAME_LABELS: Record<TcgGame, string> = {
   pokemon: 'Pokémon TCG',
   yugioh: 'Yu-Gi-Oh!',
 };
+
+export type LibraryCategory = 'libri' | 'fumetti' | 'manga';
+
+export const LIBRARY_CATEGORY_LABELS: Record<LibraryCategory, string> = {
+  libri: 'Libri',
+  fumetti: 'Fumetti',
+  manga: 'Manga',
+};
+
+export interface LibraryItem {
+  id: string;
+  user_id: string;
+  category: LibraryCategory;
+  title: string;
+  author: string | null;
+  publisher: string | null;
+  year: number | null;
+  cover_image: string | null;
+  api_id: string | null;
+  purchase_price: number | null;
+  reselling_value: number | null;
+  quantity: number;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
 
 export interface TcgCard {
   id: string;

@@ -8,3 +8,6 @@ verify_jwt = false
 
 [functions.cardtrader-proxy]
 verify_jwt = false
+
+[functions.mangaworld-proxy]
+verify_jwt = false

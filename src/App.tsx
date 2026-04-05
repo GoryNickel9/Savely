@@ -36,6 +36,10 @@ import TcgIndex from "./pages/tcg/Index";
 import TcgMagic from "./pages/tcg/Magic";
 import TcgPokemon from "./pages/tcg/Pokemon";
 import TcgYugioh from "./pages/tcg/Yugioh";
+import LibreriaIndex from "./pages/libreria/Index";
+import LibreriaLibri from "./pages/libreria/Libri";
+import LibreriaFumetti from "./pages/libreria/Fumetti";
+import LibreriaManga from "./pages/libreria/Manga";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -178,6 +182,30 @@ function TcgRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+function LibreriaRoute({ children }: { children: React.ReactNode }) {
+  const { user, loading } = useAuth();
+  const { permissions, loading: permissionsLoading } = usePermissions();
+  
+  if (loading || permissionsLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background dark">
+        <div className="animate-pulse text-muted-foreground">Caricamento...</div>
+      </div>
+    );
+  }
+  
+  if (!user) {
+    return <Navigate to="/auth" replace />;
+  }
+  
+  // Verifica se l'utente ha il permesso libreria
+  if (!permissions?.libreria) {
+    return <Navigate to="/" replace />;
+  }
+  
+  return <>{children}</>;
+}
+
 function AppRoutes() {
   return (
     <Routes>
@@ -210,6 +238,10 @@ function AppRoutes() {
       <Route path="/tcg/magic" element={<TcgRoute><TcgMagic /></TcgRoute>} />
       <Route path="/tcg/pokemon" element={<TcgRoute><TcgPokemon /></TcgRoute>} />
       <Route path="/tcg/yugioh" element={<TcgRoute><TcgYugioh /></TcgRoute>} />
+      <Route path="/libreria" element={<LibreriaRoute><LibreriaIndex /></LibreriaRoute>} />
+      <Route path="/libreria/libri" element={<LibreriaRoute><LibreriaLibri /></LibreriaRoute>} />
+      <Route path="/libreria/fumetti" element={<LibreriaRoute><LibreriaFumetti /></LibreriaRoute>} />
+      <Route path="/libreria/manga" element={<LibreriaRoute><LibreriaManga /></LibreriaRoute>} />
       <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
       <Route path="/admin" element={<AdminRoute><Admin /></AdminRoute>} />
       <Route path="*" element={<NotFound />} />

@@ -22,7 +22,8 @@ const validatePermissions = (data: unknown): data is Permissions => {
     'fumo' in perm ||
     'statistics_deep_dive' in perm ||
     'fire' in perm ||
-    'tcg' in perm;
+    'tcg' in perm ||
+    'libreria' in perm;
   
   return hasAnyPermission;
 };
