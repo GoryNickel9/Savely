@@ -8,12 +8,17 @@ let expansionsCache: Record<number, { id: number; name: string }> = {};
 let isFetchingExpansions = false;
 
 // @ts-ignore
-const ALLOWED_ORIGIN = Deno.env.get('ALLOWED_ORIGIN') || '';
+const ALLOWED_ORIGINS = (Deno.env.get('ALLOWED_ORIGIN') || '')
+  .split(',')
+  .map((o) => o.trim())
+  .filter(Boolean);
 
 function getCorsHeaders(requestOrigin: string | null): Record<string, string> {
-  // Allow localhost in development; otherwise use the configured ALLOWED_ORIGIN
-  const isLocalhost = requestOrigin?.startsWith('http://localhost') || requestOrigin?.startsWith('http://127.0.0.1');
-  const origin = isLocalhost ? requestOrigin! : ALLOWED_ORIGIN;
+  const isLocalhost =
+    requestOrigin?.startsWith('http://localhost') ||
+    requestOrigin?.startsWith('http://127.0.0.1');
+  const isAllowed = requestOrigin != null && ALLOWED_ORIGINS.includes(requestOrigin);
+  const origin = isLocalhost || isAllowed ? requestOrigin! : (ALLOWED_ORIGINS[0] ?? '');
   return {
     'Access-Control-Allow-Origin': origin,
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
