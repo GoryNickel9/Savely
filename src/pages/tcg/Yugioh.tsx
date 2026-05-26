@@ -72,7 +72,7 @@ export default function TcgYugioh() {
     if (!selected) return;
     try {
       setSavingPrice(true);
-      const currentPrice = await fetchCtZeroPrice(selected.id);
+      const currentPrice = await fetchCtZeroPrice(selected.id, condition);
       setSavingPrice(false);
       await createCard.mutateAsync({
         name: selected.name,

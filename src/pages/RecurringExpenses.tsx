@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { useRecurringExpenses, FREQUENCY_LABELS, RecurringFrequency } from '@/hooks/useRecurringExpenses';
 import { useCategories } from '@/hooks/useCategories';
@@ -51,20 +51,6 @@ export default function RecurringExpenses() {
   const [nextDueDate, setNextDueDate] = useState(new Date().toISOString().split('T')[0]);
 
   const expenseCategories = categories.filter(c => c.type === 'expense');
-
-  // Process due expenses on page load
-  useEffect(() => {
-    processDueExpenses.mutate(undefined, {
-      onSuccess: (result) => {
-        if (result.processed > 0) {
-          toast({
-            title: 'Uscite ricorrenti elaborate',
-            description: `${result.processed} transazioni create automaticamente`,
-          });
-        }
-      },
-    });
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const resetForm = () => {
     setName('');

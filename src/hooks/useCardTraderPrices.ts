@@ -5,12 +5,13 @@ import { supabase } from '@/integrations/supabase/client';
  * Fetch CT Zero price for a blueprint imperatively (e.g. at form submit time).
  * Returns the price in euros, or null if unavailable.
  */
-export async function fetchCtZeroPrice(blueprintId: string): Promise<number | null> {
+export async function fetchCtZeroPrice(blueprintId: string, condition?: string): Promise<number | null> {
   const { data: { session } } = await supabase.auth.getSession();
   if (!session) return null;
 
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
-  const url = `${supabaseUrl}/functions/v1/cardtrader-proxy?action=prices&id=${encodeURIComponent(blueprintId)}`;
+  const conditionParam = condition ? `&condition=${encodeURIComponent(condition)}` : '';
+  const url = `${supabaseUrl}/functions/v1/cardtrader-proxy?action=prices&id=${encodeURIComponent(blueprintId)}${conditionParam}`;
 
   try {
     const res = await fetch(url, {
@@ -31,9 +32,9 @@ export interface CardTraderPrices {
   totalListings: number;
 }
 
-export function useCardTraderPrices(blueprintId: string | null) {
+export function useCardTraderPrices(blueprintId: string | null, condition?: string) {
   return useQuery<CardTraderPrices | null>({
-    queryKey: ['cardtrader-prices', blueprintId],
+    queryKey: ['cardtrader-prices', blueprintId, condition],
     queryFn: async () => {
       if (!blueprintId) return null;
 
@@ -41,7 +42,8 @@ export function useCardTraderPrices(blueprintId: string | null) {
       if (!session) throw new Error('Not authenticated');
 
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
-      const url = `${supabaseUrl}/functions/v1/cardtrader-proxy?action=prices&id=${encodeURIComponent(blueprintId)}`;
+      const conditionParam = condition ? `&condition=${encodeURIComponent(condition)}` : '';
+      const url = `${supabaseUrl}/functions/v1/cardtrader-proxy?action=prices&id=${encodeURIComponent(blueprintId)}${conditionParam}`;
 
       const res = await fetch(url, {
         headers: { Authorization: `Bearer ${session.access_token}` },

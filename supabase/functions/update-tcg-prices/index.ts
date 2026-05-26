@@ -28,14 +28,27 @@ interface TcgCard {
   category: 'magic' | 'pokemon' | 'yugioh';
   card_id: string | null;
   current_price: number | null;
+  condition: string | null;
+}
+
+// Maps app condition values to CardTrader API condition strings
+function mapConditionToCardTrader(condition: string): string {
+  const map: Record<string, string> = {
+    near_mint: 'Near Mint',
+    lightly_played: 'Slightly Played',
+    moderately_played: 'Moderately Played',
+    heavily_played: 'Heavily Played',
+    damaged: 'Poor',
+  };
+  return map[condition] ?? 'Near Mint';
 }
 
 /**
- * Fetch the CT Zero lowest price (cents) for a CardTrader blueprint.
+ * Fetch the CT Zero lowest price (cents) for a CardTrader blueprint, filtered by condition.
  * CT Zero sellers: products where user.can_sell_via_hub === true.
  * Returns the price in EUR (price_cents / 100), or null if unavailable.
  */
-async function fetchCardTraderCtZeroPrice(blueprintId: string, apiKey: string): Promise<number | null> {
+async function fetchCardTraderCtZeroPrice(blueprintId: string, apiKey: string, condition?: string): Promise<number | null> {
   try {
     const res = await fetch(
       `${CT_API_URL}/marketplace/products?blueprint_id=${encodeURIComponent(blueprintId)}`,
@@ -50,16 +63,27 @@ async function fetchCardTraderCtZeroPrice(blueprintId: string, apiKey: string): 
     const data: Record<string, any[]> = await res.json();
     const products: any[] = data[blueprintId] ?? [];
 
-    const ctZeroProducts = products.filter((p) => p.user?.can_sell_via_hub === true);
-    if (ctZeroProducts.length === 0) return null;
+    if (products.length === 0) return null;
 
-    const lowest = ctZeroProducts.reduce(
+    // 1. Restrict to CT Zero sellers (matches CardTrader "Prezzo Min CT")
+    const ctZero = products.filter((p: any) => p.user?.can_sell_via_hub === true);
+    let candidates = ctZero.length > 0 ? ctZero : products; // fallback to all if no CT Zero
+
+    // 2. Further filter by condition
+    if (condition) {
+      const ctCondition = mapConditionToCardTrader(condition);
+      const byCondition = candidates.filter((p) => (p as any).properties_hash?.condition === ctCondition);
+      if (byCondition.length > 0) candidates = byCondition;
+      // If no listings match the exact condition, fall back to CT Zero (any condition)
+    }
+
+    const lowest = candidates.reduce(
       (min, p) => (p.price_cents < min.price_cents ? p : min),
-      ctZeroProducts[0],
+      candidates[0],
     );
 
     const price = lowest.price_cents / 100;
-    console.log(`✓ CT Zero price for blueprint ${blueprintId}: €${price}`);
+    console.log(`✓ Price for blueprint ${blueprintId} (${condition ?? 'any'}): €${price}`);
     return price;
   } catch (err) {
     console.error(`Error fetching CT Zero price for blueprint ${blueprintId}:`, err);
@@ -95,7 +119,7 @@ Deno.serve(async (req: any) => {
     // Fetch all cards that have a card_id (blueprint_id) to look up
     const { data: cards, error: fetchError } = await supabase
       .from('tgc_cards')
-      .select('id, user_id, category, card_id, current_price')
+      .select('id, user_id, category, card_id, current_price, condition')
       .not('card_id', 'is', null);
 
     if (fetchError) {
@@ -123,7 +147,7 @@ Deno.serve(async (req: any) => {
         continue;
       }
 
-      const price = await fetchCardTraderCtZeroPrice(card.card_id, apiKey);
+      const price = await fetchCardTraderCtZeroPrice(card.card_id, apiKey, card.condition ?? undefined);
 
       if (price !== null) {
         const { error: updateError } = await supabase

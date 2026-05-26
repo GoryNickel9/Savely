@@ -122,6 +122,7 @@ Deno.serve(async (req: Request) => {
     // ── PRICES ──────────────────────────────────────────────────────────────
     if (action === 'prices') {
       const id = searchParams.get('id');
+      const conditionParam = searchParams.get('condition'); // optional: app CardCondition value
       if (!id) {
         return new Response(
           JSON.stringify({ error: 'Missing id parameter' }),
@@ -141,12 +142,28 @@ Deno.serve(async (req: Request) => {
       const data: Record<string, any[]> = await res.json();
       const products: any[] = data[id] ?? [];
 
-      // Only CT Zero sellers (can_sell_via_hub === true)
-      const ctZeroProducts = products.filter((p) => p.user?.can_sell_via_hub === true);
+      // 1. Restrict to CT Zero sellers (matches CardTrader "Prezzo Min CT")
+      const ctZero = products.filter((p: any) => p.user?.can_sell_via_hub === true);
+      let candidates = ctZero.length > 0 ? ctZero : products; // fallback to all if no CT Zero
+
+      // 2. Further filter by condition
+      if (conditionParam) {
+        const conditionMap: Record<string, string> = {
+          near_mint: 'Near Mint',
+          lightly_played: 'Slightly Played',
+          moderately_played: 'Moderately Played',
+          heavily_played: 'Heavily Played',
+          damaged: 'Poor',
+        };
+        const ctCondition = conditionMap[conditionParam] ?? 'Near Mint';
+        const byCondition = candidates.filter((p) => (p as any).properties_hash?.condition === ctCondition);
+        if (byCondition.length > 0) candidates = byCondition;
+        // If no exact condition match, fall back to CT Zero (any condition)
+      }
 
       const lowestCtZero =
-        ctZeroProducts.length > 0
-          ? ctZeroProducts.reduce((min, p) => (p.price_cents < min.price_cents ? p : min), ctZeroProducts[0])
+        candidates.length > 0
+          ? candidates.reduce((min, p) => (p.price_cents < min.price_cents ? p : min), candidates[0])
           : null;
 
       return new Response(

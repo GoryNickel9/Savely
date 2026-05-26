@@ -11,3 +11,6 @@ verify_jwt = false
 
 [functions.mangaworld-proxy]
 verify_jwt = false
+
+[functions.process-recurring-expenses]
+verify_jwt = false
