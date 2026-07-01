@@ -206,6 +206,30 @@ function LibreriaRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+function FumoRoute({ children }: { children: React.ReactNode }) {
+  const { user, loading } = useAuth();
+  const { permissions, loading: permissionsLoading } = usePermissions();
+  
+  if (loading || permissionsLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background dark">
+        <div className="animate-pulse text-muted-foreground">Caricamento...</div>
+      </div>
+    );
+  }
+  
+  if (!user) {
+    return <Navigate to="/auth" replace />;
+  }
+  
+  // Verifica se l'utente ha il permesso fumo
+  if (!permissions?.fumo) {
+    return <Navigate to="/" replace />;
+  }
+  
+  return <>{children}</>;
+}
+
 function AppRoutes() {
   return (
     <Routes>
@@ -222,10 +246,10 @@ function AppRoutes() {
       <Route path="/charts/expense" element={<ProtectedRoute><ChartsExpense /></ProtectedRoute>} />
       <Route path="/charts/income" element={<ProtectedRoute><ChartsIncome /></ProtectedRoute>} />
       <Route path="/portfolio" element={<ProtectedRoute><Portfolio /></ProtectedRoute>} />
-      <Route path="/fumo" element={<ProtectedRoute><Fumo /></ProtectedRoute>} />
-      <Route path="/fumo/liquido-sigaretta" element={<ProtectedRoute><FumoLiquidoSigaretta /></ProtectedRoute>} />
-      <Route path="/fumo/cbd" element={<ProtectedRoute><FumoCBD /></ProtectedRoute>} />
-      <Route path="/fumo/thc" element={<ProtectedRoute><FumoTHC /></ProtectedRoute>} />
+      <Route path="/fumo" element={<FumoRoute><Fumo /></FumoRoute>} />
+      <Route path="/fumo/liquido-sigaretta" element={<FumoRoute><FumoLiquidoSigaretta /></FumoRoute>} />
+      <Route path="/fumo/cbd" element={<FumoRoute><FumoCBD /></FumoRoute>} />
+      <Route path="/fumo/thc" element={<FumoRoute><FumoTHC /></FumoRoute>} />
       <Route path="/poker" element={<PokerRoute><Poker /></PokerRoute>} />
       <Route path="/poker/next-cut" element={<PokerRoute><PokerNextCut /></PokerRoute>} />
       <Route path="/poker/hourly-earnings" element={<PokerRoute><PokerHourlyEarnings /></PokerRoute>} />
