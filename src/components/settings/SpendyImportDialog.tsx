@@ -17,7 +17,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { TrendingUp, TrendingDown, Briefcase, ArrowLeft, Check, AlertTriangle, Upload } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import * as XLSX from 'xlsx';
+import { validateImportFile } from '@/lib/importFileSecurity';
+import { parseCsvObjects } from '@/lib/csv';
 
 type ImportType = 'income' | 'expense' | 'investment';
 type ImportStep = 'select-type' | 'preview-categories' | 'resolve-duplicates' | 'importing';
@@ -80,7 +81,7 @@ export default function SpendyImportDialog({ open, onOpenChange, userId }: Spend
   const [isLoading, setIsLoading] = useState(false);
 
   // Helper to parse numbers (supports both Italian and English formats)
-  const parseItalianNumber = (value: any): number => {
+  const parseItalianNumber = (value: unknown): number => {
     if (typeof value === 'number') return value;
     if (!value) return 0;
     const str = String(value).trim();
@@ -106,7 +107,7 @@ export default function SpendyImportDialog({ open, onOpenChange, userId }: Spend
     return cleaned;
   };
 
-  // XLSX when reading CSV can convert dates to Excel serial numbers (e.g. 45444.08)
+  // Legacy CSV exports can contain numeric date serials (e.g. 45444.08)
   const normalizeDate = (value: unknown): string => {
     const fallback = new Date().toISOString().slice(0, 10);
     
@@ -124,16 +125,16 @@ export default function SpendyImportDialog({ open, onOpenChange, userId }: Spend
       if (!Number.isNaN(date.getTime())) return date.toISOString().slice(0, 10);
     }
     
-    // If it's a number (Excel serial), convert it
+    // If it's a numeric date serial, convert it
     if (typeof value === 'number' && Number.isFinite(value)) {
-      // Excel epoch: 1899-12-30
+      // Spreadsheet serial epoch: 1899-12-30
       const excelEpoch = Date.UTC(1899, 11, 30);
       const days = Math.floor(value);
       const date = new Date(excelEpoch + days * 86400000);
       return date.toISOString().slice(0, 10);
     }
     
-    // If it's a numeric-like string, try parsing as Excel serial
+    // If it's a numeric-like string, try parsing as a date serial
     const maybeNum = Number(s);
     if (Number.isFinite(maybeNum) && !s.includes('-')) {
       const excelEpoch = Date.UTC(1899, 11, 30);
@@ -249,16 +250,9 @@ export default function SpendyImportDialog({ open, onOpenChange, userId }: Spend
     setIsLoading(true);
 
     try {
-      const data = await file.arrayBuffer();
-      const wb = XLSX.read(data, {
-        cellDates: false, // Don't parse dates as Excel serial numbers
-        cellText: false, // Don't parse formatted text
-      });
-      const ws = wb.Sheets[wb.SheetNames[0]];
-      const rawRows = XLSX.utils.sheet_to_json(ws, {
-        raw: false, // Use formatted values
-        dateNF: 'yyyy-mm-dd', // Force date format
-      }) as Record<string, unknown>[];
+      validateImportFile(file);
+
+      const rawRows = parseCsvObjects(await file.text()) as Record<string, unknown>[];
       const rows = rawRows.map(cleanRow);
 
       console.log('Parsed rows:', rows.length, 'First row:', rows[0]);
@@ -631,7 +625,7 @@ export default function SpendyImportDialog({ open, onOpenChange, userId }: Spend
             {step === 'importing' && 'Importazione in corso...'}
           </DialogTitle>
           <DialogDescription>
-            {step === 'select-type' && 'Carica un file CSV o Excel. Il sistema rileverà automaticamente il tipo di dati (entrate, uscite o investimenti).'}
+            {step === 'select-type' && 'Carica un file CSV. Il sistema rileverà automaticamente il tipo di dati (entrate, uscite o investimenti).'}
             {step === 'preview-categories' && `Verranno importate ${parsedRows.length} transazioni. Configura le categorie.`}
             {step === 'resolve-duplicates' && `Trovati ${duplicates.length} possibili duplicati. Scegli quali tenere.`}
             {step === 'importing' && 'Attendere il completamento dell\'importazione.'}
@@ -641,7 +635,7 @@ export default function SpendyImportDialog({ open, onOpenChange, userId }: Spend
         <input
           ref={fileInputRef}
           type="file"
-          accept=".csv,.xlsx,.xls"
+          accept=".csv,text/csv"
           onChange={handleFileSelect}
           className="hidden"
         />
@@ -650,7 +644,7 @@ export default function SpendyImportDialog({ open, onOpenChange, userId }: Spend
           <div className="grid gap-4 py-4">
             <div className="text-center space-y-4">
               <p className="text-sm text-muted-foreground">
-                Carica un file CSV o Excel. Il sistema rileverà automaticamente il tipo di dati.
+                Carica un file CSV. Il sistema rileverà automaticamente il tipo di dati.
               </p>
               <Button
                 variant="default"
@@ -662,7 +656,7 @@ export default function SpendyImportDialog({ open, onOpenChange, userId }: Spend
                 {isLoading ? 'Analisi file...' : 'Seleziona file'}
               </Button>
               <p className="text-xs text-muted-foreground">
-                Formati supportati: CSV, Excel (.xlsx, .xls)
+                Formato supportato: CSV
               </p>
             </div>
           </div>

@@ -87,7 +87,7 @@ export function useFireCalculatorParams(dbDefaults?: FireDefaults) {
   const storedParamsRef = useRef<Partial<CalculatorParams> | null>(loadFromStorage())
 
   const params = useMemo((): CalculatorParams => {
-    const getParam = (key: keyof CalculatorParams): any => {
+    const getParam = (key: keyof CalculatorParams): number => {
       const urlKey = PARAM_KEYS[key]
       const urlValue = searchParams.get(urlKey)
       
@@ -135,7 +135,7 @@ export function useFireCalculatorParams(dbDefaults?: FireDefaults) {
     }
   }, [searchParams])
 
-  const setParam = useCallback((key: keyof CalculatorParams, value: any) => {
+  const setParam = useCallback((key: keyof CalculatorParams, value: number) => {
     const urlKey = PARAM_KEYS[key]
     setSearchParams(prev => {
       const newParams = new URLSearchParams(prev)
@@ -160,7 +160,7 @@ export function useFireCalculatorParams(dbDefaults?: FireDefaults) {
   }, [setSearchParams])
 
   // Debounced version of setParam for high-frequency updates (like slider inputs)
-  const setParamDebounced = useCallback((key: keyof CalculatorParams, value: any, delay = 300) => {
+  const setParamDebounced = useCallback((key: keyof CalculatorParams, value: number, delay = 300) => {
     // Clear existing timer
     if (debounceTimerRef.current) {
       clearTimeout(debounceTimerRef.current)

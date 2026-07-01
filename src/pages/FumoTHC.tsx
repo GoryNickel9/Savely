@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Supabase generated types do not include the thc table */
 import MainLayout from '@/components/layout/MainLayout';
 import { useAuth } from '@/hooks/useAuth';
 import { usePermissions } from '@/hooks/usePermissions';
@@ -41,25 +42,36 @@ export default function FumoTHC() {
   const { permissions, loading: permissionsLoading } = usePermissions();
   const { toast } = useToast();
 
-  if (permissionsLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="animate-pulse text-muted-foreground">Caricamento...</div>
-      </div>
-    );
-  }
-
-  // Verifica se l'utente ha il permesso fumo
-  if (!permissions?.fumo) {
-    return <Navigate to="/" replace />;
-  }
-
+  // All hooks must be called before any conditional return (Rules of Hooks)
   const { data: rawEntries, loading, reload } = useSupabaseData<THCEntry>({
     tableName: 'thc',
     orderBy: 'data_acquisto',
     ascending: false
   });
 
+  // Create dialog state
+  const [newCosto, setNewCosto] = useState('');
+  const [newGrammi, setNewGrammi] = useState('');
+  const [newDataArrivo, setNewDataArrivo] = useState(new Date().toISOString().split('T')[0]);
+  const [newDataFinito, setNewDataFinito] = useState('');
+  const [newMarca, setNewMarca] = useState('');
+  const [newThcContent, setNewThcContent] = useState('');
+  const [newDescrizione, setNewDescrizione] = useState('');
+  const { open: createOpen, openCreate, close: closeCreate } = useDialogManager();
+
+  // Edit dialog state
+  const [editCosto, setEditCosto] = useState('');
+  const [editGrammi, setEditGrammi] = useState('');
+  const [editDataArrivo, setEditDataArrivo] = useState('');
+  const [editDataFinito, setEditDataFinito] = useState('');
+  const { open: editOpen, editingItem, openEdit, close: closeEdit } = useDialogManager<THCEntry>();
+
+  // Prepara additionalFields per useYearlyData (fuori dal JSX per evitare loop infinito)
+  const additionalFields = useMemo(() => ({
+    grammiTotali: (group: THCEntry[]) => group.reduce((sum, e) => sum + (e.grammi || 0), 0)
+  }), []);
+
+  // Derived data (non-hook, must stay after useSupabaseData)
   const entries = rawEntries.map(entry => {
     if (entry.data_finito && entry.grammi && entry.giorni_durata === null) {
       const derived = calculateDerivedFields(
@@ -80,23 +92,6 @@ export default function FumoTHC() {
     return entry;
   });
 
-  // Create dialog state
-  const [newCosto, setNewCosto] = useState('');
-  const [newGrammi, setNewGrammi] = useState('');
-  const [newDataArrivo, setNewDataArrivo] = useState(new Date().toISOString().split('T')[0]);
-  const [newDataFinito, setNewDataFinito] = useState('');
-  const [newMarca, setNewMarca] = useState('');
-  const [newThcContent, setNewThcContent] = useState('');
-  const [newDescrizione, setNewDescrizione] = useState('');
-  const { open: createOpen, openCreate, close: closeCreate } = useDialogManager();
-
-  // Edit dialog state
-  const [editCosto, setEditCosto] = useState('');
-  const [editGrammi, setEditGrammi] = useState('');
-  const [editDataArrivo, setEditDataArrivo] = useState('');
-  const [editDataFinito, setEditDataFinito] = useState('');
-  const { open: editOpen, editingItem, openEdit, close: closeEdit } = useDialogManager<THCEntry>();
-
   // Calcola l'anno corrente
   const currentYear = new Date().getFullYear();
   
@@ -104,11 +99,6 @@ export default function FumoTHC() {
   const currentYearEntries = entries.filter(entry =>
     new Date(entry.data_acquisto).getFullYear() === currentYear
   );
-  
-  // Prepara additionalFields per useYearlyData (fuori dal JSX per evitare loop infinito)
-  const additionalFields = useMemo(() => ({
-    grammiTotali: (group: THCEntry[]) => group.reduce((sum, e) => sum + (e.grammi || 0), 0)
-  }), []);
   
   // Calcola yearlyStats fuori dal JSX
   const yearlyStats = useYearlyData({
@@ -123,6 +113,20 @@ export default function FumoTHC() {
     costoAlGrammo: (stat.grammiTotali as number) > 0 ? stat.total / (stat.grammiTotali as number) : 0,
     costoMensile: stat.total / 12
   }));
+
+  // Conditional returns after all hooks
+  if (permissionsLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="animate-pulse text-muted-foreground">Caricamento...</div>
+      </div>
+    );
+  }
+
+  // Verifica se l'utente ha il permesso fumo
+  if (!permissions?.fumo) {
+    return <Navigate to="/" replace />;
+  }
 
   const addNewRecord = async (e: React.FormEvent) => {
     e.preventDefault();

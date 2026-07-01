@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Supabase generated types do not include the poker_rakeback table */
 import MainLayout from '@/components/layout/MainLayout';
 import { useAuth } from '@/hooks/useAuth';
 import { useState, useEffect, useMemo } from 'react';
@@ -323,7 +324,7 @@ export default function PokerRakeback() {
                   {
                     key: 'rakeback_received',
                     header: 'Rake Back',
-                    render: (entry: any) => (
+                    render: (entry: RakebackEntry) => (
                       <span className={`text-right font-medium ${entry.rakeback_received >= 0 ? 'text-green-500' : 'text-red-500'}`}>
                         €{entry.rakeback_received.toFixed(2)}
                       </span>
@@ -333,7 +334,7 @@ export default function PokerRakeback() {
                   {
                     key: 'percentage',
                     header: 'Percentuale',
-                    render: (entry: any) => entry.rake_generated > 0 ? ((entry.rakeback_received / entry.rake_generated) * 100).toFixed(1) + '%' : '0%',
+                    render: (entry: RakebackEntry) => entry.rake_generated > 0 ? ((entry.rakeback_received / entry.rake_generated) * 100).toFixed(1) + '%' : '0%',
                     className: 'text-right'
                   },
                   {
@@ -381,7 +382,7 @@ export default function PokerRakeback() {
                 Nessun rakeback registrato
               </div>
             ) : (
-              <DataTable<any>
+              <DataTable<YearlyData>
                 columns={[
                   {
                     key: 'year',
@@ -398,7 +399,7 @@ export default function PokerRakeback() {
                   {
                     key: 'totalRakeback',
                     header: 'Rakeback Totale',
-                    render: (data: any) => (
+                    render: (data: YearlyData) => (
                       <span className={`text-right font-medium ${data.totalRakeback >= 0 ? 'text-green-500' : 'text-red-500'}`}>
                         €{data.totalRakeback.toFixed(2)}
                       </span>
@@ -408,7 +409,7 @@ export default function PokerRakeback() {
                   {
                     key: 'averagePercentage',
                     header: 'Percentuale Media',
-                    render: (data: any) => `${data.averagePercentage.toFixed(1)}%`,
+                    render: (data: YearlyData) => `${data.averagePercentage.toFixed(1)}%`,
                     className: 'text-right'
                   }
                 ]}

@@ -33,7 +33,7 @@ export async function getUserPermissions(userId: string): Promise<Permissions> {
       return defaultPermissions;
     }
 
-    const dbPermissions = (data as any).permissions as Permissions | null;
+    const dbPermissions = (data as { permissions?: unknown }).permissions as Permissions | null;
     const permissions: Permissions = {
       admin: dbPermissions?.admin || false,
       poker: dbPermissions?.poker || false,
@@ -110,7 +110,7 @@ export async function updateUserPermissions(
     }
 
     // Unisci i permessi esistenti con quelli nuovi
-    const currentPermissions = ((currentData as any)?.permissions as Permissions) || getDefaultPermissions();
+    const currentPermissions = ((currentData as { permissions?: unknown })?.permissions as Permissions) || getDefaultPermissions();
     const updatedPermissions: Permissions = {
       ...currentPermissions,
       ...permissions,
@@ -119,6 +119,7 @@ export async function updateUserPermissions(
     // Aggiorna i permessi nel database
     const { error } = await supabase
       .from('profiles')
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .update({ permissions: updatedPermissions } as any)
       .eq('user_id', userId);
 

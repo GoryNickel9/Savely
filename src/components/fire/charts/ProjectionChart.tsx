@@ -85,7 +85,7 @@ export default function ProjectionChart({
   const maxPortfolio = Math.max(...data.map(d => d.portfolio))
   const yAxisMax = Math.ceil(maxPortfolio * 1.05) // Add 5% padding
 
-  const CustomTooltip = ({ active, payload }: any) => {
+  const CustomTooltip = ({ active, payload }: { active?: boolean; payload?: Array<{ payload: ProjectionPoint }> }) => {
     if (active && payload && payload.length) {
       const point = payload[0].payload as ProjectionPoint
       const reachedFire = fireNumber && point.portfolio >= fireNumber

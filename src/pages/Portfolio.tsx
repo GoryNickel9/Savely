@@ -89,7 +89,7 @@ export default function Portfolio() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const assetData: any = {
+      const assetData: Record<string, unknown> = {
         name,
         type,
       };

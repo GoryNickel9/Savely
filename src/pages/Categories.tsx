@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { TransactionType } from '@/lib/types';
+import { TransactionType, Category } from '@/lib/types';
 import { Plus, Edit2, Trash2, FolderPlus } from 'lucide-react';
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
@@ -78,7 +78,7 @@ export default function Categories() {
     }
   };
 
-  const openEditDialog = (category: any) => {
+  const openEditDialog = (category: Category) => {
     setEditingCategory(category.id);
     setEditName(category.name);
     setEditIcon(category.icon);

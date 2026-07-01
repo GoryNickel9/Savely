@@ -21,7 +21,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useCategories } from '@/hooks/useCategories';
 import { useQueryClient } from '@tanstack/react-query';
 import { Upload, CheckCircle, AlertCircle } from 'lucide-react';
-import * as XLSX from 'xlsx';
+import { validateImportFile } from '@/lib/importFileSecurity';
+import { parseCsvObjects } from '@/lib/csv';
 
 interface RevolutImportDialogProps {
   open: boolean;
@@ -32,14 +33,14 @@ interface RevolutImportDialogProps {
 interface RevolutTransaction {
   Type: string;
   Product: string;
-  'Started Date': string | number | Date;
-  'Completed Date': string | number | Date;
+  'Started Date': string;
+  'Completed Date': string;
   Description: string;
-  Amount: number;
-  Fee: number;
+  Amount: string;
+  Fee: string;
   Currency: string;
   State: string;
-  Balance: number;
+  Balance: string;
 }
 
 interface PendingTransaction {
@@ -94,13 +95,21 @@ export default function RevolutImportDialog({ open, onOpenChange, userId }: Revo
       return;
     }
 
+    try {
+      validateImportFile(file);
+    } catch (error) {
+      toast({
+        title: 'File non valido',
+        description: error instanceof Error ? error.message : 'Il file selezionato non e valido.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setIsProcessing(true);
 
     try {
-      const data = await file.arrayBuffer();
-      const wb = XLSX.read(data);
-      const ws = wb.Sheets[wb.SheetNames[0]];
-      const rows = XLSX.utils.sheet_to_json(ws) as RevolutTransaction[];
+      const rows = parseCsvObjects(await file.text()) as unknown as RevolutTransaction[];
 
       // Filter only Card Payment transactions with COMPLETED state
       const cardPayments = rows.filter(
@@ -147,20 +156,12 @@ export default function RevolutImportDialog({ open, onOpenChange, userId }: Revo
         const amount = Math.abs(Number(row.Amount));
         const dateValue = row['Completed Date'];
         
-        // Handle date - could be string, Date object, or Excel serial number
+        // Handle date from Revolut CSV
         let date: string;
         if (!dateValue) {
           date = new Date().toISOString().split('T')[0];
-        } else if (typeof dateValue === 'string') {
-          date = dateValue.split(' ')[0];
-        } else if (dateValue instanceof Date) {
-          date = dateValue.toISOString().split('T')[0];
-        } else if (typeof dateValue === 'number') {
-          // Excel serial date number
-          const excelDate = new Date((dateValue - 25569) * 86400 * 1000);
-          date = excelDate.toISOString().split('T')[0];
         } else {
-          date = new Date().toISOString().split('T')[0];
+          date = dateValue.split(' ')[0];
         }
         
         // Check for duplicate
@@ -315,21 +316,21 @@ export default function RevolutImportDialog({ open, onOpenChange, userId }: Revo
         <DialogHeader>
           <DialogTitle>Importa da Revolut</DialogTitle>
           <DialogDescription>
-            Importa solo transazioni di tipo "Card Payment" dal file CSV/XLSX Revolut.
+            Importa solo transazioni di tipo "Card Payment" dal file CSV Revolut.
           </DialogDescription>
         </DialogHeader>
 
         {step === 'upload' && (
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              Carica il file CSV o Excel esportato da Revolut. Verranno importati solo i pagamenti con carta (Card Payment).
+              Carica il file CSV esportato da Revolut. Verranno importati solo i pagamenti con carta (Card Payment).
             </p>
             <div>
               <Label>File Revolut</Label>
               <Input
                 ref={fileInputRef}
                 type="file"
-                accept=".csv,.xls,.xlsx"
+                accept=".csv,text/csv"
                 onChange={handleFileUpload}
                 disabled={isProcessing}
               />

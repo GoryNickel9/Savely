@@ -3,6 +3,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { TcgCard, TcgGame, CardCondition } from '@/lib/types';
 import { useAuth } from './useAuth';
 
+/* eslint-disable @typescript-eslint/no-explicit-any -- Supabase generated types do not include tgc_cards table */
+
 export function useTcgCards(game?: TcgGame) {
   const { user } = useAuth();
   const queryClient = useQueryClient();

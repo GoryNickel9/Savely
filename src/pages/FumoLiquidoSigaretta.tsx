@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Supabase generated types do not include the liquido_sigaretta table */
 import MainLayout from '@/components/layout/MainLayout';
 import { useAuth } from '@/hooks/useAuth';
 import { usePermissions } from '@/hooks/usePermissions';
@@ -45,19 +46,7 @@ export default function FumoLiquidoSigaretta() {
   const { permissions, loading: permissionsLoading } = usePermissions();
   const { toast } = useToast();
   
-  if (permissionsLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="animate-pulse text-muted-foreground">Caricamento...</div>
-      </div>
-    );
-  }
-
-  // Verifica se l'utente ha il permesso fumo
-  if (!permissions?.fumo) {
-    return <Navigate to="/" replace />;
-  }
-  
+  // All hooks must be called before any conditional return (Rules of Hooks)
   const { data: records, loading, reload } = useSupabaseData<LiquidoRecord>({
     tableName: 'liquido_sigaretta',
     orderBy: 'data_arrivo',
@@ -77,28 +66,6 @@ export default function FumoLiquidoSigaretta() {
   const [editDataArrivo, setEditDataArrivo] = useState('');
   const [editDataFinito, setEditDataFinito] = useState('');
   const { open: editOpen, editingItem, openEdit, close: closeEdit } = useDialogManager<LiquidoRecord>();
-
-  // Calcola campi derivati
-  const calcolareCampi = (arrivo: string, finito: string | null, millilitri: number, costo: number) => {
-    if (!finito) {
-      return { giorni_durata: null, millilitri_al_giorno: null, euro_al_giorno: null, costo_mensile: null };
-    }
-    
-    const dataArrivo = new Date(arrivo);
-    const dataFinito = new Date(finito);
-    const giorni = Math.ceil((dataFinito.getTime() - dataArrivo.getTime()) / (1000 * 60 * 60 * 24));
-    
-    if (giorni > 0) {
-      return {
-        giorni_durata: giorni,
-        millilitri_al_giorno: millilitri / giorni,
-        euro_al_giorno: costo / giorni,
-        costo_mensile: (costo / giorni) * 30
-      };
-    }
-    
-    return { giorni_durata: null, millilitri_al_giorno: null, euro_al_giorno: null, costo_mensile: null };
-  };
 
   // Raggruppa i dati per anno (solo record completati)
   const additionalFields = useMemo(() => ({
@@ -126,6 +93,20 @@ export default function FumoLiquidoSigaretta() {
     };
   });
 
+  // Conditional returns after all hooks
+  if (permissionsLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="animate-pulse text-muted-foreground">Caricamento...</div>
+      </div>
+    );
+  }
+
+  // Verifica se l'utente ha il permesso fumo
+  if (!permissions?.fumo) {
+    return <Navigate to="/" replace />;
+  }
+
   // Calcola l'anno corrente
   const currentYear = new Date().getFullYear();
 
@@ -133,6 +114,28 @@ export default function FumoLiquidoSigaretta() {
   const currentYearRecords = records.filter(record =>
     new Date(record.data_arrivo).getFullYear() === currentYear
   );
+
+  // Calcola campi derivati
+  const calcolareCampi = (arrivo: string, finito: string | null, millilitri: number, costo: number) => {
+    if (!finito) {
+      return { giorni_durata: null, millilitri_al_giorno: null, euro_al_giorno: null, costo_mensile: null };
+    }
+    
+    const dataArrivo = new Date(arrivo);
+    const dataFinito = new Date(finito);
+    const giorni = Math.ceil((dataFinito.getTime() - dataArrivo.getTime()) / (1000 * 60 * 60 * 24));
+    
+    if (giorni > 0) {
+      return {
+        giorni_durata: giorni,
+        millilitri_al_giorno: millilitri / giorni,
+        euro_al_giorno: costo / giorni,
+        costo_mensile: (costo / giorni) * 30
+      };
+    }
+    
+    return { giorni_durata: null, millilitri_al_giorno: null, euro_al_giorno: null, costo_mensile: null };
+  };
 
   // Aggiungi nuovo record
   const addNewRecord = async (e: React.FormEvent) => {

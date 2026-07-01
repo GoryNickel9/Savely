@@ -3,6 +3,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { LibraryItem, LibraryCategory } from '@/lib/types';
 import { useAuth } from './useAuth';
 
+/* eslint-disable @typescript-eslint/no-explicit-any -- Supabase generated types do not include library_items table */
+
 export function useLibraryItems(category?: LibraryCategory) {
   const { user } = useAuth();
   const queryClient = useQueryClient();

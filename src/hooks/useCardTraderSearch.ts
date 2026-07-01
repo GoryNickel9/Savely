@@ -41,8 +41,8 @@ export function useCardTraderSearch() {
 
       const data: CardTraderCard[] = await res.json();
       setResults(data);
-    } catch (err: any) {
-      setError(err.message ?? 'Errore sconosciuto');
+    } catch (err: unknown) {
+      setError((err as Error).message ?? 'Errore sconosciuto');
     } finally {
       setLoading(false);
     }

@@ -29,7 +29,7 @@ interface UseSupabaseDataOptions {
   tableName: string;
   orderBy?: string;
   ascending?: boolean;
-  filter?: { column: string; value: any }[];
+  filter?: { column: string; value: unknown }[];
 }
 
 interface UseSupabaseDataReturn<T> {
@@ -38,7 +38,7 @@ interface UseSupabaseDataReturn<T> {
   reload: () => Promise<void>;
 }
 
-export function useSupabaseData<T extends Record<string, any>>(
+export function useSupabaseData<T extends Record<string, unknown>>(
   options: UseSupabaseDataOptions
 ): UseSupabaseDataReturn<T> {
   const { tableName, orderBy, ascending = false, filter = [] } = options;
@@ -62,7 +62,7 @@ export function useSupabaseData<T extends Record<string, any>>(
     }
     
     // Valida il nome della tabella
-    if (!VALID_TABLES.includes(tableName as any)) {
+    if (!VALID_TABLES.includes(tableName as (typeof VALID_TABLES)[number])) {
       console.error(`[useSupabaseData] Tabella non valida: ${tableName}`);
       toast({
         title: 'Errore',
@@ -79,6 +79,7 @@ export function useSupabaseData<T extends Record<string, any>>(
     
     try {
       let query = supabase
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         .from(tableName as any)
         .select('*')
         .eq('user_id', user.id);

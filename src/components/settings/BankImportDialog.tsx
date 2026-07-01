@@ -10,7 +10,8 @@ import { useToast } from '@/hooks/use-toast';
 import { useCategories } from '@/hooks/useCategories';
 import { usePortfolio } from '@/hooks/usePortfolio';
 import { Check, X, FileSpreadsheet, TrendingUp, Plus } from 'lucide-react';
-import * as XLSX from 'xlsx';
+import { validateImportFile } from '@/lib/importFileSecurity';
+import { parseCsvRows } from '@/lib/csv';
 
 interface BankImportDialogProps {
   open: boolean;
@@ -211,25 +212,15 @@ export default function BankImportDialog({ open, onOpenChange, userId }: BankImp
     if (!file) return;
 
     try {
+      validateImportFile(file);
+
       let dividendiId = dividendiCategoryId;
       if (!dividendiId) {
         dividendiId = await ensureDividendiCategory();
         setDividendiCategoryId(dividendiId);
       }
 
-      let rows: string[][];
-      if (file.name.toLowerCase().endsWith('.csv')) {
-        const text = await file.text();
-        rows = text
-          .split('\n')
-          .filter(line => line.trim())
-          .map(line => line.split(';').map(cell => cell.trim().replace(/^"|"$/g, '')));
-      } else {
-        const arrayData = await file.arrayBuffer();
-        const wb = XLSX.read(arrayData, { type: 'array' });
-        const ws = wb.Sheets[wb.SheetNames[0]];
-        rows = XLSX.utils.sheet_to_json(ws, { header: 1, raw: false }) as string[][];
-      }
+      const rows = parseCsvRows(await file.text());
 
       // Detect header row
       const headerRowIndex = rows.findIndex(row =>
@@ -587,7 +578,7 @@ export default function BankImportDialog({ open, onOpenChange, userId }: BankImp
         <DialogHeader>
           <DialogTitle>Importa dalla tua banca</DialogTitle>
           <DialogDescription>
-            {step === 'upload' && 'Carica il tuo estratto conto in formato CSV o Excel.'}
+            {step === 'upload' && 'Carica il tuo estratto conto in formato CSV.'}
             {step === 'review-isins' && `Associa ISIN a ticker (${currentIsinIndex + 1}/${unknownIsins.length})`}
             {step === 'review' && `Revisiona le transazioni (${currentIndex + 1}/${manualTransactions.length})${autoImportedCount > 0 ? ` - ${autoImportedCount} automatiche` : ''}`}
             {step === 'importing' && 'Importazione in corso...'}
@@ -604,7 +595,7 @@ export default function BankImportDialog({ open, onOpenChange, userId }: BankImp
               </div>
             ) : (
               <>
-                <input ref={fileInputRef} type="file" accept=".csv,.xlsx,.xls" onChange={handleFileUpload} className="hidden" />
+                <input ref={fileInputRef} type="file" accept=".csv,text/csv" onChange={handleFileUpload} className="hidden" />
                 <Button
                   onClick={() => fileInputRef.current?.click()}
                   variant="outline"
@@ -612,7 +603,7 @@ export default function BankImportDialog({ open, onOpenChange, userId }: BankImp
                 >
                   <FileSpreadsheet className="w-8 h-8 text-muted-foreground" />
                   <span>Clicca per caricare il file</span>
-                  <span className="text-xs text-muted-foreground">CSV o Excel (BBVA, Trade Republic, ecc.)</span>
+                  <span className="text-xs text-muted-foreground">CSV (BBVA, Trade Republic, ecc.)</span>
                 </Button>
               </>
             )}

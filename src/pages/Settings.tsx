@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { LogOut, User, Download, Upload, FileSpreadsheet, Trash2, Settings2, Edit2, FolderPlus, Folder, FolderPen, Check, X } from 'lucide-react';
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
@@ -28,14 +28,14 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import * as XLSX from 'xlsx';
 import SpendyImportDialog from '@/components/settings/SpendyImportDialog';
 import RevolutImportDialog from '@/components/settings/RevolutImportDialog';
 import BankImportDialog from '@/components/settings/BankImportDialog';
 import ISINMappingsDialog from '@/components/settings/ISINMappingsDialog';
-import { TransactionType, CurrencyCode } from '@/lib/types';
+import { Category, TransactionType, CurrencyCode } from '@/lib/types';
 import { EMOJI_OPTIONS, COLOR_OPTIONS, CURRENCY_SYMBOLS } from '@/lib/constants';
 import { useProfile } from '@/hooks/useProfile';
+import { serializeCsvRows } from '@/lib/csv';
 
 export default function Settings() {
   const { user, signOut, updateEmail, updatePassword } = useAuth();
@@ -44,13 +44,11 @@ export default function Settings() {
   const { toast } = useToast();
   const navigate = useNavigate();
   const [isExporting, setIsExporting] = useState(false);
-  const [isImporting, setIsImporting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [spendyDialogOpen, setSpendyDialogOpen] = useState(false);
   const [revolutDialogOpen, setRevolutDialogOpen] = useState(false);
   const [bankImportDialogOpen, setBankImportDialogOpen] = useState(false);
   const [isinMappingsDialogOpen, setIsinMappingsDialogOpen] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   
   // Account edit dialog state
   const [accountEditOpen, setAccountEditOpen] = useState(false);
@@ -80,7 +78,7 @@ export default function Settings() {
   const [newCatIcon, setNewCatIcon] = useState('📦');
   const [newCatColor, setNewCatColor] = useState('#6b7280');
   const [newCatType, setNewCatType] = useState<TransactionType>('expense');
-  const exportData = async (format: 'csv' | 'xlsx') => {
+  const exportData = async () => {
     if (!user) return;
     setIsExporting(true);
 
@@ -94,32 +92,15 @@ export default function Settings() {
         supabase.from('portfolio_assets').select('*'),
       ]);
 
-      const wb = XLSX.utils.book_new();
+      const rows = [
+        ...(transactionsRes.data ?? []).map(row => ({ entity: 'transactions', ...row })),
+        ...(categoriesRes.data ?? []).map(row => ({ entity: 'categories', ...row })),
+        ...(budgetsRes.data ?? []).map(row => ({ entity: 'budgets', ...row })),
+        ...(savingsRes.data ?? []).map(row => ({ entity: 'savings_goals', ...row })),
+        ...(portfolioRes.data ?? []).map(row => ({ entity: 'portfolio_assets', ...row })),
+      ];
 
-      // Add sheets
-      if (transactionsRes.data?.length) {
-        const ws = XLSX.utils.json_to_sheet(transactionsRes.data);
-        XLSX.utils.book_append_sheet(wb, ws, 'Transazioni');
-      }
-      if (categoriesRes.data?.length) {
-        const ws = XLSX.utils.json_to_sheet(categoriesRes.data);
-        XLSX.utils.book_append_sheet(wb, ws, 'Categorie');
-      }
-      if (budgetsRes.data?.length) {
-        const ws = XLSX.utils.json_to_sheet(budgetsRes.data);
-        XLSX.utils.book_append_sheet(wb, ws, 'Budget');
-      }
-      if (savingsRes.data?.length) {
-        const ws = XLSX.utils.json_to_sheet(savingsRes.data);
-        XLSX.utils.book_append_sheet(wb, ws, 'Obiettivi');
-      }
-      if (portfolioRes.data?.length) {
-        const ws = XLSX.utils.json_to_sheet(portfolioRes.data);
-        XLSX.utils.book_append_sheet(wb, ws, 'Portfolio');
-      }
-
-      // Check if workbook has sheets
-      if (wb.SheetNames.length === 0) {
+      if (rows.length === 0) {
         toast({
           title: 'Nessun dato',
           description: 'Non ci sono dati da esportare',
@@ -128,16 +109,10 @@ export default function Settings() {
         return;
       }
 
-      const filename = `spendy_export_${new Date().toISOString().split('T')[0]}.${format}`;
-      
-      if (format === 'csv') {
-        // Export first sheet as CSV
-        const csvContent = XLSX.utils.sheet_to_csv(wb.Sheets[wb.SheetNames[0]]);
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        downloadBlob(blob, filename);
-      } else {
-        XLSX.writeFile(wb, filename);
-      }
+      const filename = `spendy_export_${new Date().toISOString().split('T')[0]}.csv`;
+      const csvContent = serializeCsvRows(rows);
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      downloadBlob(blob, filename);
 
       toast({
         title: 'Export completato',
@@ -166,172 +141,6 @@ export default function Settings() {
     URL.revokeObjectURL(url);
   };
 
-  const parseItalianNumber = (value: any): number => {
-    if (typeof value === 'number') return value;
-    if (!value) return 0;
-    const str = String(value).trim();
-    // Remove dots (thousands separator) and replace comma with dot (decimal separator)
-    const normalized = str.replace(/\./g, '').replace(',', '.');
-    return parseFloat(normalized) || 0;
-  };
-
-  const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !user) return;
-    
-    setIsImporting(true);
-
-    try {
-      const data = await file.arrayBuffer();
-      const wb = XLSX.read(data);
-
-      let importedCount = 0;
-
-      // Import transactions
-      if (wb.SheetNames.includes('Transazioni')) {
-        const ws = wb.Sheets['Transazioni'];
-        const rows = XLSX.utils.sheet_to_json(ws) as Record<string, unknown>[];
-        
-        for (const row of rows) {
-          const { error } = await supabase.from('transactions').insert({
-            user_id: user.id,
-            amount: parseItalianNumber(row.amount),
-            type: row.type === 'income' ? 'income' : 'expense',
-            description: String(row.description || ''),
-            date: String(row.date || new Date().toISOString().split('T')[0]),
-            currency: 'EUR',
-          });
-          if (!error) importedCount++;
-        }
-      }
-
-      // Import categories
-      if (wb.SheetNames.includes('Categorie')) {
-        const ws = wb.Sheets['Categorie'];
-        const rows = XLSX.utils.sheet_to_json(ws) as Record<string, unknown>[];
-        
-        for (const row of rows) {
-          const { error } = await supabase.from('categories').insert({
-            user_id: user.id,
-            name: String(row.name || 'Categoria'),
-            type: row.type === 'income' ? 'income' : 'expense',
-            icon: String(row.icon || '💰'),
-            color: String(row.color || '#22c55e'),
-          });
-          if (!error) importedCount++;
-        }
-      }
-
-      // Import savings goals
-      if (wb.SheetNames.includes('Obiettivi')) {
-        const ws = wb.Sheets['Obiettivi'];
-        const rows = XLSX.utils.sheet_to_json(ws) as Record<string, unknown>[];
-        
-        for (const row of rows) {
-          const { error } = await supabase.from('savings_goals').insert({
-            user_id: user.id,
-            name: String(row.name || 'Obiettivo'),
-            target_amount: Number(row.target_amount) || 0,
-            current_amount: Number(row.current_amount) || 0,
-            icon: String(row.icon || '🎯'),
-            color: String(row.color || '#8b5cf6'),
-            deadline: row.deadline ? String(row.deadline) : null,
-          });
-          if (!error) importedCount++;
-        }
-      }
-
-      // Import portfolio
-      if (wb.SheetNames.includes('Portfolio')) {
-        const ws = wb.Sheets['Portfolio'];
-        const rows = XLSX.utils.sheet_to_json(ws) as Record<string, unknown>[];
-        
-        for (const row of rows) {
-          const { error } = await supabase.from('portfolio_assets').insert({
-            user_id: user.id,
-            name: String(row.name || 'Asset'),
-            type: String(row.type || 'stock') as 'stock' | 'etf' | 'crypto' | 'bond' | 'cash' | 'real_estate' | 'other',
-            quantity: parseItalianNumber(row.quantity),
-            purchase_price: parseItalianNumber(row.purchase_price),
-            current_price: row.current_price ? parseItalianNumber(row.current_price) : null,
-            symbol: row.symbol ? String(row.symbol) : null,
-            purchase_date: String(row.purchase_date || new Date().toISOString().split('T')[0]),
-          });
-          if (!error) importedCount++;
-        }
-      }
-
-      // Import investments from CSV
-      if (wb.SheetNames.includes('Investimenti')) {
-        const ws = wb.Sheets['Investimenti'];
-        const rows = XLSX.utils.sheet_to_json(ws) as Record<string, unknown>[];
-        
-        for (const row of rows) {
-          const ticker = String(row.ticker || '');
-          const investito = parseItalianNumber(row.investito);
-          const valoreAttuale = parseItalianNumber(row.valore_attuale);
-          const prezzoCarico = parseItalianNumber(row.prezzo_carico);
-          const dataVendita = row.data_vendita ? String(row.data_vendita) : null;
-          const prezzoVendita = row.prezzo_vendita ? parseItalianNumber(row.prezzo_vendita) : null;
-
-          // Determine asset type based on ticker
-          let assetType: 'stock' | 'etf' | 'crypto' | 'bond' | 'cash' | 'real_estate' | 'other' = 'stock';
-          if (ticker.includes('-EUR') || ticker.includes('BTC') || ticker.includes('ETH')) {
-            assetType = 'crypto';
-          } else if (ticker.includes('.MI') || ticker.includes('.L') || ticker.includes('.PA')) {
-            assetType = 'stock';
-          } else if (ticker.includes('ETF') || ticker.includes('IE00')) {
-            assetType = 'etf';
-          }
-
-          const { error } = await supabase.from('portfolio_assets').insert({
-            user_id: user.id,
-            name: ticker,
-            type: assetType,
-            quantity: investito,
-            purchase_price: prezzoCarico,
-            current_price: valoreAttuale,
-            symbol: ticker,
-            purchase_date: String(row.data || new Date().toISOString().split('T')[0]),
-          });
-          if (!error) importedCount++;
-
-          // If sold, create a sell transaction
-          if (dataVendita && prezzoVendita) {
-            const { error: sellError } = await supabase.from('transactions').insert({
-              user_id: user.id,
-              amount: prezzoVendita * investito,
-              type: 'income',
-              description: `Vendita ${ticker}`,
-              date: dataVendita,
-              currency: 'EUR',
-            });
-            if (!sellError) importedCount++;
-          }
-        }
-      }
-
-      toast({
-        title: 'Import completato',
-        description: `Importati ${importedCount} record`,
-      });
-
-      // Reset file input
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
-    } catch (error) {
-      console.error('Import error:', error);
-      toast({
-        title: 'Errore import',
-        description: 'Si è verificato un errore durante l\'import. Verifica il formato del file.',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsImporting(false);
-    }
-  };
-
   const handleAccountUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsUpdating(true);
@@ -354,8 +163,8 @@ export default function Settings() {
         // Validate password using the new schema
         try {
           passwordSchema.parse(newPassword);
-        } catch (error: any) {
-          throw new Error(error.errors?.[0]?.message || 'La password non soddisfa i requisiti di sicurezza');
+        } catch (error: unknown) {
+          throw new Error((error as { errors?: Array<{ message: string }> }).errors?.[0]?.message || 'La password non soddisfa i requisiti di sicurezza');
         }
         
         if (newPassword !== confirmPassword) {
@@ -374,10 +183,10 @@ export default function Settings() {
       setNewEmail('');
       setNewPassword('');
       setConfirmPassword('');
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         title: 'Errore',
-        description: error.message || 'Impossibile aggiornare le credenziali',
+        description: (error as Error).message || 'Impossibile aggiornare le credenziali',
         variant: 'destructive'
       });
     } finally {
@@ -385,7 +194,7 @@ export default function Settings() {
     }
   };
 
-  const openCategoryEdit = (category: any) => {
+  const openCategoryEdit = (category: Category) => {
     setEditingCategory(category.id);
     setEditCatName(category.name);
     setEditCatIcon(category.icon);
@@ -450,7 +259,7 @@ export default function Settings() {
     }
   };
 
-  const openCategoryDelete = (category: any) => {
+  const openCategoryDelete = (category: Category) => {
     setDeletingCategory(category.id);
     setCategoryDeleteOpen(true);
   };
@@ -733,15 +542,7 @@ export default function Settings() {
                     <div className="flex flex-wrap gap-2">
                       <Button
                         variant="outline"
-                        onClick={() => exportData('xlsx')}
-                        disabled={isExporting}
-                      >
-                        <Download className="w-5 h-5 mr-2" />
-                        {isExporting ? 'Esportazione...' : 'Esporta Excel'}
-                      </Button>
-                      <Button
-                        variant="outline"
-                        onClick={() => exportData('csv')}
+                        onClick={() => exportData()}
                         disabled={isExporting}
                       >
                         <Download className="w-5 h-5 mr-2" />

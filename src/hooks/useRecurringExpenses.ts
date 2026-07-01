@@ -108,6 +108,7 @@ export function useRecurringExpenses() {
     mutationFn: async (id: string) => {
       const { error } = await supabase
         .from('recurring_expenses')
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         .update({ deleted_at: new Date().toISOString() } as any)
         .eq('id', id)
         .eq('user_id', user!.id);

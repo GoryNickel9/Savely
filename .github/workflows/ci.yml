@@ -1,0 +1,121 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ─────────────────────────────────────────
+  # Priority 1 — Quality gate
+  # ─────────────────────────────────────────
+  quality:
+    name: Quality gate (lint + build)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build
+        run: npm run build
+
+  # ─────────────────────────────────────────
+  # Priority 1 — Test gate
+  # ─────────────────────────────────────────
+  test:
+    name: Test gate (unit tests)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run unit tests
+        run: npm test
+
+  # ─────────────────────────────────────────
+  # Priority 2 — Typecheck gate
+  # ─────────────────────────────────────────
+  typecheck:
+    name: Typecheck gate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: TypeScript check
+        run: npm run typecheck
+
+  # ─────────────────────────────────────────
+  # Priority 2 — Security gate
+  # ─────────────────────────────────────────
+  security:
+    name: Security gate (dependency audit)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Audit dependencies (high/critical only)
+        # Blocca su high e critical; le vulnerabilita moderate vengono registrate ma non bloccano
+        run: npm audit --audit-level=high
+
+  # ─────────────────────────────────────────
+  # Priority 3 — E2E gate (disabilitato)
+  # Da abilitare quando Playwright sarà configurato
+  # ─────────────────────────────────────────
+  # e2e:
+  #   name: E2E gate (Playwright)
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - uses: actions/setup-node@v4
+  #       with:
+  #         node-version: 22
+  #         cache: npm
+  #     - run: npm ci
+  #     - run: npx playwright install --with-deps
+  #     - run: npx playwright test

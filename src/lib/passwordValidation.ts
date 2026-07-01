@@ -6,7 +6,7 @@ const passwordPatterns = {
   hasUpperCase: /[A-Z]/, // Almeno una maiuscola
   hasLowerCase: /[a-z]/, // Almeno una minuscola
   hasNumber: /[0-9]/, // Almeno un numero
-  hasSymbol: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>/?]/, // Almeno un simbolo
+  hasSymbol: /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/, // Almeno un simbolo
 };
 
 // Schema Zod per la validazione della password

@@ -22,9 +22,10 @@ export function useLastPriceUpdate() {
         
         if (error) throw error;
         return data as PriceUpdateLog | null;
-      } catch (error: any) {
+      } catch (error: unknown) {
         // If table doesn't exist (404), return null instead of throwing
-        if (error?.code === 'PGRST116' || error?.status === 404) {
+        const err = error as { code?: string; status?: number };
+        if (err?.code === 'PGRST116' || err?.status === 404) {
           return null;
         }
         throw error;
