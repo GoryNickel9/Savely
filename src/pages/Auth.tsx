@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, TrendingUp, Shield, PieChart, Check, X } from 'lucide-react';
+import { Loader2, TrendingUp, Shield, PieChart, Check, X, MailCheck } from 'lucide-react';
 import { z } from 'zod';
 import { passwordSchema, checkPasswordRequirements, passwordRequirementsList } from '@/lib/passwordValidation';
 
@@ -27,15 +27,17 @@ export default function Auth() {
   const [resetEmail, setResetEmail] = useState('');
   const [resetLoading, setResetLoading] = useState(false);
   const [resetDialogOpen, setResetDialogOpen] = useState(false);
+  const [resetSent, setResetSent] = useState(false);
+  const [sentEmail, setSentEmail] = useState('');
   const { user, signIn, signUp, resetPassword } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
-    if (user) {
+    if (user && !resetSent) {
       navigate('/');
     }
-  }, [user, navigate]);
+  }, [user, navigate, resetSent]);
 
   const validateForm = () => {
     try {
@@ -118,10 +120,8 @@ export default function Auth() {
         variant: 'destructive',
       });
     } else {
-      toast({
-        title: 'Email inviata!',
-        description: 'Controlla la tua casella di posta per il link di recupero.',
-      });
+      setSentEmail(resetEmail);
+      setResetSent(true);
       setResetDialogOpen(false);
       setResetEmail('');
     }
@@ -183,6 +183,22 @@ export default function Auth() {
             <CardDescription>Accedi o crea un account per continuare</CardDescription>
           </CardHeader>
           <CardContent>
+            {resetSent ? (
+              <div className="text-center space-y-6 py-8">
+                <div className="mx-auto p-3 rounded-xl bg-primary/10 text-primary w-fit">
+                  <MailCheck className="w-6 h-6" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-display mb-2">Controlla la tua email</h2>
+                  <p className="text-muted-foreground">
+                    Abbiamo inviato le istruzioni per recuperare la password a <strong>{sentEmail}</strong>.
+                  </p>
+                </div>
+                <Button variant="outline" onClick={() => setResetSent(false)}>
+                  Torna al login
+                </Button>
+              </div>
+            ) : (
             <Tabs defaultValue="signin" className="w-full">
               <TabsList className="grid w-full grid-cols-2 mb-6">
                 <TabsTrigger value="signin">Accedi</TabsTrigger>
@@ -317,6 +333,7 @@ export default function Auth() {
                 </form>
               </TabsContent>
             </Tabs>
+            )}
           </CardContent>
         </Card>
       </div>
