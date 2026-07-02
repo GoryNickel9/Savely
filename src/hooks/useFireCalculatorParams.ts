@@ -133,6 +133,7 @@ export function useFireCalculatorParams(dbDefaults?: FireDefaults) {
       portfolioValue: getParam('portfolioValue'),
       retirementYears: getParam('retirementYears'),
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams])
 
   const setParam = useCallback((key: keyof CalculatorParams, value: number) => {

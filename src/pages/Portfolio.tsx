@@ -54,10 +54,9 @@ export default function Portfolio() {
   const tcgTotalGain = tcgTotalValue - tcgTotalCost;
 
   // Combine all assets for instrument selection
-  const allAssets = [...openAssets, ...closedAssets];
-
   // Unique existing instruments for quick selection
   const existingInstruments = useMemo(() => {
+    const allAssets = [...openAssets, ...closedAssets];
     const map = new Map<string, { name: string; symbol: string; type: AssetType }>();
     allAssets.forEach(a => {
       if (a.symbol) {
@@ -68,7 +67,7 @@ export default function Portfolio() {
       }
     });
     return Array.from(map.values());
-  }, [allAssets]);
+  }, [openAssets, closedAssets]);
 
   const handleSelectExisting = (symbolKey: string) => {
     setSelectedExisting(symbolKey);

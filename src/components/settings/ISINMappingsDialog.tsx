@@ -53,6 +53,7 @@ export default function ISINMappingsDialog({ open, onOpenChange, userId }: ISINM
     if (open) {
       fetchMappings();
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, userId]);
 
   const fetchMappings = async () => {

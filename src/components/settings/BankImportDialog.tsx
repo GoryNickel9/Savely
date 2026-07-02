@@ -194,6 +194,7 @@ export default function BankImportDialog({ open, onOpenChange, userId }: BankImp
       }
     };
     setup();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, userId, categories]);
 
   useEffect(() => {
@@ -203,6 +204,7 @@ export default function BankImportDialog({ open, onOpenChange, userId }: BankImp
       const saved = categoryMappings[currentTransaction.descrizione.toLowerCase()];
       setSelectedCategory(saved || '');
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentIndex, currentTransaction]);
 
   // ── file parsing ──────────────────────────────────────────────────────────

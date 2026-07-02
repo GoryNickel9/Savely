@@ -68,6 +68,7 @@ export default function PokerNextCut() {
     if (!nextCut) return 0;
     const gross = calculateNextCutGross(nextCut.deal);
     return gross - nextCut.profit_loss;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nextCut?.deal, nextCut?.profit_loss, totalMonthlySpending]);
 
   // Update Profit/Loss

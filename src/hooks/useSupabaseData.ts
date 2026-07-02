@@ -117,6 +117,7 @@ export function useSupabaseData<T extends Record<string, unknown>>(
       isLoadingRef.current = false;
       setLoading(false);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id, tableName, orderBy, ascending, filter]); // Rimuovo toast dalle dipendenze
 
   useEffect(() => {

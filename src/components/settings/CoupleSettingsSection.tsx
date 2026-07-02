@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Heart, Copy, Check, Clock, UserCheck, LinkOff, Link2 } from 'lucide-react';
+import { Heart, Copy, Check, Clock, UserCheck, Link2Off, Link2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -160,7 +160,7 @@ export default function CoupleSettingsSection() {
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button variant="outline" size="sm" className="border-destructive/50 text-destructive hover:bg-destructive/10">
-                <LinkOff className="w-4 h-4 mr-2" />
+                <Link2Off className="w-4 h-4 mr-2" />
                 Revoca connessione
               </Button>
             </AlertDialogTrigger>

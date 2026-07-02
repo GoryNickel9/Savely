@@ -28,6 +28,7 @@ export default function AgeInput({
     if (parsed !== value) {
       setInputValue(value.toString())
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {

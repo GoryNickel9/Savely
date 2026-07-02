@@ -44,6 +44,7 @@ export default function PermissionsManager({ currentUserId }: PermissionsManager
 
   useEffect(() => {
     loadUsers();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handlePermissionToggle = async (
