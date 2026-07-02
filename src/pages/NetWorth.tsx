@@ -46,8 +46,8 @@ export default function NetWorth() {
             <h1 className="text-3xl font-display font-bold">Patrimonio</h1>
             <p className="text-muted-foreground">Storico del tuo patrimonio netto nel tempo</p>
           </div>
-          <Link to="/" className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1">
-            <ArrowLeft className="w-4 h-4" /> Dashboard
+          <Link to="/portfolio" className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1">
+            <ArrowLeft className="w-4 h-4" /> Portfolio
           </Link>
         </div>
 
