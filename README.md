@@ -56,28 +56,124 @@ L'app è una **single-page application** con autenticazione Supabase, stato serv
 
 ## Funzionalità
 
+L'app è organizzata in **moduli**. Le sezioni base sono disponibili per ogni utente autenticato; i moduli specializzati richiedono un permesso specifico (vedi [Sistema di permessi](#sistema-di-permessi)).
+
 ### 🧩 Moduli base (tutti gli utenti autenticati)
 
-- **Dashboard** — panoramica patrimonio netto, statistiche mensili/annuali, cashflow, performance portfolio, ultime transazioni.
-- **Transazioni** — entrate/uscite con supporto multi-valuta, conversione automatica in EUR, filtri per data/categoria/tipo, categorizzazione personalizzata.
-- **Uscite Ricorrenti** — spese periodiche (settimanali, mensili, trimestrali, annuali) generate automaticamente da una Edge Function cron.
-- **Budget** — budget mensili per categoria con monitoraggio in tempo reale e indicatori di avanzamento.
-- **Portfolio** — tracciamento asset (azioni, ETF, crypto, obbligazioni, liquidità, immobili, altro) con P&L in tempo reale e aggiornamento automatico dei prezzi.
-- **Grafici** — entrate/uscite, analisi per categoria, trend temporali (sezioni dedicate a entrate, uscite e confronto entrate/uscite).
+#### 📊 Dashboard (`/`)
+La pagina di benvenuto che riassume lo stato delle tue finanze in un colpo d'occhio:
+- **Patrimonio Netto** — calcolato come cashflow totale (entrate − uscite di sempre) + P&L realizzato delle sole posizioni di investimento (escluse liquidità, immobili e "altro") + valore degli immobili scontato del 25% (per prudenza).
+- **Statistiche del mese corrente** — entrate e uscite del mese in corso.
+- **Statistiche dell'anno corrente** — entrate e uscite da inizio anno.
+- **Performance Portfolio** — valore, P&L (assoluto e percentuale) delle posizioni aperte (solo strumenti di investimento).
+- **Totale budget** impostato e le **ultime transazioni** inserite.
+
+#### 💸 Transazioni (`/transactions`)
+Il cuore della contabilità quotidiana:
+- Inserimento, modifica (inline) ed eliminazione di entrate e uscite.
+- **Multi-valuta**: ogni transazione può essere in EUR, USD, GBP, CHF, JPY, CNY o IDR; l'importo viene **convertito automaticamente in EUR** al tasso di cambio del giorno dell'operazione (API Frankfurter).
+- **Categorizzazione**: ogni transazione è associata a una categoria personalizzata (con icona/colore).
+- **Filtri avanzati**: per periodo (questo mese, mese scorso, semestre, quest'anno, anno scorso, range personalizzato), per categoria e per ricerca testuale;filtro "solo condivise" per chi usa il Budget Familiare.
+- **Condivisione di coppia**: una transazione può essere marcata come spesa condivisa con il partner (con categoria di coppia e split percentuale) direttamente dal form di inserimento.
+
+#### 🔁 Uscite Ricorrenti (`/recurring`)
+Per gestire le spese che si ripetono nel tempo (affitto, abbonamenti, rate):
+- Definizione di spese con **frequenza** (settimanale, mensile, trimestrale, annuale), importo, categoria e **prossima data di scadenza**.
+- Per le frequenze settimanali si può impostare l'**intervallo** in settimane (es. ogni 2 settimane).
+- Una **Edge Function cron** (`process-recurring-expenses`) genera automaticamente le transazioni quando arriva la scadenza.
+- Possibilità di processare manualmente le scadenze in ritardo.
+
+#### 🐷 Budget (`/budget`)
+Per pianificare e monitorare la spesa mensile:
+- Impostazione di un **budget mensile per categoria**.
+- **Suggerimento basato sui dati**: per ogni categoria viene mostrata la **spesa mensile mediana** calcolata sulle transazioni degli ultimi 730 giorni, come riferimento per impostare il budget.
+- **Monitoraggio in tempo reale** dell'avanzamento con barre di progresso e indicatori visivi (sotto/sopra budget).
+- Riepilogo dei totali: budget atteso totale vs. spesa effettiva (mediana globale) e differenza.
+
+#### 📈 Portfolio (`/portfolio`)
+Per tracciare i tuoi investimenti e il loro valore nel tempo:
+- Gestione di asset per tipo: **azioni, ETF, crypto, obbligazioni, liquidità, immobili, altro**.
+- Tracciamento del **P&L non realizzato** (posizioni aperte) e **P&L realizzato** (posizioni chiuse) in assoluto e percentuale.
+- **Aggiornamento automatico dei prezzi** via Edge Function (`update-prices`), con limite anti-abuso sull'aggiornamento manuale (cooldown); storico prezzi per grafico di andamento.
+- **Chiusura delle posizioni** con registrazione del prezzo di vendita e della data (calcolo del guadagno/perdita realizzata).
+- Selezione rapida di strumenti già presenti, gestione liquidità multi-valuta.
+- **Integrazione con la collezione TCG**: le carte TCG con un valore di mercato sono mostrate insieme agli asset finanziari nel riepilogo del portafoglio.
+- Grafici: composizione del portafoglio (pie), andamento nel tempo (area/line).
+
+#### 📊 Grafici (`/charts`)
+Analisi visiva delle tue entrate e uscite, suddivisa in tre sezioni:
+- **Analisi Entrate/Uscite** (`/charts/income-expense`): andamento **cumulativo del bilancio** nel tempo (area chart giorno-per-giorno), con filtri per anno, mese, "da una data" o range.
+- **Analisi Uscite** (`/charts/expense`): distribuzione delle spese **per categoria** (pie/bar/line) e andamento mensile, con filtri temporali.
+- **Analisi Entrate** (`/charts/income`): come sopra, ma sulle entrate.
+
+Tutti i grafici supportano filtri temporali (tutto, anno, mese, da una data, tra due date) e l'aggregazione mensile.
+
+#### ⚙️ Impostazioni (`/settings`)
+Gestione del proprio account e dei dati:
+- **Informazioni Account**: modifica credenziali (email, password) con verifica della password attuale, logout.
+- **Valuta Principale**: scelta della valuta di default per le nuove transazioni.
+- **Import / Export Dati** (vedi sezione dedicata).
+- **Gestione Categorie**: creazione/modifica/eliminazione di categorie personalizzate con icona (emoji) e colore.
+- **Sezione Coppia** (se permesso `couple_expenses`): gestione dell'accoppiamento con il partner.
+- **Mappature ISIN** (per portfolio): collegamento dei simboli agli ISIN per l'aggiornamento automatico dei prezzi.
+
+---
 
 ### 🔐 Moduli specializzati (richiedono permesso)
 
-- **Poker** — Next Cut, Guadagno Orario, Rakeback, Spese Manuali.
-- **Fumo** — Liquido Sigaretta, CBD, THC con statistiche e calcoli derivati.
-- **FIRE** — calcolatori Standard FIRE e Barista FIRE con proiezioni e calcolo anni al FIRE.
-- **Statistiche Deep Dive** — analisi avanzate (medie, mediane, media winsorizzata su finestre di 365/730 giorni).
-- **TCG** — collezione di carte Magic: The Gathering, Pokémon TCG e Yu-Gi-Oh! con valore, P&L e aggiornamento prezzi.
-- **Libreria** — catalogo di Libri, Fumetti e Manga con costo di acquisto, valore di rivendita e ricerca cover via API.
-- **Budget Familiare** — spese condivise e budget condiviso con un partner accoppiato (split percentuale, audit log, privacy delle categorie personali).
+#### 🎲 Poker (permesso `poker`)
+Strumenti per chi gioca a poker e vuole tenere sotto controllo i costi e i traguardi:
+- **Next Cut** (`/poker/next-cut`): calcola **quanto manca** per raggiungere il prossimo "cut" (livello di guadagno). Combina la spesa mensile totale — derivata automaticamente dalla mediana delle transazioni degli ultimi 730 giorni + le spese manuali poker — con il **deal** (guadagno per mano/sessione) e il **profit/loss** accumulato, per indicare quanto ancora devi guadagnare.
+- **Guadagno Orario** (`/poker/hourly-earnings`): traccia il tuo guadagno per ora di gioco.
+- **Rakeback** (`/poker/rakeback`): monitoraggio del rakeback ricevuto nel tempo.
+- **Spese Manuali** (`/poker/manual-expenses`): registrazione di spese correlate al poker (es. buy-in, travel) con distinzione spese obbligatorie/facoltative; questi importi confluiscono nel calcolo del Next Cut.
+
+#### 🚬 Fumo (permesso `fumo`)
+Tracciamento dei costi del fumo e prodotti correlati, suddiviso in tre aree:
+- **Liquido Sigaretta** (`/fumo/liquido-sigaretta`): spese per liquidi e sigarette elettroniche, con statistiche di consumo e costi derivati.
+- **CBD** (`/fumo/cbd`): monitoraggio di prodotti a base di CBD.
+- **THC** (`/fumo/thc`): monitoraggio di prodotti a base di THC.
+Ogni area registra gli acquisti e calcola statistiche e costi derivati (es. costo medio, spesa periodica).
+
+#### 🔥 FIRE (permesso `fire`)
+Calcolatori per la pianificazione dell'indipendenza finanziaria (Financial Independence, Retire Early):
+- **Standard FIRE** (`/fire/standard`): calcola il **FIRE number** classico (patrimonio necessario = spese annuali / withdrawal rate) e **quanti anni mancano** al raggiungimento. Parametri: età attuale e desiderata di pensionamento, risparmi attuali, contributo annuo, rendimento atteso, inflazione, withdrawal rate, spese e reddito annuo. Mostra una proiezione grafica della crescita del portafoglio e una barra di avanzamento verso il FIRE.
+- **Barista FIRE** (`/fire/barista`): variante in cui un **reddito part-time** copre parte delle spese, riducendo il patrimonio necessario. Calcola il "Barista number" (più basso del FIRE number), la riduzione in valore e percentuale, e gli anni per raggiungerlo.
+- Entrambi i calcolatori offrono valori di default derivati dai tuoi dati (spese medie, patrimonio) e si possono resettare.
+
+#### 📊 Statistiche Deep Dive (permesso `statistics_deep_dive`)
+Analisi statistica avanzata della spesa, oltre i grafici base:
+- **Media**, **mediana** e **media winsorizzata** della spesa su finestre temporali estese (365 giorni per la media, 730 giorni per mediana e media winsorizzata), per cogliere trend reali al netto dei valori anomali.
+
+#### 🃏 TCG (permesso `tcg`)
+Gestione della collezione di carte da gioco, con valore di mercato:
+- Sotto-sezioni dedicate per **Magic: The Gathering**, **Pokémon TCG** e **Yu-Gi-Oh!** (`/tcg/magic`, `/tcg/pokemon`, `/tcg/yugioh`).
+- Per ogni carta: nome, set/espansione, numero collezione, **condizione** (Near Mint → Damaged), lingua (EN, IT, JP, DE, FR, ES, PT, KOR, ZHS), quantità, prezzo d'acquisto, prezzo corrente, data, immagine e note.
+- **Ricerca via API CardTrader**: cerca carte reali con prezzo di mercato (CT Zero) e aggiungile alla collezione in pochi click.
+- **Dashboard collezione**: valore totale (attuale vs costo), P&L assoluto e percentuale, numero di pezzi; pie chart per gioco.
+- **Aggiornamento automatico dei prezzi** via Edge Function (`update-tcg-prices`).
+- Le carte con valore di mercato **confluiscono nel Portfolio** finanziario.
+
+#### 📚 Libreria (permesso `libreria`)
+Catalogo della propria collezione libreria, con valutazione:
+- Sotto-sezioni per **Libri**, **Fumetti** e **Manga** (`/libreria/libri`, `/libreria/fumetti`, `/libreria/manga`).
+- Per ogni voce: titolo, autore, editore, anno, **copertina**, prezzo d'acquisto, **valore di rivendita**, quantità e note.
+- **Ricerca via API**: Google Books per i libri (con recupero cover), Jikan/MyAnimeList per i manga (tramite Edge Function `mangaworld-proxy`).
+- **Dashboard collezione**: costo totale, valore di rivendita totale, P&L, numero di pezzi; statistiche per categoria.
+
+#### 💞 Budget Familiare (permesso `couple_expenses`)
+Per gestire le finanze condivise con un partner:
+- **Accoppiamento**: sistema di invito/accettazione (richiesta → connessione) tra due utenti.
+- **Spese condivise**: una transazione può essere condivisa con il partner con uno **split percentuale** personalizzato; il partner vede l'importo, la valuta, la descrizione e la data, ma **mai la categoria personale** del creatore (per proteggerne la privacy).
+- **Budget condiviso**: budget mensili per "categoria di coppia" (nome testuale condiviso, non legato ai category_id personali).
+- **Suggerimento basato sui dati**: spesa mediana mensile condivisa calcolata sugli storici.
+- **Audit log immutabile** di tutte le azioni sulla connessione (creazione, revoca, ecc.).
+
+---
 
 ### ⚙️ Amministrazione
 
-- **Admin Panel** — gestione utenti e assegnazione permessi (solo `admin`).
+- **Admin Panel** (`/admin`, permesso `admin`): elenco di tutti gli utenti con i relativi permessi e assegnazione/modifica dei permessi (inclusi `admin`, `poker`, `fumo`, `fire`, `statistics_deep_dive`, `tcg`, `libreria`, `couple_expenses`).
 
 ---
 
