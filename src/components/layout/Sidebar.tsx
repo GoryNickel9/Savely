@@ -21,6 +21,8 @@ import {
   Library,
   BookOpen,
   HeartHandshake,
+  Wallet,
+  Sparkles,
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -33,6 +35,8 @@ const navigation = [
   { name: 'Uscite Ricorrenti', href: '/recurring', icon: CalendarClock },
   { name: 'Budget', href: '/budget', icon: PiggyBank },
   { name: 'Portfolio', href: '/portfolio', icon: LineChart },
+  { name: 'Patrimonio', href: '/net-worth', icon: Wallet },
+  { name: 'Previsioni', href: '/forecast', icon: Sparkles },
   { name: 'Grafici', href: '/charts', icon: BarChart3 },
 ];
 
