@@ -22,6 +22,7 @@ import {
   BookOpen,
   HeartHandshake,
   Sparkles,
+  Lightbulb,
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -35,6 +36,7 @@ const navigation = [
   { name: 'Budget', href: '/budget', icon: PiggyBank },
   { name: 'Portfolio', href: '/portfolio', icon: LineChart },
   { name: 'Previsioni', href: '/forecast', icon: Sparkles },
+  { name: 'Insights', href: '/insights', icon: Lightbulb },
   { name: 'Grafici', href: '/charts', icon: BarChart3 },
 ];
 
