@@ -1,4 +1,5 @@
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -22,6 +23,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -29,6 +31,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
+
+        if (event === 'PASSWORD_RECOVERY') {
+          navigate('/reset-password', { replace: true });
+        }
       }
     );
 
@@ -39,7 +45,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [navigate]);
 
   // Ensure a base set of categories exists for each user (needed for imports and UX)
   useEffect(() => {
@@ -103,13 +109,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signUp = async (email: string, password: string, fullName?: string) => {
     const redirectUrl = `${siteUrl}/auth/callback`;
     
-    // DEBUG: Log per verificare l'URL di redirect (solo in sviluppo)
-    if (import.meta.env.DEV) {
-      console.log('📧 Email verification redirect URL:', redirectUrl);
-      console.log('🌐 Current origin:', window.location.origin);
-    }
-    
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -118,13 +118,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       },
     });
     
-    if (error && import.meta.env.DEV) {
-      console.error('❌ Sign up error:', error);
-    } else if (!error && import.meta.env.DEV) {
-      console.log('✅ Sign up successful, email sent to:', email);
+    if (error) return { error: error as Error | null };
+    
+    if (!data.session) {
+      const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+      return { error: signInError as Error | null };
     }
     
-    return { error: error as Error | null };
+    return { error: null };
   };
 
   const signOut = async () => {
