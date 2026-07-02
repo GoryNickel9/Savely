@@ -3,16 +3,21 @@ import MainLayout from '@/components/layout/MainLayout';
 import { useTransactions } from '@/hooks/useTransactions';
 import { useCategories } from '@/hooks/useCategories';
 import { useProfile } from '@/hooks/useProfile';
+import { usePermissions } from '@/hooks/usePermissions';
+import { useCouplePairStatus } from '@/hooks/useCouplePairStatus';
+import { useSharedExpenses, SharedExpenseViewRow } from '@/hooks/useSharedExpenses';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
 import { TransactionType, Transaction, CurrencyCode } from '@/lib/types';
 import { CategorySelect } from '@/components/CategorySelect';
 import { CURRENCY_SYMBOLS } from '@/lib/constants';
-import { Plus, Trash2, Pencil, Search, Calendar } from 'lucide-react';
+import { Plus, Trash2, Pencil, Search, Calendar, HeartHandshake } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { startOfMonth, endOfMonth, subMonths, startOfYear, endOfYear, subYears, isWithinInterval, parseISO } from 'date-fns';
 
@@ -22,6 +27,9 @@ export default function Transactions() {
   const { transactions, createTransaction, updateTransaction, deleteTransaction } = useTransactions();
   const { incomeCategories, expenseCategories, categories: allCategories } = useCategories();
   const { defaultCurrency } = useProfile();
+  const { permissions } = usePermissions();
+  const { connection } = useCouplePairStatus();
+  const { mySharedTransactionIds, mySharedExpenses, partnerSharedExpenses, createSharedExpense, removeMySharedExpense, removePartnerSharedExpense } = useSharedExpenses(connection?.id ?? null);
   const { toast } = useToast();
 
   // Dialog states
@@ -46,6 +54,11 @@ export default function Transactions() {
   const [filterEndDate, setFilterEndDate] = useState('');
   const [categorySearch, setCategorySearch] = useState('');
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [filterOnlyShared, setFilterOnlyShared] = useState(false);
+
+  // Couple sharing form states
+  const [isShared, setIsShared] = useState(false);
+  const [coupleCategory, setCoupleCategory] = useState('');
 
   const categories = type === 'income' ? incomeCategories : expenseCategories;
 
@@ -57,6 +70,8 @@ export default function Transactions() {
     setDescription('');
     setDate(new Date().toISOString().split('T')[0]);
     setEditingTransaction(null);
+    setIsShared(false);
+    setCoupleCategory('');
   };
 
   const openCreateDialog = () => {
@@ -122,7 +137,7 @@ export default function Transactions() {
         });
         toast({ title: 'Transazione modificata!' });
       } else {
-        await createTransaction.mutateAsync({
+        const newTx = await createTransaction.mutateAsync({
           type,
           amount: Number.parseFloat(amount),
           currency,
@@ -131,6 +146,18 @@ export default function Transactions() {
           description: description || undefined,
           date,
         });
+        // Mark as shared with partner if toggled
+        if (isShared && connection?.id && coupleCategory) {
+          try {
+            await createSharedExpense.mutateAsync({
+              connection_id: connection.id,
+              original_tx_id: newTx.id,
+              couple_category_name: coupleCategory,
+            });
+          } catch {
+            toast({ title: 'Spesa salvata, ma condivisione fallita', variant: 'destructive' });
+          }
+        }
         toast({ title: 'Transazione aggiunta!' });
       }
       setOpen(false);
@@ -191,15 +218,73 @@ export default function Transactions() {
       // Category filter
       if (filterCategoryId !== 'all' && t.category_id !== filterCategoryId) return false;
 
+      // Only shared filter
+      if (filterOnlyShared && !mySharedTransactionIds.has(t.id)) return false;
+
       return true;
     });
-  }, [transactions, filterPeriod, filterCategoryId, filterStartDate, filterEndDate, categorySearch, selectedYear]);
+  }, [transactions, filterPeriod, filterCategoryId, filterStartDate, filterEndDate, categorySearch, selectedYear, filterOnlyShared, mySharedTransactionIds]);
 
   // Extract unique years from transactions
   const availableYears = useMemo(() => {
     const years = transactions.map(t => new Date(t.date).getFullYear());
     return Array.from(new Set(years)).sort((a, b) => b - a);
   }, [transactions]);
+
+  // Helper: check if a date string is within the current period filter
+  const isInPeriod = (dateStr: string): boolean => {
+    const now = new Date();
+    const d = parseISO(dateStr);
+    if (filterPeriod === 'this_month') return isWithinInterval(d, { start: startOfMonth(now), end: endOfMonth(now) });
+    if (filterPeriod === 'last_month') return isWithinInterval(d, { start: startOfMonth(subMonths(now, 1)), end: endOfMonth(subMonths(now, 1)) });
+    if (filterPeriod === 'last_semester') return isWithinInterval(d, { start: startOfMonth(subMonths(now, 5)), end: endOfMonth(now) });
+    if (filterPeriod === 'last_year') return isWithinInterval(d, { start: startOfMonth(subMonths(now, 11)), end: endOfMonth(now) });
+    if (filterPeriod === 'this_year') return isWithinInterval(d, { start: startOfYear(new Date(selectedYear, 0, 1)), end: endOfYear(new Date(selectedYear, 0, 1)) });
+    if (filterPeriod === 'custom') {
+      if (filterStartDate && d < parseISO(filterStartDate)) return false;
+      if (filterEndDate && d > parseISO(filterEndDate)) return false;
+    }
+    return true;
+  };
+
+  // Filtered partner shared expenses (apply period + search + onlyShared logic)
+  const filteredPartnerShared = useMemo(() => {
+    if (!permissions?.couple_expenses || !connection) return [];
+    return partnerSharedExpenses.filter(se => {
+      if (!isInPeriod(se.date)) return false;
+      if (categorySearch.trim()) {
+        const search = categorySearch.toLowerCase();
+        const desc = se.description?.toLowerCase() || '';
+        const cat = se.couple_category_name?.toLowerCase() || '';
+        if (!desc.includes(search) && !cat.includes(search)) return false;
+      }
+      return true;
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [partnerSharedExpenses, filterPeriod, filterStartDate, filterEndDate, categorySearch, selectedYear, permissions?.couple_expenses, connection]);
+
+  // Unified display items (own transactions + partner shared), sorted by date desc
+  type OwnItem = { kind: 'own'; tx: Transaction; sharedId?: string };
+  type PartnerItem = { kind: 'partner'; se: SharedExpenseViewRow };
+  type DisplayItem = OwnItem | PartnerItem;
+
+  const displayItems = useMemo((): DisplayItem[] => {
+    const ownItems: OwnItem[] = filteredTransactions.map(tx => ({
+      kind: 'own',
+      tx,
+      sharedId: mySharedExpenses.find(se => se.original_tx_id === tx.id)?.id,
+    }));
+    const partnerItems: PartnerItem[] = filteredPartnerShared.map(se => ({
+      kind: 'partner',
+      se,
+    }));
+    const all: DisplayItem[] = [...ownItems, ...partnerItems];
+    return all.sort((a, b) => {
+      const dA = a.kind === 'own' ? a.tx.date : a.se.date;
+      const dB = b.kind === 'own' ? b.tx.date : b.se.date;
+      return dB.localeCompare(dA);
+    });
+  }, [filteredTransactions, filteredPartnerShared, mySharedExpenses]);
 
   return (
     <MainLayout>
@@ -253,7 +338,38 @@ export default function Transactions() {
                 </div>
                 <div><Label>Descrizione</Label><Input value={description} onChange={e => setDescription(e.target.value)} /></div>
                 <div><Label>Data</Label><Input type="date" value={date} onChange={e => setDate(e.target.value)} /></div>
-                <Button type="submit" className="w-full" disabled={isFetchingRate}>
+
+                {/* Couple sharing toggle — only when creating an expense with active connection */}
+                {!editingTransaction && permissions?.couple_expenses && connection && type === 'expense' && (
+                  <div className="space-y-3 p-3 rounded-lg border border-border bg-muted/30">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <HeartHandshake className="w-4 h-4 text-rose-400" />
+                        <Label className="cursor-pointer">Condividi con il partner (50/50)</Label>
+                      </div>
+                      <Switch checked={isShared} onCheckedChange={setIsShared} />
+                    </div>
+                    {isShared && (
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Categoria condivisa</Label>
+                        <Select value={coupleCategory} onValueChange={setCoupleCategory}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Seleziona categoria condivisa" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {expenseCategories.map(cat => (
+                              <SelectItem key={cat.id} value={cat.name}>
+                                {cat.icon} {cat.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                <Button type="submit" className="w-full" disabled={isFetchingRate || (isShared && !coupleCategory)}>
                   {(() => {
                     if (isFetchingRate) return 'Recupero cambio...';
                     return editingTransaction ? 'Aggiorna' : 'Salva';
@@ -347,60 +463,172 @@ export default function Transactions() {
               </div>
             )}
           </div>
+
+          {/* Only-shared toggle (visible only with couple_expenses + active connection) */}
+          {permissions?.couple_expenses && connection && (
+            <div className="flex items-center gap-2 pt-1">
+              <Switch
+                id="filter-shared"
+                checked={filterOnlyShared}
+                onCheckedChange={setFilterOnlyShared}
+              />
+              <Label htmlFor="filter-shared" className="cursor-pointer text-sm flex items-center gap-1">
+                <HeartHandshake className="w-4 h-4 text-rose-400" />
+                Solo condivise
+              </Label>
+            </div>
+          )}
         </div>
 
-        {/* Transactions list */}
+        {/* Transactions list — unified: own + partner shared */}
         <div className="glass rounded-xl divide-y divide-border">
-          {filteredTransactions.length === 0 ? (
+          {displayItems.length === 0 ? (
             <p className="text-muted-foreground text-center py-12">Nessuna transazione trovata</p>
-          ) : filteredTransactions.map(t => (
-            <div key={t.id} className="flex items-center justify-between p-4">
-              <div className="flex items-center gap-3">
-                <span className="text-2xl">{t.category?.icon || '💰'}</span>
-                <div>
-                  <p className="font-medium">{t.category?.name || 'Transazione'}</p>
-                  {t.description && (
-                    <p className="text-sm text-muted-foreground">{t.description}</p>
-                  )}
-                  <p className="text-xs text-muted-foreground">{new Date(t.date).toLocaleDateString('it-IT')}</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="text-right">
-                  {(() => {
-                    const txCurrency = (t.currency || 'EUR') as CurrencyCode;
-                    const rateEur = t.exchange_rate_eur ?? 1;
-                    const amountInEur = t.amount * rateEur;
-                    const sign = t.type === 'income' ? '+' : '-';
-                    const colorClass = t.type === 'income' ? 'text-success font-semibold' : 'text-destructive font-semibold';
-                    if (txCurrency === defaultCurrency) {
-                      return (
+          ) : displayItems.map(item => {
+            /* ---- Own transaction ---- */
+            if (item.kind === 'own') {
+              const t = item.tx;
+              const txCurrency = (t.currency || 'EUR') as CurrencyCode;
+              const rateEur = t.exchange_rate_eur ?? 1;
+              const amountInEur = t.amount * rateEur;
+              const sign = t.type === 'income' ? '+' : '-';
+              const colorClass = t.type === 'income' ? 'text-success font-semibold' : 'text-destructive font-semibold';
+              return (
+                <div key={t.id} className="flex items-center justify-between p-4">
+                  <div className="flex items-center gap-3">
+                    <span className="text-2xl">{t.category?.icon || '💰'}</span>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <p className="font-medium">{t.category?.name || 'Transazione'}</p>
+                        {item.sharedId && (
+                          <Badge variant="secondary" className="bg-rose-500/10 text-rose-400 border-rose-500/20 text-xs gap-1">
+                            <HeartHandshake className="w-3 h-3" />
+                            Condivisa
+                          </Badge>
+                        )}
+                      </div>
+                      {t.description && <p className="text-sm text-muted-foreground">{t.description}</p>}
+                      <p className="text-xs text-muted-foreground">{new Date(t.date).toLocaleDateString('it-IT')}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="text-right">
+                      {txCurrency === defaultCurrency ? (
                         <span className={colorClass}>
                           {sign}{CURRENCY_SYMBOLS[defaultCurrency]}{Number(t.amount).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </span>
-                      );
-                    }
-                    const mainSymbol = CURRENCY_SYMBOLS[defaultCurrency] || defaultCurrency;
-                    const origSymbol = CURRENCY_SYMBOLS[txCurrency] || txCurrency;
-                    return (
-                      <div>
-                        <span className={colorClass}>
-                          {sign}{mainSymbol}{amountInEur.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                        </span>
-                        <p className="text-xs text-muted-foreground">{sign}{origSymbol}{Number(t.amount).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {txCurrency}</p>
-                      </div>
-                    );
-                  })()}
+                      ) : (
+                        <div>
+                          <span className={colorClass}>
+                            {sign}{CURRENCY_SYMBOLS[defaultCurrency] || defaultCurrency}{amountInEur.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </span>
+                          <p className="text-xs text-muted-foreground">
+                            {sign}{CURRENCY_SYMBOLS[txCurrency] || txCurrency}{Number(t.amount).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {txCurrency}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                    {/* Creator: remove share link */}
+                    {item.sharedId && connection && (
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="ghost" size="icon" title="Rimuovi condivisione">
+                            <HeartHandshake className="w-4 h-4 text-rose-400" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Rimuovere la condivisione?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              La condivisione verrà rimossa. La tua transazione rimarrà nel tuo ledger ma il partner non la vedrà più.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Annulla</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => removeMySharedExpense.mutate(item.sharedId!)}>
+                              Rimuovi condivisione
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    )}
+                    <Button variant="ghost" size="icon" onClick={() => openEditDialog(t)}>
+                      <Pencil className="w-4 h-4" />
+                    </Button>
+                    <Button variant="ghost" size="icon" onClick={() => openDeleteConfirm(t)}>
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
                 </div>
-                <Button variant="ghost" size="icon" onClick={() => openEditDialog(t)}>
-                  <Pencil className="w-4 h-4" />
-                </Button>
-                <Button variant="ghost" size="icon" onClick={() => openDeleteConfirm(t)}>
-                  <Trash2 className="w-4 h-4" />
-                </Button>
+              );
+            }
+
+            /* ---- Partner shared expense ---- */
+            const se = item.se;
+            const seCurrency = se.currency as CurrencyCode;
+            const shareEur = se.my_share_amount * (se.exchange_rate_eur ?? 1);
+            const isArchived = !!connection?.revoked_at;
+            return (
+              <div key={`se-${se.id}`} className="flex items-center justify-between p-4 bg-rose-500/5">
+                <div className="flex items-center gap-3">
+                  <span className="text-2xl">💑</span>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <p className="font-medium">{se.couple_category_name || 'Spesa condivisa'}</p>
+                      <Badge variant="secondary" className="bg-rose-500/10 text-rose-400 border-rose-500/20 text-xs gap-1">
+                        <HeartHandshake className="w-3 h-3" />
+                        {isArchived ? 'Archiviata' : 'Dal partner'}
+                      </Badge>
+                    </div>
+                    {se.description && <p className="text-sm text-muted-foreground">{se.description}</p>}
+                    <p className="text-xs text-muted-foreground">{new Date(se.date).toLocaleDateString('it-IT')}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="text-right">
+                    {seCurrency === 'EUR' ? (
+                      <span className="text-destructive font-semibold">
+                        -{CURRENCY_SYMBOLS['EUR']}{Number(se.my_share_amount).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </span>
+                    ) : (
+                      <div>
+                        <span className="text-destructive font-semibold">
+                          -{CURRENCY_SYMBOLS[defaultCurrency] || defaultCurrency}{shareEur.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </span>
+                        <p className="text-xs text-muted-foreground">
+                          -{CURRENCY_SYMBOLS[seCurrency] || seCurrency}{Number(se.my_share_amount).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {seCurrency}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                  {/* Partner: remove share link (only on active connection) */}
+                  {!isArchived && (
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="ghost" size="icon" title="Rimuovi dalla tua lista">
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Rimuovere dalla tua lista?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            La spesa condivisa verrà rimossa dalla tua lista. La transazione originale rimarrà nel ledger del tuo partner.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Annulla</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => removePartnerSharedExpense.mutate(se.id)}>
+                            Rimuovi
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         {/* Delete confirmation dialog */}
