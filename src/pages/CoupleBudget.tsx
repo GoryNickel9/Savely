@@ -60,7 +60,7 @@ export default function CoupleBudget() {
     e.preventDefault();
     try {
       await createBudget.mutateAsync({ couple_category_name: categoryName, amount: parseAmount(amount) });
-      toast({ title: 'Budget coppia creato!' });
+      toast({ title: 'Budget familiare creato!' });
       setOpen(false);
       setCategoryName('');
       setAmount('');
@@ -103,7 +103,7 @@ export default function CoupleBudget() {
           <div>
             <h1 className="text-3xl font-display font-bold flex items-center gap-2">
               <HeartHandshake className="w-8 h-8 text-rose-400" />
-              Budget Coppia
+              Budget Familiare
             </h1>
             <p className="text-muted-foreground">
               {isArchived
@@ -122,7 +122,7 @@ export default function CoupleBudget() {
               </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
-                  <DialogTitle>Nuovo Budget Coppia</DialogTitle>
+                  <DialogTitle>Nuovo Budget Familiare</DialogTitle>
                 </DialogHeader>
                 <form onSubmit={handleCreate} className="space-y-4">
                   <div>

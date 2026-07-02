@@ -80,7 +80,7 @@ export default function Sidebar() {
                   )}
                 >
                   <HeartHandshake className="w-5 h-5" />
-                  Budget Coppia
+                  Budget Familiare
                 </Link>
               )}
             </div>

@@ -116,7 +116,7 @@ export default function CoupleSettingsSection() {
   if (isLoading) {
     return (
       <div className="border-t border-border pt-6">
-        <div className="animate-pulse text-muted-foreground text-sm">Caricamento sezione coppia...</div>
+        <div className="animate-pulse text-muted-foreground text-sm">Caricamento sezione famiglia...</div>
       </div>
     );
   }
@@ -125,12 +125,12 @@ export default function CoupleSettingsSection() {
     <div className="border-t border-border pt-6 space-y-4">
       <h3 className="font-medium flex items-center gap-2">
         <Heart className="w-5 h-5 text-rose-400" />
-        Spese di Coppia
+        Spese Familiari
       </h3>
 
       {/* Your couple code — always visible */}
       <div className="space-y-1">
-        <p className="text-sm text-muted-foreground">Il tuo codice coppia</p>
+        <p className="text-sm text-muted-foreground">Il tuo codice familiare</p>
         <div className="flex items-center gap-2">
           <div className="glass rounded-lg px-4 py-2 font-mono text-lg tracking-widest font-bold select-all">
             {myCode ?? '—'}
@@ -234,7 +234,7 @@ export default function CoupleSettingsSection() {
             </Badge>
           </div>
           <p className="text-sm text-muted-foreground">
-            La tua richiesta è in attesa di accettazione. Condividi il tuo codice coppia con il partner
+            La tua richiesta è in attesa di accettazione. Condividi il tuo codice familiare con il partner
             in modo che possa trovarti.
           </p>
           <Button
@@ -253,7 +253,7 @@ export default function CoupleSettingsSection() {
       {!connection && !pendingSent && !pendingReceived && (
         <div className="space-y-2">
           <p className="text-sm text-muted-foreground">
-            Inserisci il codice coppia del tuo partner per inviare una richiesta di collegamento.
+            Inserisci il codice familiare del tuo partner per inviare una richiesta di collegamento.
           </p>
           <div className="flex items-center gap-2">
             <Input

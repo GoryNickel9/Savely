@@ -223,7 +223,7 @@ export default function Admin() {
                           />
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="text-sm text-muted-foreground w-24">Spese Coppia</span>
+                          <span className="text-sm text-muted-foreground w-24">Spese Familiari</span>
                           <Switch
                             checked={userProfile.permissions.couple_expenses || false}
                             onCheckedChange={() => togglePermission(userProfile.user_id, 'couple_expenses', userProfile.permissions.couple_expenses || false)}
