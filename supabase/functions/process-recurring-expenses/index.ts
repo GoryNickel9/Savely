@@ -90,7 +90,7 @@ Deno.serve(async (req: Request) => {
 
     if (fetchError) {
       console.error('Error fetching due expenses:', fetchError);
-      return new Response(JSON.stringify({ error: fetchError.message }), { status: 500 });
+      return new Response(JSON.stringify({ error: 'Internal error' }), { status: 500 });
     }
 
     if (!dueExpenses || dueExpenses.length === 0) {
@@ -161,6 +161,6 @@ Deno.serve(async (req: Request) => {
     return new Response(JSON.stringify({ processed, total: dueExpenses.length }), { status: 200 });
   } catch (err: any) {
     console.error('Unexpected error:', err);
-    return new Response(JSON.stringify({ error: err.message ?? 'Internal error' }), { status: 500 });
+    return new Response(JSON.stringify({ error: 'Internal error' }), { status: 500 });
   }
 });

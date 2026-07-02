@@ -154,7 +154,7 @@ Deno.serve(async (req: any) => {
     if (fetchError) {
       console.error('Error fetching TCG cards:', fetchError);
       return new Response(
-        JSON.stringify({ error: 'Failed to fetch cards', details: fetchError.message }),
+        JSON.stringify({ error: 'Internal error' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
       );
     }
