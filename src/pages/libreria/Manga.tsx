@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Plus, Trash2, Search, Loader2, Pencil, ArrowLeft } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { parseAmount } from '@/lib/utils';
 
 const VOLUME_RANGE_RE = /^(\d+)\s*[-–]\s*(\d+)$/;
 
@@ -107,8 +108,8 @@ export default function LibreriaManga() {
             publisher: publisher.trim() || undefined,
             year: parsedYear,
             cover_image: coverImageUrl.trim() || undefined,
-            purchase_price: purchasePrice ? Number.parseFloat(purchasePrice) : undefined,
-            reselling_value: resellingValue ? Number.parseFloat(resellingValue) : undefined,
+            purchase_price: purchasePrice ? parseAmount(purchasePrice) : undefined,
+            reselling_value: resellingValue ? parseAmount(resellingValue) : undefined,
             quantity: 1,
             notes: notes.trim() || undefined,
           });
@@ -122,8 +123,8 @@ export default function LibreriaManga() {
           publisher: publisher.trim() || undefined,
           year: parsedYear,
           cover_image: coverImageUrl.trim() || undefined,
-          purchase_price: purchasePrice ? Number.parseFloat(purchasePrice) : undefined,
-          reselling_value: resellingValue ? Number.parseFloat(resellingValue) : undefined,
+          purchase_price: purchasePrice ? parseAmount(purchasePrice) : undefined,
+          reselling_value: resellingValue ? parseAmount(resellingValue) : undefined,
           quantity: Number.parseInt(quantity, 10) || 1,
           notes: notes.trim() || undefined,
         });
@@ -174,8 +175,8 @@ export default function LibreriaManga() {
         publisher: editPublisher.trim() || undefined,
         year: editYear.trim() ? Number.parseInt(editYear.trim(), 10) : undefined,
         cover_image: editCoverImage.trim() || undefined,
-        purchase_price: editPurchasePrice ? Number.parseFloat(editPurchasePrice) : undefined,
-        reselling_value: editResellingValue ? Number.parseFloat(editResellingValue) : undefined,
+        purchase_price: editPurchasePrice ? parseAmount(editPurchasePrice) : undefined,
+        reselling_value: editResellingValue ? parseAmount(editResellingValue) : undefined,
         quantity: Number.parseInt(editQuantity, 10) || 1,
         notes: editNotes.trim() || undefined,
       });

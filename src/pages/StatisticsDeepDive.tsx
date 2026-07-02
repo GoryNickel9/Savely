@@ -12,6 +12,7 @@ import {
   MEDIAN_CALCULATION_DAYS,
   WINSORIZED_MEAN_CALCULATION_DAYS
 } from '@/lib/constants';
+import { parseAmount } from '@/lib/utils';
 
 type StatisticType = 'mean' | 'median' | 'winsorized';
 
@@ -179,7 +180,7 @@ export default function StatisticsDeepDive() {
                   <Input
                     type="number"
                     value={tempConfig.winsorizedPercentile}
-                    onChange={(e) => setTempConfig({ ...tempConfig, winsorizedPercentile: parseFloat(e.target.value) || 0 })}
+                    onChange={(e) => setTempConfig({ ...tempConfig, winsorizedPercentile: parseAmount(e.target.value) || 0 })}
                     min="0"
                     max="0.5"
                     step="0.01"

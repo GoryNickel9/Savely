@@ -11,7 +11,7 @@ import { CURRENCY_SYMBOLS } from '@/lib/constants';
 import { Plus, Edit2, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { getMedianMonthlySpending, getGlobalMedianMonthlySpending } from '@/lib/utils';
+import { getMedianMonthlySpending, getGlobalMedianMonthlySpending, parseAmount } from '@/lib/utils';
 import { MEDIAN_CALCULATION_DAYS } from '@/lib/constants';
 import { CategorySelect } from '@/components/CategorySelect';
 
@@ -69,7 +69,7 @@ export default function Budget() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await createBudget.mutateAsync({ category_id: categoryId, amount: parseFloat(amount) });
+      await createBudget.mutateAsync({ category_id: categoryId, amount: parseAmount(amount) });
       toast({ title: 'Budget creato!' });
       setOpen(false);
       setCategoryId('');
@@ -82,7 +82,7 @@ export default function Budget() {
   const handleEditSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await updateBudget.mutateAsync({ id: editBudgetId, amount: parseFloat(editAmount) });
+      await updateBudget.mutateAsync({ id: editBudgetId, amount: parseAmount(editAmount) });
       toast({ title: 'Budget aggiornato!' });
       setEditOpen(false);
       setEditBudgetId('');

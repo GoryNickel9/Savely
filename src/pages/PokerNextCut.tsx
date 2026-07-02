@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { useToast } from '@/hooks/use-toast';
 import { CURRENCY_SYMBOLS } from '@/lib/constants';
 import MainLayout from '@/components/layout/MainLayout';
-import { getGlobalMedianMonthlySpending } from '@/lib/utils';
+import { getGlobalMedianMonthlySpending, parseAmount } from '@/lib/utils';
 import { MEDIAN_CALCULATION_DAYS } from '@/lib/constants';
 
 export default function PokerNextCut() {
@@ -76,7 +76,7 @@ export default function PokerNextCut() {
     if (!editingProfitLossValue || !nextCut) return;
     
     try {
-      await updateProfitLoss(parseFloat(editingProfitLossValue));
+      await updateProfitLoss(parseAmount(editingProfitLossValue));
       toast({ title: 'P/L Attuale aggiornato!' });
       setEditingProfitLoss(false);
       setEditingProfitLossValue('');
@@ -94,7 +94,7 @@ export default function PokerNextCut() {
     if (!editingDealValue || !nextCut) return;
     
     try {
-      await updateDeal(parseFloat(editingDealValue));
+      await updateDeal(parseAmount(editingDealValue));
       toast({ title: 'Deal aggiornato!' });
       setEditingDeal(false);
       setEditingDealValue('');
@@ -113,7 +113,7 @@ export default function PokerNextCut() {
     if (!newExpenseName || !newExpenseAmount) return;
     
     try {
-      await addExpenseMutation.mutateAsync({ name: newExpenseName, amount: parseFloat(newExpenseAmount) });
+      await addExpenseMutation.mutateAsync({ name: newExpenseName, amount: parseAmount(newExpenseAmount) });
       toast({ title: 'Spesa aggiunta!' });
       setCreateOpen(false);
       setNewExpenseName('');
@@ -133,7 +133,7 @@ export default function PokerNextCut() {
     if (!editingExpense || !editingExpenseAmount) return;
     
     try {
-      await updateExpenseMutation.mutateAsync({ id: editingExpense.id, amount: parseFloat(editingExpenseAmount) });
+      await updateExpenseMutation.mutateAsync({ id: editingExpense.id, amount: parseAmount(editingExpenseAmount) });
       toast({ title: 'Spesa aggiornata!' });
       setEditOpen(false);
       setEditingExpense(null);

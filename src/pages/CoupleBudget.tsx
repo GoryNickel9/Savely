@@ -13,6 +13,7 @@ import { CURRENCY_SYMBOLS } from '@/lib/constants';
 import { Plus, Edit2, Trash2, HeartHandshake } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getMedianMonthlySpendingShared } from '@/lib/coupleExpenses';
+import { parseAmount } from '@/lib/utils';
 
 export default function CoupleBudget() {
   const { connection, isLoading: statusLoading } = useCouplePairStatus();
@@ -58,7 +59,7 @@ export default function CoupleBudget() {
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await createBudget.mutateAsync({ couple_category_name: categoryName, amount: parseFloat(amount) });
+      await createBudget.mutateAsync({ couple_category_name: categoryName, amount: parseAmount(amount) });
       toast({ title: 'Budget coppia creato!' });
       setOpen(false);
       setCategoryName('');
@@ -71,7 +72,7 @@ export default function CoupleBudget() {
   const handleEditSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await updateBudget.mutateAsync({ id: editBudgetId, amount: parseFloat(editAmount) });
+      await updateBudget.mutateAsync({ id: editBudgetId, amount: parseAmount(editAmount) });
       toast({ title: 'Budget aggiornato!' });
       setEditOpen(false);
     } catch {

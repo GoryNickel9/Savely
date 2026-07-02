@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Plus, Trash2, Search, Loader2, Pencil, ArrowLeft } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
+import { parseAmount } from '@/lib/utils';
 
 const LANGUAGES = ['EN', 'IT', 'JP', 'DE', 'FR', 'ES', 'PT', 'KOR', 'ZHS'];
 const CONDITIONS: CardCondition[] = ['near_mint', 'lightly_played', 'moderately_played', 'heavily_played', 'damaged'];
@@ -83,7 +84,7 @@ export default function TcgYugioh() {
         condition,
         language,
         quantity: parseInt(quantity),
-        purchase_price: parseFloat(purchasePrice),
+        purchase_price: parseAmount(purchasePrice),
         purchase_date: purchaseDate,
         current_price: currentPrice ?? undefined,
         image_url: selected.image,
@@ -128,7 +129,7 @@ export default function TcgYugioh() {
         condition: editCondition,
         language: editLanguage,
         quantity: parseInt(editQuantity),
-        purchase_price: parseFloat(editPurchasePrice),
+        purchase_price: parseAmount(editPurchasePrice),
         purchase_date: editPurchaseDate,
       });
       toast({ title: 'Carta aggiornata!' });

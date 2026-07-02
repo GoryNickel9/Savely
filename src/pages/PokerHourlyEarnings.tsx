@@ -11,6 +11,7 @@ import { Trash2, Plus, Edit, Save, X, ArrowLeft } from 'lucide-react';
 import { calculateMedian } from '@/lib/statistics';
 import { useSupabaseData } from '@/hooks/useSupabaseData';
 import { useYearlyData } from '@/hooks/useYearlyData';
+import { parseAmount } from '@/lib/utils';
 
 interface HourlyEarning {
   id: string;
@@ -130,10 +131,10 @@ export default function PokerHourlyEarnings() {
       return;
     }
     
-    const minutes = parseFloat(newHours);
+    const minutes = parseAmount(newHours);
     const hours = minutes / 60;
-    const profitLoss = parseFloat(newProfitLoss);
-    const netWonEv = newNetWonEv ? parseFloat(newNetWonEv) : 0;
+    const profitLoss = parseAmount(newProfitLoss);
+    const netWonEv = newNetWonEv ? parseAmount(newNetWonEv) : 0;
     const hourlyRate = hours > 0 ? profitLoss / hours : 0;
     const hourlyRateEv = hours > 0 ? netWonEv / hours : 0;
     
@@ -230,10 +231,10 @@ export default function PokerHourlyEarnings() {
       return;
     }
     
-    const minutes = parseFloat(editHours);
+    const minutes = parseAmount(editHours);
     const hours = minutes / 60;
-    const profitLoss = parseFloat(editProfitLoss);
-    const netWonEv = editNetWonEv ? parseFloat(editNetWonEv) : 0;
+    const profitLoss = parseAmount(editProfitLoss);
+    const netWonEv = editNetWonEv ? parseAmount(editNetWonEv) : 0;
     const hourlyRate = hours > 0 ? profitLoss / hours : 0;
     const hourlyRateEv = hours > 0 ? netWonEv / hours : 0;
     
@@ -406,10 +407,10 @@ export default function PokerHourlyEarnings() {
                               />
                             </td>
                             <td className="text-right py-3 px-4 text-muted-foreground">
-                              €{((parseFloat(editProfitLoss || '0') / (parseFloat(editHours || '0') / 60) || 0) * (deal || 0.55)).toFixed(2)}
+                              €{((parseAmount(editProfitLoss || '0') / (parseAmount(editHours || '0') / 60) || 0) * (deal || 0.55)).toFixed(2)}
                             </td>
                             <td className="text-right py-3 px-4 text-muted-foreground">
-                              €{((parseFloat(editNetWonEv || '0') / (parseFloat(editHours || '0') / 60) || 0) * (deal || 0.55)).toFixed(2)}
+                              €{((parseAmount(editNetWonEv || '0') / (parseAmount(editHours || '0') / 60) || 0) * (deal || 0.55)).toFixed(2)}
                             </td>
                             <td className="text-center py-3 px-4">
                               <div className="flex justify-center gap-1">

@@ -14,6 +14,7 @@ import { AssetType, CurrencyCode, PortfolioAsset, TCG_GAME_LABELS } from '@/lib/
 import { Plus, Trash2, Clock, X, Library } from 'lucide-react';
 import { useState, useMemo } from 'react';
 import { useToast } from '@/hooks/use-toast';
+import { parseAmount } from '@/lib/utils';
 import {
   PieChart, Pie, Cell, ResponsiveContainer, Tooltip,
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Legend,
@@ -97,15 +98,15 @@ export default function Portfolio() {
         assetData.symbol = null;
         if (type === 'cash' && cashCurrency !== 'EUR') {
           // Multi-currency cash: quantity = importo nativo, current_price = tasso EUR aggiornato dall'Edge Function
-          assetData.quantity = parseFloat(price);
+          assetData.quantity = parseAmount(price);
           assetData.purchase_price = 1;
           assetData.current_price = 1;
           assetData.currency = cashCurrency;
         } else {
           // EUR cash / real_estate / other: quantity=1, price=valore totale
           assetData.quantity = 1;
-          assetData.purchase_price = parseFloat(price);
-          assetData.current_price = parseFloat(price);
+          assetData.purchase_price = parseAmount(price);
+          assetData.current_price = parseAmount(price);
         }
         // Per cash e other non impostiamo purchase_date
         if (type !== 'cash' && type !== 'other') {
@@ -114,9 +115,9 @@ export default function Portfolio() {
       } else {
         // Per gli altri tipi, usiamo tutti i campi
         assetData.symbol = symbol;
-        assetData.quantity = parseFloat(quantity);
-        assetData.purchase_price = parseFloat(price);
-        assetData.current_price = parseFloat(price);
+        assetData.quantity = parseAmount(quantity);
+        assetData.purchase_price = parseAmount(price);
+        assetData.current_price = parseAmount(price);
         assetData.purchase_date = purchaseDate;
       }
 
@@ -155,8 +156,8 @@ export default function Portfolio() {
     try {
       const isMultiCurrency = editingAsset.currency && editingAsset.currency !== 'EUR';
       const updates = isMultiCurrency
-        ? { id: editingAsset.id, quantity: parseFloat(editValue) }
-        : { id: editingAsset.id, purchase_price: parseFloat(editValue), current_price: parseFloat(editValue) };
+        ? { id: editingAsset.id, quantity: parseAmount(editValue) }
+        : { id: editingAsset.id, purchase_price: parseAmount(editValue), current_price: parseAmount(editValue) };
       await updateAsset.mutateAsync(updates);
       toast({ title: 'Liquidità aggiornata!' });
       setEditDialogOpen(false);
@@ -765,7 +766,7 @@ export default function Portfolio() {
                 />
                 {editingAsset?.currency && editingAsset.currency !== 'EUR' && (
                   <p className="text-xs text-muted-foreground mt-1">
-                    Equivalente attuale: ~{CURRENCY_SYMBOLS.EUR}{(parseFloat(editValue || '0') * (editingAsset.current_price ?? 1)).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    Equivalente attuale: ~{CURRENCY_SYMBOLS.EUR}{(parseAmount(editValue || '0') * (editingAsset.current_price ?? 1)).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </p>
                 )}
               </div>

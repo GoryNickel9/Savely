@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Plus, Trash2, Search, Loader2, Pencil, ArrowLeft } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { parseAmount } from '@/lib/utils';
 
 interface GoogleBook {
   id: string;
@@ -127,8 +128,8 @@ export default function LibreriaLibri() {
         year: getBookYear(selectedDoc),
         cover_image: selectedDoc.volumeInfo.imageLinks?.thumbnail?.replace('http://', 'https://') ?? undefined,
         api_id: selectedDoc.id,
-        purchase_price: purchasePrice ? parseFloat(purchasePrice) : undefined,
-        reselling_value: resellingValue ? parseFloat(resellingValue) : undefined,
+        purchase_price: purchasePrice ? parseAmount(purchasePrice) : undefined,
+        reselling_value: resellingValue ? parseAmount(resellingValue) : undefined,
         quantity: parseInt(quantity) || 1,
         notes: notes || undefined,
       });
@@ -165,8 +166,8 @@ export default function LibreriaLibri() {
     try {
       await updateItem.mutateAsync({
         id: editingItem.id,
-        purchase_price: editPurchasePrice ? parseFloat(editPurchasePrice) : undefined,
-        reselling_value: editResellingValue ? parseFloat(editResellingValue) : undefined,
+        purchase_price: editPurchasePrice ? parseAmount(editPurchasePrice) : undefined,
+        reselling_value: editResellingValue ? parseAmount(editResellingValue) : undefined,
         quantity: parseInt(editQuantity) || 1,
         notes: editNotes || undefined,
       });

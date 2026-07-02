@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { useSupabaseData } from '@/hooks/useSupabaseData';
 import { useYearlyData } from '@/hooks/useYearlyData';
 import { useDialogManager } from '@/hooks/useDialogManager';
+import { parseAmount } from '@/lib/utils';
 import { DataTable, Column } from '@/components/ui/data-table';
 
 interface RakebackEntry {
@@ -91,8 +92,8 @@ export default function PokerRakeback() {
       return;
     }
     
-    const rakeGenerated = parseFloat(newRakeGenerated);
-    const rakebackReceived = parseFloat(newRakebackReceived);
+    const rakeGenerated = parseAmount(newRakeGenerated);
+    const rakebackReceived = parseAmount(newRakebackReceived);
     
     // Converti MM/YYYY in data (primo giorno del mese)
     const [year, month] = newMonth.split('-');
@@ -174,8 +175,8 @@ export default function PokerRakeback() {
       return;
     }
     
-    const rakeGenerated = parseFloat(editRakeGenerated);
-    const rakebackReceived = parseFloat(editRakebackReceived);
+    const rakeGenerated = parseAmount(editRakeGenerated);
+    const rakebackReceived = parseAmount(editRakebackReceived);
     
     try {
       const { error } = await supabase

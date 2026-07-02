@@ -14,6 +14,7 @@ import { CURRENCY_SYMBOLS } from '@/lib/constants';
 import { Trash2, Edit2, ArrowLeft, Plus } from 'lucide-react';
 import { Link, Navigate } from 'react-router-dom';
 import { useSupabaseData } from '@/hooks/useSupabaseData';
+import { parseAmount } from '@/lib/utils';
 import { useYearlyData } from '@/hooks/useYearlyData';
 import { useDialogManager } from '@/hooks/useDialogManager';
 import { DataTable, Column } from '@/components/ui/data-table';
@@ -146,16 +147,16 @@ export default function FumoLiquidoSigaretta() {
       const campi = calcolareCampi(
         newDataArrivo,
         newDataFinito || null,
-        parseFloat(newMillilitri),
-        parseFloat(newCosto)
+        parseAmount(newMillilitri),
+        parseAmount(newCosto)
       );
 
       const { error } = await supabase
         .from('liquido_sigaretta' as any)
         .insert({
           user_id: user!.id,
-          costo: parseFloat(newCosto),
-          millilitri: parseFloat(newMillilitri),
+          costo: parseAmount(newCosto),
+          millilitri: parseAmount(newMillilitri),
           data_arrivo: newDataArrivo,
           data_finito: newDataFinito || null,
           ...campi,
@@ -185,15 +186,15 @@ export default function FumoLiquidoSigaretta() {
       const campi = calcolareCampi(
         editDataArrivo,
         editDataFinito || null,
-        parseFloat(editMillilitri),
-        parseFloat(editCosto)
+        parseAmount(editMillilitri),
+        parseAmount(editCosto)
       );
 
       const { error } = await supabase
         .from('liquido_sigaretta' as any)
         .update({
-          costo: parseFloat(editCosto),
-          millilitri: parseFloat(editMillilitri),
+          costo: parseAmount(editCosto),
+          millilitri: parseAmount(editMillilitri),
           data_arrivo: editDataArrivo,
           data_finito: editDataFinito || null,
           ...campi,

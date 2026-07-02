@@ -13,6 +13,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { CategorySelect } from '@/components/CategorySelect';
+import { parseAmount } from '@/lib/utils';
 import {
   Dialog,
   DialogContent,
@@ -67,7 +68,7 @@ export default function RecurringExpenses() {
     
     const expenseData = {
       name,
-      amount: parseFloat(amount),
+      amount: parseAmount(amount),
       category_id: categoryId || undefined,
       frequency,
       week_interval: frequency === 'weekly' ? weekInterval : undefined,

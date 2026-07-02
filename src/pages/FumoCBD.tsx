@@ -14,6 +14,7 @@ import { CURRENCY_SYMBOLS } from '@/lib/constants';
 import { Plus, Trash2, ArrowLeft, Edit2 } from 'lucide-react';
 import { Link, Navigate } from 'react-router-dom';
 import { useSupabaseData } from '@/hooks/useSupabaseData';
+import { parseAmount } from '@/lib/utils';
 import { useYearlyData } from '@/hooks/useYearlyData';
 import { useDialogManager } from '@/hooks/useDialogManager';
 import { calculateDerivedFields } from '@/lib/fumoCalculations';
@@ -128,18 +129,18 @@ export default function FumoCBD() {
       const campi = calculateDerivedFields(
         newDataArrivo,
         newDataFinito || null,
-        newGrammi ? parseFloat(newGrammi) : null,
-        parseFloat(newCosto)
+        newGrammi ? parseAmount(newGrammi) : null,
+        parseAmount(newCosto)
       );
 
       const { error } = await supabase
         .from('cbd' as any)
         .insert({
           user_id: user!.id,
-          costo: parseFloat(newCosto),
+          costo: parseAmount(newCosto),
           marca: newMarca || null,
-          thc_content: newThcContent ? parseFloat(newThcContent) : null,
-          grammi: newGrammi ? parseFloat(newGrammi) : null,
+          thc_content: newThcContent ? parseAmount(newThcContent) : null,
+          grammi: newGrammi ? parseAmount(newGrammi) : null,
           descrizione: newDescrizione || null,
           data_acquisto: newDataArrivo,
           data_finito: newDataFinito || null,
@@ -189,15 +190,15 @@ export default function FumoCBD() {
       const campi = calculateDerivedFields(
         editDataArrivo,
         editDataFinito || null,
-        editGrammi ? parseFloat(editGrammi) : null,
-        parseFloat(editCosto)
+        editGrammi ? parseAmount(editGrammi) : null,
+        parseAmount(editCosto)
       );
 
       const { error } = await supabase
         .from('cbd' as any)
         .update({
-          costo: parseFloat(editCosto),
-          grammi: editGrammi ? parseFloat(editGrammi) : null,
+          costo: parseAmount(editCosto),
+          grammi: editGrammi ? parseAmount(editGrammi) : null,
           data_acquisto: editDataArrivo,
           data_finito: editDataFinito || null,
           ...campi,
