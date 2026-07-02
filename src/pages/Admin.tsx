@@ -222,6 +222,14 @@ export default function Admin() {
                             disabled={updating === userProfile.user_id}
                           />
                         </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm text-muted-foreground w-24">Spese Coppia</span>
+                          <Switch
+                            checked={userProfile.permissions.couple_expenses || false}
+                            onCheckedChange={() => togglePermission(userProfile.user_id, 'couple_expenses', userProfile.permissions.couple_expenses || false)}
+                            disabled={updating === userProfile.user_id}
+                          />
+                        </div>
                       </div>
                     </div>
                   </div>

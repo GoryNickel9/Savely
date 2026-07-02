@@ -42,6 +42,7 @@ export async function getUserPermissions(userId: string): Promise<Permissions> {
       fire: dbPermissions?.fire || false,
       tcg: dbPermissions?.tcg || false,
       libreria: dbPermissions?.libreria || false,
+      couple_expenses: dbPermissions?.couple_expenses || false,
     };
 
     // Salva in cache
@@ -84,6 +85,7 @@ export function getDefaultPermissions(): Permissions {
     fire: false,
     tcg: false,
     libreria: false,
+    couple_expenses: false,
   };
 }
 
