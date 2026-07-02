@@ -5,6 +5,7 @@ import { usePriceHistory } from '@/hooks/usePriceHistory';
 import { useLastPriceUpdate } from '@/hooks/useLastPriceUpdate';
 import { useManualPriceUpdate } from '@/hooks/useManualPriceUpdate';
 import { Button } from '@/components/ui/button';
+import { Link } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -321,6 +322,9 @@ export default function Portfolio() {
             )}
           </div>
           <div className="flex gap-2">
+            <Button asChild variant="outline">
+              <Link to="/net-worth">Patrimonio</Link>
+            </Button>
             <Button
               onClick={() => manualUpdatePrices()}
               disabled={!canUpdate || isUpdating}

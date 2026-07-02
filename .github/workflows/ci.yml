@@ -136,7 +136,12 @@ jobs:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
         run: |
+          if [ -z "$VITE_SUPABASE_URL" ] || [ -z "$VITE_SUPABASE_ANON_KEY" ]; then
+            echo "::error::I secrets VITE_SUPABASE_URL e/o VITE_SUPABASE_ANON_KEY non sono impostati. L'app non può inizializzarsi in CI (pagina bianca)."
+            exit 1
+          fi
           printf 'VITE_SUPABASE_URL=%s\nVITE_SUPABASE_ANON_KEY=%s\n' "$VITE_SUPABASE_URL" "$VITE_SUPABASE_ANON_KEY" > .env.local
+          echo ".env.local scritto (lunghezza chiave: ${#VITE_SUPABASE_ANON_KEY})"
 
       - name: Run Playwright tests
         env:
