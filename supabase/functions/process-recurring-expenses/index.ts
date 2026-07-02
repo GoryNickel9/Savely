@@ -17,7 +17,7 @@ interface RecurringExpense {
 }
 
 function calculateNextDueDate(currentDate: string, frequency: RecurringFrequency, weekInterval = 1): string {
-  const date = new Date(currentDate);
+  const date = new Date(currentDate + 'T00:00:00');
   const originalDay = date.getDate();
 
   switch (frequency) {
@@ -38,7 +38,11 @@ function calculateNextDueDate(currentDate: string, frequency: RecurringFrequency
       break;
   }
 
-  return date.toISOString().split('T')[0];
+  // Format as YYYY-MM-DD in local time (avoid UTC shift from toISOString)
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
 }
 
 // @ts-ignore
@@ -50,13 +54,14 @@ Deno.serve(async (_req: Request) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    const today = new Date().toISOString().split('T')[0];
+    const today = new Date();
+    const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
 
     const { data: dueExpenses, error: fetchError } = await supabase
       .from('recurring_expenses')
       .select('*')
       .eq('is_active', true)
-      .lte('next_due_date', today)
+      .lte('next_due_date', todayStr)
       .is('deleted_at', null);
 
     if (fetchError) {
@@ -72,24 +77,31 @@ Deno.serve(async (_req: Request) => {
     let processed = 0;
 
     for (const expense of dueExpenses as RecurringExpense[]) {
-      const dueDate = new Date(expense.next_due_date);
-      const month = dueDate.getMonth() + 1;
-      const year = dueDate.getFullYear();
-      const monthStart = `${year}-${String(month).padStart(2, '0')}-01`;
-      const monthEnd = `${year}-${String(month).padStart(2, '0')}-32`;
+        const dueDate = new Date(expense.next_due_date + 'T00:00:00');
+        const month = dueDate.getMonth() + 1;
+        const year = dueDate.getFullYear();
+        const monthStart = `${year}-${String(month).padStart(2, '0')}-01`;
+        // Primo giorno del MESE SUCCESSIVO (timezone-safe, niente date invalide)
+        const nextMonth = month % 12 + 1;
+        const nextYear = month === 12 ? year + 1 : year;
+        const monthEnd = `${nextYear}-${String(nextMonth).padStart(2, '0')}-01`;
 
-      // Idempotency: skip if a transaction already exists for this expense in this month
-      const { data: existing } = await supabase
-        .from('transactions')
-        .select('id')
-        .eq('user_id', expense.user_id)
-        .eq('description', expense.name)
-        .gte('date', monthStart)
-        .lt('date', monthEnd)
-        .is('deleted_at', null)
-        .maybeSingle();
+        // Idempotency: skip if a transaction already exists for this expense in this month
+        const { data: existing, error: existError } = await supabase
+          .from('transactions')
+          .select('id')
+          .eq('user_id', expense.user_id)
+          .eq('description', expense.name)
+          .gte('date', monthStart)
+          .lt('date', monthEnd)
+          .is('deleted_at', null)
+          .maybeSingle();
 
-      if (!existing) {
+        if (existError) {
+          console.error(`Idempotency check failed for "${expense.name}":`, existError);
+        }
+
+        if (!existing && !existError) {
         const { error: insertError } = await supabase.from('transactions').insert({
           user_id: expense.user_id,
           type: 'expense',

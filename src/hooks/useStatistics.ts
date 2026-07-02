@@ -4,6 +4,7 @@ import { useTransactions } from './useTransactions';
 import { useBudgets } from './useBudgets';
 import { useCategories } from './useCategories';
 import { Transaction, Budget, Category } from '@/lib/types';
+import { parseLocalDate } from '@/lib/utils';
 import { useMemo } from 'react';
 
 /**
@@ -72,7 +73,7 @@ export function useStatistics(winsorizedPercentile: number = 0.10, meanDays?: nu
       startDate.setDate(startDate.getDate() - days);
       
       return transactions.filter(t => {
-        const txDate = new Date(t.date);
+        const txDate = parseLocalDate(t.date);
         return t.type === 'expense' && txDate >= startDate;
       });
     };
@@ -101,7 +102,7 @@ export function useStatistics(winsorizedPercentile: number = 0.10, meanDays?: nu
     
     // Continua finché non superiamo il mese di fine
     while (current <= endMonth) {
-      const key = `${current.getFullYear()}-${current.getMonth()}`;
+      const key = `${current.getFullYear()}-${String(current.getMonth()).padStart(2, '0')}`;
       result.push(key);
       current.setMonth(current.getMonth() + 1);
     }
@@ -124,8 +125,8 @@ export function useStatistics(winsorizedPercentile: number = 0.10, meanDays?: nu
     // Raggruppa TUTTE le spese per mese (non per categoria)
     const monthlyTotals: Record<string, number> = {};
     expenses.forEach(t => {
-      const date = new Date(t.date);
-      const key = `${date.getFullYear()}-${date.getMonth()}`;
+      const date = parseLocalDate(t.date);
+      const key = `${date.getFullYear()}-${String(date.getMonth()).padStart(2, '0')}`;
       monthlyTotals[key] = (monthlyTotals[key] || 0) + Number(t.amount);
     });
     
@@ -156,8 +157,8 @@ export function useStatistics(winsorizedPercentile: number = 0.10, meanDays?: nu
       // Raggruppa le spese della categoria per mese
       const monthlyTotals: Record<string, number> = {};
       categoryExpenses.forEach(t => {
-        const date = new Date(t.date);
-        const key = `${date.getFullYear()}-${date.getMonth()}`;
+        const date = parseLocalDate(t.date);
+        const key = `${date.getFullYear()}-${String(date.getMonth()).padStart(2, '0')}`;
         monthlyTotals[key] = (monthlyTotals[key] || 0) + Number(t.amount);
       });
       

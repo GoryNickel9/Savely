@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { parseLocalDate } from '@/lib/utils';
 
 /**
  * Tipo per campi aggiuntivi dinamici nei dati annuali
@@ -46,7 +47,7 @@ export function useYearlyData<T>(
 
   return useMemo(() => {
     const grouped = items.reduce((acc: YearlyData<T>[], item) => {
-      const year = new Date(getDate(item)).getFullYear().toString();
+      const year = parseLocalDate(getDate(item)).getFullYear().toString();
       const existing = acc.find(g => g.year === year);
       
       if (existing) {

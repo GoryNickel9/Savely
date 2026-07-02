@@ -47,7 +47,6 @@ export function useSupabaseData<T extends Record<string, unknown>>(
   const [data, setData] = useState<T[]>([]);
   const [loading, setLoading] = useState(true);
   const isLoadingRef = useRef(false);
-  const hasLoadedRef = useRef(false);
 
   const loadData = useCallback(async () => {
     // Evita chiamate multiple concorrenti
@@ -104,7 +103,6 @@ export function useSupabaseData<T extends Record<string, unknown>>(
       
       console.log(`[useSupabaseData] Dati caricati da ${tableName}:`, result?.length || 0, 'record');
       setData((result as unknown as T[]) || []);
-      hasLoadedRef.current = true;
     } catch (error) {
       console.error(`[useSupabaseData] Errore nel caricamento dei dati da ${tableName}:`, error);
       toast({
@@ -121,9 +119,7 @@ export function useSupabaseData<T extends Record<string, unknown>>(
   }, [user?.id, tableName, orderBy, ascending, filter]); // Rimuovo toast dalle dipendenze
 
   useEffect(() => {
-    if (!hasLoadedRef.current) {
-      loadData();
-    }
+    loadData();
   }, [loadData]);
 
   return { data, loading, reload: loadData };

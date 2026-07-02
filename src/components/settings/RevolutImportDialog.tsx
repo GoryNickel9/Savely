@@ -144,8 +144,10 @@ export default function RevolutImportDialog({ open, onOpenChange, userId }: Revo
         .select('description, date, amount')
         .eq('user_id', userId);
 
+      // Arrotonda a 2 decimali per evitare mismatch da epsilon floating-point
+      const round2 = (n: number) => Math.round((Math.abs(n) + Number.EPSILON) * 100) / 100;
       const existingKeys = new Set(
-        existingTransactions?.map(t => `${t.description}|${t.date}|${Math.abs(Number(t.amount))}`) || []
+        existingTransactions?.map(t => `${t.description}|${t.date}|${round2(Number(t.amount))}`) || []
       );
 
       const pending: PendingTransaction[] = [];
@@ -153,7 +155,7 @@ export default function RevolutImportDialog({ open, onOpenChange, userId }: Revo
 
       for (const row of cardPayments) {
         const description = row.Description;
-        const amount = Math.abs(Number(row.Amount));
+        const amount = round2(Number(row.Amount));
         const dateValue = row['Completed Date'];
         
         // Handle date from Revolut CSV

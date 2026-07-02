@@ -531,7 +531,7 @@ export default function Portfolio() {
             return Object.entries(grouped).map(([key, group]) => {
               const totalQuantity = group.reduce((sum, a) => sum + a.quantity, 0);
               const totalCostBasis = group.reduce((sum, a) => sum + a.purchase_price * a.quantity, 0);
-              const avgPurchasePrice = totalCostBasis / totalQuantity;
+              const avgPurchasePrice = totalQuantity > 0 ? totalCostBasis / totalQuantity : 0;
               
               // Use the most recent current_price from the group
               const latestPrice = group.find(a => a.current_price !== null)?.current_price ?? avgPurchasePrice;
@@ -604,7 +604,9 @@ export default function Portfolio() {
                       variant="ghost"
                       size="icon"
                       onClick={() => {
-                        group.forEach(a => deleteAsset.mutate(a.id));
+                        Promise.all(group.map(a => deleteAsset.mutateAsync(a.id))).catch(() => {
+                          toast({ title: 'Errore durante l\'eliminazione', variant: 'destructive' });
+                        });
                       }}
                     >
                       <Trash2 className="w-4 h-4" />
@@ -672,7 +674,6 @@ export default function Portfolio() {
                 const totalSoldValue = group.reduce((sum, a) => sum + (a.sold_price ?? a.purchase_price) * a.quantity, 0);
                 const realizedPL = totalSoldValue - totalCostBasis;
                 const realizedPercent = totalCostBasis > 0 ? (realizedPL / totalCostBasis) * 100 : 0;
-                
                 const first = group[0];
                 const soldDate = first.sold_at ? format(parseISO(first.sold_at), 'd MMM yyyy', { locale: it }) : '';
                 
@@ -701,7 +702,9 @@ export default function Portfolio() {
                         variant="ghost" 
                         size="icon" 
                         onClick={() => {
-                          group.forEach(a => deleteAsset.mutate(a.id));
+                          Promise.all(group.map(a => deleteAsset.mutateAsync(a.id))).catch(() => {
+                            toast({ title: 'Errore durante l\'eliminazione', variant: 'destructive' });
+                          });
                         }}
                       >
                         <Trash2 className="w-4 h-4" />

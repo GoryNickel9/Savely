@@ -12,6 +12,38 @@ export function cn(...inputs: ClassValue[]) {
 export { calculateMedian };
 
 /**
+ * Parsa una stringa di data come ora locale.
+ * Le stringhe solo-data ("YYYY-MM-DD") vengono parseate come UTC dalla specifica JS,
+ * il che sposta il giorno locale per gli utenti a ovest di UTC. Apponendo
+ * "T00:00:00" si forza il parsing in ora locale (H5).
+ * Le stringhe già complete di orario (ISO datetime) vengono passate invariate.
+ */
+export function parseLocalDate(dateString: string): Date {
+  if (!dateString) return new Date(NaN);
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+    return new Date(`${dateString}T00:00:00`);
+  }
+  return new Date(dateString);
+}
+
+/**
+ * Parsa un importo inserito dall'utente in modo tollerante verso il formato italiano.
+ * "10,50" -> 10.5, "1.234,56" -> 1234.56. Ritorna NaN se il valore non è numerico.
+ */
+export function parseAmount(value: string | number | undefined | null): number {
+  if (value === undefined || value === null || value === '') return Number.NaN;
+  const s = value.toString().trim();
+  // Se contiene sia "." che "," assumiamo formato italiano (migliaia/decimali)
+  if (s.includes('.') && s.includes(',')) {
+    return parseFloat(s.replace(/\./g, '').replace(',', '.'));
+  }
+  if (s.includes(',')) {
+    return parseFloat(s.replace(',', '.'));
+  }
+  return parseFloat(s);
+}
+
+/**
  * Interfaccia per il range di date
  */
 interface DateRange {
@@ -42,7 +74,7 @@ function filterTransactionsByDate(
   range: DateRange
 ): Transaction[] {
   return transactions.filter(t => {
-    const txDate = new Date(t.date);
+    const txDate = parseLocalDate(t.date);
     return txDate >= range.startDate && txDate <= range.endDate;
   });
 }
@@ -55,7 +87,7 @@ function filterTransactionsByDate(
 function groupTransactionsByMonth(transactions: Transaction[]): Record<string, number> {
   const monthlyTotals: Record<string, number> = {};
   transactions.forEach(t => {
-    const date = new Date(t.date);
+    const date = parseLocalDate(t.date);
     const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
     monthlyTotals[key] = (monthlyTotals[key] || 0) + Number(t.amount);
   });
@@ -80,7 +112,7 @@ export function getMedianMonthlySpending(options: GetMedianMonthlySpendingOption
   const range = getDateRange(days || MEDIAN_CALCULATION_DAYS);
   
   const categoryTransactions = transactions.filter(t => {
-    const txDate = new Date(t.date);
+    const txDate = parseLocalDate(t.date);
     return t.category_id === categoryId &&
            t.type === 'expense' &&
            txDate >= range.startDate;
@@ -104,7 +136,7 @@ export function getGlobalMedianMonthlySpending(
   const range = getDateRange(days);
   
   const expenses = transactions.filter(t => {
-    const txDate = new Date(t.date);
+    const txDate = parseLocalDate(t.date);
     return t.type === 'expense' && txDate >= range.startDate;
   });
   

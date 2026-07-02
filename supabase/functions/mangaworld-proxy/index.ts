@@ -3,6 +3,9 @@
 // MangaWorld scraping was replaced because the site uses Cloudflare bot protection
 // that returns challenge pages to server-side fetches with no HTTP error.
 
+// @ts-ignore
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
 const JIKAN_BASE = 'https://api.jikan.moe/v4';
 
 // @ts-ignore
@@ -98,6 +101,37 @@ Deno.serve(async (req: Request) => {
 
   if (req.method === 'OPTIONS') {
     return new Response('ok', { status: 200, headers: corsHeaders });
+  }
+
+  // SEC-2: richiede un utente autenticato (evita abuso come proxy aperto)
+  // @ts-ignore
+  const supabaseUrl = Deno.env.get('SUPABASE_URL');
+  // @ts-ignore
+  const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY');
+  const authHeader = req.headers.get('Authorization');
+  if (!supabaseUrl || !supabaseAnonKey || !authHeader) {
+    return new Response(
+      JSON.stringify({ error: 'Unauthorized' }),
+      { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+    );
+  }
+  try {
+    const userClient = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const { data: { user } } = await userClient.auth.getUser();
+    if (!user) {
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      );
+    }
+  } catch (err) {
+    console.error('Auth check failed:', err);
+    return new Response(
+      JSON.stringify({ error: 'Unauthorized' }),
+      { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+    );
   }
 
   const { searchParams } = new URL(req.url);

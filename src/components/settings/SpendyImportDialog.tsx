@@ -804,12 +804,12 @@ export default function SpendyImportDialog({ open, onOpenChange, userId }: Spend
             <ScrollArea className="h-[350px]">
               <div className="space-y-4 pr-4">
                 {duplicates.map((dup, index) => (
-                  <div key={index} className="p-4 border rounded-lg space-y-3">
+                  <div key={`${dup.existing.id}-${index}`} className="p-4 border rounded-lg space-y-3">
                     <div className="grid grid-cols-2 gap-4 text-sm">
                       <div>
                         <Label className="text-xs text-muted-foreground">Nel file CSV</Label>
                         <div className="mt-1">
-                          <p className="font-medium">€{Number(dup.csvRow.importo).toFixed(2)}</p>
+                          <p className="font-medium">€{parseItalianNumber(dup.csvRow.importo).toFixed(2)}</p>
                           <p className="text-muted-foreground">{normalizeDate(dup.csvRow.data)}</p>
                           <p className="text-xs">{String(dup.csvRow.categoria || 'Altro')}</p>
                           {dup.csvRow.note && <p className="text-xs italic">{String(dup.csvRow.note)}</p>}

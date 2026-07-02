@@ -1,5 +1,5 @@
 import { useSearchParams } from 'react-router-dom'
-import { useCallback, useMemo, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { useFireDefaultsFromDB } from './useFireDefaultsFromDB'
 import type { FireDefaults } from './useFireDefaultsFromDB'
 
@@ -85,6 +85,15 @@ export function useFireCalculatorParams(dbDefaults?: FireDefaults) {
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   // Load stored params immediately (synchronously) during initialization
   const storedParamsRef = useRef<Partial<CalculatorParams> | null>(loadFromStorage())
+
+  // Cleanup del timer debounce allo smontaggio (evita setState su componente smontato)
+  useEffect(() => {
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current)
+      }
+    }
+  }, [])
 
   const params = useMemo((): CalculatorParams => {
     const getParam = (key: keyof CalculatorParams): number => {

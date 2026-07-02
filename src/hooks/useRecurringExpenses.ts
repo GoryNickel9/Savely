@@ -123,7 +123,8 @@ export function useRecurringExpenses() {
   // Process due recurring expenses and create transactions
   const processDueExpenses = useMutation({
     mutationFn: async () => {
-      const today = new Date().toISOString().split('T')[0];
+      const now = new Date();
+      const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
       
       // Get all active recurring expenses due today or before
       const { data: dueExpenses, error: fetchError } = await supabase
@@ -139,21 +140,27 @@ export function useRecurringExpenses() {
 
       for (const expense of dueExpenses) {
         // Check if transaction already exists for this month
-        const dueDate = new Date(expense.next_due_date);
+        const dueDate = new Date(expense.next_due_date + 'T00:00:00');
         const month = dueDate.getMonth() + 1; // JavaScript months are 0-indexed
         const year = dueDate.getFullYear();
-        
-        const { data: existing } = await supabase
+        const nextMonth = month % 12 + 1;
+        const nextYear = month === 12 ? year + 1 : year;
+
+        const { data: existing, error: existError } = await supabase
           .from('transactions')
           .select('id')
           .eq('user_id', user!.id)
           .eq('description', expense.name)
           .gte('date', `${year}-${String(month).padStart(2, '0')}-01`)
-          .lt('date', `${year}-${String(month).padStart(2, '0')}-32`)
+          .lt('date', `${nextYear}-${String(nextMonth).padStart(2, '0')}-01`)
           .is('deleted_at', null)
           .maybeSingle();
 
-        if (!existing) {
+        if (existError) {
+          console.error('Idempotency check failed:', existError);
+        }
+
+        if (!existing && !existError) {
           // Create transaction
           await supabase
             .from('transactions')
@@ -197,7 +204,7 @@ export function useRecurringExpenses() {
 }
 
 function calculateNextDueDate(currentDate: string, frequency: RecurringFrequency, weekInterval: number = 1): string {
-  const date = new Date(currentDate);
+  const date = new Date(currentDate + 'T00:00:00');
   const originalDay = date.getDate();
   
   switch (frequency) {
@@ -227,5 +234,9 @@ function calculateNextDueDate(currentDate: string, frequency: RecurringFrequency
       break;
   }
   
-  return date.toISOString().split('T')[0];
+  // Formatta come YYYY-MM-DD in local time (evita lo shift UTC di toISOString)
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
 }

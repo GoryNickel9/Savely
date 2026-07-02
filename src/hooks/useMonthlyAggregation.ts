@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { Transaction } from '@/lib/types';
+import { parseLocalDate } from '@/lib/utils';
 
 export interface MonthlyData {
   month: string;
@@ -16,8 +17,8 @@ export function useMonthlyAggregation(
     const monthlyMap = new Map<string, MonthlyData>();
 
     transactions.forEach(transaction => {
-      const date = new Date(transaction.date);
-      const monthKey = `${date.getFullYear()}-${date.getMonth()}`;
+      const date = parseLocalDate(transaction.date);
+      const monthKey = `${date.getFullYear()}-${String(date.getMonth()).padStart(2, '0')}`;
       const monthLabel = date.toLocaleDateString('it-IT', {
         month: 'long',
         year: 'numeric'

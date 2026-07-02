@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { LogOut, User, Download, Upload, FileSpreadsheet, Trash2, Settings2, Edit2, FolderPlus, Folder, FolderPen, Check, X } from 'lucide-react';
 import { useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
@@ -46,6 +47,7 @@ export default function Settings() {
   const { permissions } = usePermissions();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [isExporting, setIsExporting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [spendyDialogOpen, setSpendyDialogOpen] = useState(false);
@@ -783,24 +785,68 @@ export default function Settings() {
                       onClick={async () => {
                         setIsDeleting(true);
                         try {
-                          // Delete all user data in order (respecting foreign keys)
-                          await supabase.from('asset_price_history').delete().eq('user_id', user!.id);
-                          await supabase.from('budgets').delete().eq('user_id', user!.id);
-                          await supabase.from('transactions').delete().eq('user_id', user!.id);
-                          await supabase.from('categories').delete().eq('user_id', user!.id);
-                          await supabase.from('savings_goals').delete().eq('user_id', user!.id);
-                          await supabase.from('portfolio_assets').delete().eq('user_id', user!.id);
+                          // Delete all user data in order (rispettando le foreign key).
+                          // Ogni delete viene verificata: se fallisce viene registrata.
+                          const failed: string[] = [];
+                          const tablesByUser = [
+                            'shared_expenses',
+                            'couple_budgets',
+                            'couple_connection_requests',
+                            'couple_connections',
+                            'asset_price_history',
+                            'manual_price_updates',
+                            'price_update_logs',
+                            'budgets',
+                            'transactions',
+                            'recurring_expenses',
+                            'portfolio_assets',
+                            'category_mappings',
+                            'isin_mappings',
+                            'cbd',
+                            'liquido_sigaretta',
+                            'thc',
+                            'tgc_cards',
+                            'library_items',
+                            'poker_next_cut',
+                            'poker_manual_expenses',
+                            'poker_hourly_earnings',
+                            'poker_rakeback',
+                            'categories',
+                            'savings_goals',
+                          ] as const;
 
-                          toast({ 
-                            title: 'Dati eliminati', 
-                            description: 'Tutti i tuoi dati sono stati eliminati. Il tuo account è ancora attivo.' 
-                          });
+                          for (const table of tablesByUser) {
+                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                            const { error } = await (supabase as any)
+                              .from(table)
+                              .delete()
+                              .eq('user_id', user!.id);
+                            if (error) {
+                              console.error(`Delete ${table} failed:`, error);
+                              failed.push(table);
+                            }
+                          }
+
+                          queryClient.clear();
+
+                          if (failed.length > 0) {
+                            toast({
+                              title: 'Eliminazione parziale',
+                              description: `Alcune tabelle non sono state eliminate (${failed.join(', ')}). Riprova.`,
+                              variant: 'destructive',
+                            });
+                          } else {
+                            toast({
+                              title: 'Dati eliminati',
+                              description: 'Tutti i tuoi dati sono stati eliminati. Il tuo account è ancora attivo.',
+                            });
+                          }
                         } catch (error) {
                           console.error('Delete data error:', error);
-                          toast({ 
-                            title: 'Errore', 
-                            description: 'Impossibile eliminare i dati', 
-                            variant: 'destructive' 
+                          toast({
+                            title: 'Errore',
+                            description: 'Impossibile eliminare i dati',
+                            variant: 'destructive',
                           });
                         } finally {
                           setIsDeleting(false);

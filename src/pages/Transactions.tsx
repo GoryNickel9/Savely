@@ -17,6 +17,7 @@ import { Switch } from '@/components/ui/switch';
 import { TransactionType, Transaction, CurrencyCode } from '@/lib/types';
 import { CategorySelect } from '@/components/CategorySelect';
 import { CURRENCY_SYMBOLS } from '@/lib/constants';
+import { parseAmount } from '@/lib/utils';
 import { Plus, Trash2, Pencil, Search, Calendar, HeartHandshake } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { startOfMonth, endOfMonth, subMonths, startOfYear, endOfYear, subYears, isWithinInterval, parseISO } from 'date-fns';
@@ -121,6 +122,11 @@ export default function Transactions() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const parsedAmount = parseAmount(amount);
+    if (!Number.isFinite(parsedAmount) || parsedAmount <= 0) {
+      toast({ title: 'Importo non valido', description: 'Inserisci un importo maggiore di zero.', variant: 'destructive' });
+      return;
+    }
     setIsFetchingRate(true);
     try {
       const exchange_rate_eur = await fetchExchangeRate(currency);
@@ -128,7 +134,7 @@ export default function Transactions() {
         await updateTransaction.mutateAsync({
           id: editingTransaction.id,
           type,
-          amount: Number.parseFloat(amount),
+          amount: parsedAmount,
           currency,
           exchange_rate_eur,
           category_id: categoryId || undefined,
@@ -139,7 +145,7 @@ export default function Transactions() {
       } else {
         const newTx = await createTransaction.mutateAsync({
           type,
-          amount: Number.parseFloat(amount),
+          amount: parsedAmount,
           currency,
           exchange_rate_eur,
           category_id: categoryId || undefined,

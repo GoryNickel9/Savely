@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { Transaction } from '@/lib/types';
+import { parseLocalDate } from '@/lib/utils';
 
 export type FilterMode = 'all' | 'year' | 'month' | 'since' | 'between';
 
@@ -14,18 +15,18 @@ interface UseFilteredTransactionsOptions {
 }
 
 /**
- * Helper per validare e parsare una data in modo sicuro
+ * Helper per validare e parsare una data in modo sicuro (ora locale)
  */
 function parseDate(dateString: string): Date | null {
   if (!dateString) return null;
-  
-  const date = new Date(dateString);
+
+  const date = parseLocalDate(dateString);
   // Verifica che la data sia valida
   if (isNaN(date.getTime())) {
     console.warn(`Data non valida: ${dateString}`);
     return null;
   }
-  
+
   return date;
 }
 

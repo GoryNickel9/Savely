@@ -250,8 +250,11 @@ export function calculateStandardFIRE(inputs: FIREInputs): StandardFIREResult {
     annualExpenses 
   } = inputs
 
+  // Guard: withdrawalRate deve essere positivo per evitare divisioni per zero / Infinity
+  const safeWithdrawalRate = withdrawalRate > 0 ? withdrawalRate : 0.04
+
   // FIRE Number = Annual Expenses / Withdrawal Rate
-  const fireNumber = annualExpenses / withdrawalRate
+  const fireNumber = annualExpenses / safeWithdrawalRate
 
   // Real return (adjusted for inflation)
   const realReturn = (1 + expectedReturn) / (1 + inflationRate) - 1
@@ -332,8 +335,11 @@ export function calculateCoastFIRE(
   annualExpenses: number,
   withdrawalRate: number
 ): CoastFIREResult {
+  // Guard: withdrawalRate deve essere positivo
+  const safeWithdrawalRate = withdrawalRate > 0 ? withdrawalRate : 0.04
+
   // FIRE number at retirement
-  const fireNumber = annualExpenses / withdrawalRate
+  const fireNumber = annualExpenses / safeWithdrawalRate
   
   // Years until target retirement
   const yearsToRetirement = Math.max(0, targetRetirementAge - currentAge)
@@ -426,14 +432,17 @@ export function calculateBaristaFIRE(
   withdrawalRate: number,
   partTimeAnnualIncome: number
 ): BaristaFIREResult {
+  // Guard: withdrawalRate deve essere positivo
+  const safeWithdrawalRate = withdrawalRate > 0 ? withdrawalRate : 0.04
+
   // Full FIRE number (without part-time income)
-  const fullFireNumber = annualExpenses / withdrawalRate
+  const fullFireNumber = annualExpenses / safeWithdrawalRate
   
   // Expenses that portfolio needs to cover = total expenses - part-time income
   const portfolioExpenses = Math.max(0, annualExpenses - partTimeAnnualIncome)
   
   // Barista FIRE number = reduced expenses / withdrawal rate
-  const baristaNumber = portfolioExpenses / withdrawalRate
+  const baristaNumber = portfolioExpenses / safeWithdrawalRate
   
   // Real return
   const realReturn = (1 + expectedReturn) / (1 + inflationRate) - 1

@@ -350,7 +350,7 @@ export default function BankImportDialog({ open, onOpenChange, userId }: BankImp
         setStep('review');
       } else {
         const investmentTxs = parsed.filter(t => t.type === 'investment');
-        executeImport(investmentTxs, mappingsMap, autoImported, []);
+        await executeImport(investmentTxs, mappingsMap, autoImported, []);
       }
 
       const autoMsg = autoImported.length > 0 ? `, ${autoImported.length} automatiche` : '';
@@ -381,9 +381,19 @@ export default function BankImportDialog({ open, onOpenChange, userId }: BankImp
       mapping = { isin: current.isin, symbol: newSymbol.toUpperCase(), name: newAssetName, assetType: 'etf' };
     }
 
-    await supabase.from('isin_mappings').upsert({
+    const { error: isinError } = await supabase.from('isin_mappings').upsert({
       user_id: userId, isin: mapping.isin, symbol: mapping.symbol, name: mapping.name, asset_type: mapping.assetType,
     });
+
+    if (isinError) {
+      console.error('ISIN mapping upsert error:', isinError);
+      toast({
+        title: 'Errore',
+        description: 'Impossibile salvare la mappatura ISIN. Riprova.',
+        variant: 'destructive',
+      });
+      return;
+    }
 
     const newMappings = { ...isinMappings, [current.isin]: mapping };
     setIsinMappings(newMappings);
@@ -395,7 +405,7 @@ export default function BankImportDialog({ open, onOpenChange, userId }: BankImp
         setStep('review');
       } else {
         const investmentTxs = transactions.filter(t => t.type === 'investment');
-        executeImport(investmentTxs, newMappings, autoImportedTransactions, []);
+        await executeImport(investmentTxs, newMappings, autoImportedTransactions, []);
       }
     } else {
       setCurrentIsinIndex(prev => prev + 1);
@@ -450,17 +460,20 @@ export default function BankImportDialog({ open, onOpenChange, userId }: BankImp
   };
 
   const handleDecline = () => {
+    // Calcola il nuovo Set sincronamente per usarlo subito in moveToNext (evita stale state)
+    const newDeclined = new Set(declinedDescriptions);
     if (currentTransaction.descrizione)
-      setDeclinedDescriptions(prev => new Set(prev).add(currentTransaction.descrizione.toLowerCase()));
+      newDeclined.add(currentTransaction.descrizione.toLowerCase());
+    setDeclinedDescriptions(newDeclined);
     setSkippedCount(prev => prev + 1);
-    moveToNext();
+    moveToNext(newDeclined);
   };
 
-  const moveToNext = () => {
+  const moveToNext = async (currentDeclined: Set<string> = declinedDescriptions) => {
     let nextIndex = currentIndex + 1;
     while (nextIndex < manualTransactions.length) {
       const next = manualTransactions[nextIndex];
-      if (next.descrizione && declinedDescriptions.has(next.descrizione.toLowerCase())) {
+      if (next.descrizione && currentDeclined.has(next.descrizione.toLowerCase())) {
         setSkippedCount(prev => prev + 1);
         nextIndex++;
       } else break;
@@ -468,7 +481,7 @@ export default function BankImportDialog({ open, onOpenChange, userId }: BankImp
 
     if (nextIndex >= manualTransactions.length) {
       const investmentTxs = transactions.filter(t => t.type === 'investment');
-      executeImport(investmentTxs, isinMappings, autoImportedTransactions, acceptedTransactions);
+      await executeImport(investmentTxs, isinMappings, autoImportedTransactions, acceptedTransactions);
     } else {
       setCurrentIndex(nextIndex);
     }
@@ -485,69 +498,82 @@ export default function BankImportDialog({ open, onOpenChange, userId }: BankImp
     setStep('importing');
     setImportProgress(0);
 
-    const allRegularTxs = [...autoTxs, ...manualTxs];
-    const total = investmentTxs.length + allRegularTxs.length;
-    let transactionCount = 0;
-    let investmentCount = 0;
-    let processed = 0;
+    try {
+      const allRegularTxs = [...autoTxs, ...manualTxs];
+      const total = investmentTxs.length + allRegularTxs.length;
+      let transactionCount = 0;
+      let investmentCount = 0;
+      let processed = 0;
 
-    // Save category mappings (shared)
-    const mappingEntries = Object.entries(categoryMappings);
-    if (mappingEntries.length > 0) {
-      await supabase.from('category_mappings').upsert(
-        mappingEntries.map(([keyword, categoryId]) => ({
-          user_id: userId, description: keyword, category_id: categoryId, source: 'shared',
-        })),
-        { onConflict: 'user_id,description,source' }
-      );
-    }
-
-    // Import investments
-    for (const tx of investmentTxs) {
-      if (tx.isin) {
-        const mapping = isinMap[tx.isin];
-        if (mapping) {
-          const existingAsset = assets.find(a => a.symbol?.toUpperCase() === mapping.symbol.toUpperCase());
-          if (!existingAsset) {
-            await createAsset.mutateAsync({
-              name: mapping.name,
-              symbol: mapping.symbol,
-              type: mapping.assetType as 'etf' | 'stock' | 'crypto' | 'bond' | 'cash' | 'real_estate' | 'other',
-              quantity: 1,
-              purchase_price: tx.amount,
-              purchase_date: tx.date,
-              notes: `Importato da banca - ISIN: ${tx.isin}`,
-            });
-          }
-          investmentCount++;
+      // Save category mappings (shared)
+      const mappingEntries = Object.entries(categoryMappings);
+      if (mappingEntries.length > 0) {
+        const { error: mappingError } = await supabase.from('category_mappings').upsert(
+          mappingEntries.map(([keyword, categoryId]) => ({
+            user_id: userId, description: keyword, category_id: categoryId, source: 'shared',
+          })),
+          { onConflict: 'user_id,description,source' }
+        );
+        if (mappingError) {
+          console.error('Category mappings save error:', mappingError);
         }
       }
-      processed++;
-      setImportProgress((processed / total) * 100);
-    }
 
-    // Import regular transactions in batches
-    const BATCH_SIZE = 1000;
-    for (let i = 0; i < allRegularTxs.length; i += BATCH_SIZE) {
-      const batch = allRegularTxs.slice(i, i + BATCH_SIZE);
-      const { error } = await supabase.from('transactions').insert(
-        batch.map(tx => ({
-          user_id: userId,
-          type: tx.type as 'income' | 'expense',
-          amount: tx.amount,
-          currency: 'EUR' as const,
-          category_id: tx.categoryId,
-          description: tx.note ? `${tx.editedDescrizione} - ${tx.note}` : tx.editedDescrizione,
-          date: tx.date,
-        }))
-      );
-      if (!error) transactionCount += batch.length;
-      processed += batch.length;
-      setImportProgress((processed / total) * 100);
-    }
+      // Import investments
+      for (const tx of investmentTxs) {
+        if (tx.isin) {
+          const mapping = isinMap[tx.isin];
+          if (mapping) {
+            const existingAsset = assets.find(a => a.symbol?.toUpperCase() === mapping.symbol.toUpperCase());
+            if (!existingAsset) {
+              await createAsset.mutateAsync({
+                name: mapping.name,
+                symbol: mapping.symbol,
+                type: mapping.assetType as 'etf' | 'stock' | 'crypto' | 'bond' | 'cash' | 'real_estate' | 'other',
+                quantity: 1,
+                purchase_price: tx.amount,
+                purchase_date: tx.date,
+                notes: `Importato da banca - ISIN: ${tx.isin}`,
+              });
+            }
+            investmentCount++;
+          }
+        }
+        processed++;
+        setImportProgress((processed / total) * 100);
+      }
 
-    setImportedCount({ transactions: transactionCount, investments: investmentCount });
-    setStep('complete');
+      // Import regular transactions in batches
+      const BATCH_SIZE = 1000;
+      for (let i = 0; i < allRegularTxs.length; i += BATCH_SIZE) {
+        const batch = allRegularTxs.slice(i, i + BATCH_SIZE);
+        const { error } = await supabase.from('transactions').insert(
+          batch.map(tx => ({
+            user_id: userId,
+            type: tx.type as 'income' | 'expense',
+            amount: tx.amount,
+            currency: 'EUR' as const,
+            category_id: tx.categoryId,
+            description: tx.note ? `${tx.editedDescrizione} - ${tx.note}` : tx.editedDescrizione,
+            date: tx.date,
+          }))
+        );
+        if (!error) transactionCount += batch.length;
+        processed += batch.length;
+        setImportProgress((processed / total) * 100);
+      }
+
+      setImportedCount({ transactions: transactionCount, investments: investmentCount });
+      setStep('complete');
+    } catch (error) {
+      console.error('Import error:', error);
+      toast({
+        title: 'Errore di importazione',
+        description: 'Si è verificato un errore durante l\'importazione. Riprova.',
+        variant: 'destructive',
+      });
+      setStep('review');
+    }
   };
 
   // ── reset ─────────────────────────────────────────────────────────────────
