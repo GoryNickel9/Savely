@@ -14,7 +14,7 @@ import { z } from 'zod';
 import { passwordSchema, checkPasswordRequirements, passwordRequirementsList } from '@/lib/passwordValidation';
 import { Checkbox } from '@/components/ui/checkbox';
 import { supabase } from '@/integrations/supabase/client';
-import { challengeAndVerify } from '@/lib/mfa';
+import { challengeAndVerify } from '@/hooks/useMfa';
 
 const authSchema = z.object({
   email: z.string().email('Email non valida'),

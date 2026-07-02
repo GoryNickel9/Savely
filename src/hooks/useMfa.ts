@@ -1,24 +1,18 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import {
-  listTotpFactors,
-  unenrollFactor,
-  getAAL,
-  enrollTotp,
-  verifyTotpEnrollment,
+  validateTotpCode,
   type TotpEnrollment,
+  type VerifiedFactor,
+  type AuthAAL,
 } from '@/lib/mfa';
 
 /**
- * MFA hooks (TanStack Query).
+ * MFA (TOTP) Supabase wrappers + TanStack Query hooks.
  *
- * - `useFactors`: lists the current user's enrolled TOTP factors + current AAL.
- * - `useEnrollTotp`: starts enrollment (returns factorId/uri/secret).
- * - `useVerifyEnrollment`: verifies the 6-digit code, completing enrollment.
- * - `useUnenrollFactor`: removes a factor.
- *
- * Query keys are prefixed `['mfa', ...]`; mutations invalidate `['mfa']`.
+ * Pure validation/parsing helpers live in src/lib/mfa.ts; this module owns the
+ * Supabase auth.mfa.* calls and the query/mutation cache.
  */
-const factorsKey = ['mfa', 'factors'] as const;
 
 export interface MfaFactorRow {
   id: string;
@@ -26,6 +20,91 @@ export interface MfaFactorRow {
   factor_type: 'totp';
   created_at: string;
 }
+
+/** Start TOTP enrollment. Returns the QR URI + secret to show the user. */
+export async function enrollTotp(): Promise<TotpEnrollment> {
+  const { data, error } = await supabase.auth.mfa.enroll({ factorType: 'totp' });
+  if (error) throw error;
+  const totp = data.totp;
+  return {
+    factorId: data.id,
+    uri: totp.uri,
+    secret: totp.secret,
+  };
+}
+
+/**
+ * Create a challenge for the given factor and verify it with the user's code.
+ * On success the factor becomes active (AAL raises to aal2).
+ */
+export async function verifyTotpEnrollment(factorId: string, code: string): Promise<VerifiedFactor> {
+  const codeErr = validateTotpCode(code);
+  if (codeErr) throw new Error(codeErr);
+
+  const { data: challenge, error: challengeError } = await supabase.auth.mfa.challenge({ factorId });
+  if (challengeError) throw challengeError;
+
+  const { error: verifyError } = await supabase.auth.mfa.verify({
+    factorId,
+    challengeId: challenge.id,
+    code: code.trim(),
+  });
+  if (verifyError) throw verifyError;
+
+  return { factorId };
+}
+
+/** List the current user's enrolled TOTP factors (verified only, typically). */
+export async function listTotpFactors() {
+  const { data, error } = await supabase.auth.mfa.listFactors();
+  if (error) throw error;
+  return data.totp ?? [];
+}
+
+/** Remove a factor by id. */
+export async function unenrollFactor(factorId: string): Promise<void> {
+  const { error } = await supabase.auth.mfa.unenroll({ factorId });
+  if (error) throw error;
+}
+
+/**
+ * Challenge + verify flow used at login when the user has an active TOTP factor.
+ * Returns true on success.
+ */
+export async function challengeAndVerify(factorId: string, code: string): Promise<boolean> {
+  const codeErr = validateTotpCode(code);
+  if (codeErr) throw new Error(codeErr);
+
+  const { data: challenge, error: challengeError } = await supabase.auth.mfa.challenge({ factorId });
+  if (challengeError) throw challengeError;
+
+  const { error: verifyError } = await supabase.auth.mfa.verify({
+    factorId,
+    challengeId: challenge.id,
+    code: code.trim(),
+  });
+  if (verifyError) throw verifyError;
+  return true;
+}
+
+/**
+ * Returns the current Authenticator Assurance Level ('aal1' = password only,
+ * 'aal2' = password + second factor verified) and the next reachable level.
+ */
+export async function getAAL(): Promise<{ current: AuthAAL; next: AuthAAL }> {
+  const { data, error } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+  if (error) throw error;
+  return {
+    current: (data.currentLevel ?? 'aal1') as AuthAAL,
+    next: (data.nextLevel ?? 'aal1') as AuthAAL,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Hooks
+// ---------------------------------------------------------------------------
+
+const factorsKey = ['mfa', 'factors'] as const;
 
 export function useFactors() {
   return useQuery({
