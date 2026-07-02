@@ -210,3 +210,91 @@ export interface PokerNextCut {
   created_at: string;
   updated_at: string;
 }
+
+// ---------------------------------------------------------------------------
+// Couple Expenses feature types
+// ---------------------------------------------------------------------------
+
+/** Pairing request status */
+export type CoupleRequestStatus = 'pending' | 'accepted' | 'rejected' | 'cancelled';
+
+/** A request to pair two users (couple_connection_requests table) */
+export interface CoupleConnectionRequest {
+  id: string;
+  sender_id: string;
+  receiver_id: string;
+  status: CoupleRequestStatus;
+  created_at: string;
+  updated_at: string;
+}
+
+/** An active (or revoked) couple connection (couple_connections table) */
+export interface CoupleConnection {
+  id: string;
+  user_a: string;
+  user_b: string;
+  revoked_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+/**
+ * A shared expense record (shared_expenses table).
+ * Note: category_id of the original transaction is intentionally absent —
+ * it is never stored here to preserve the creator's privacy.
+ */
+export interface SharedExpense {
+  id: string;
+  connection_id: string;
+  original_tx_id: string;
+  created_by: string;
+  split_percentage: number;
+  couple_category_name: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+/**
+ * Row returned by shared_expenses_view.
+ * Safe projection: includes amount/currency/description/date but NOT category_id.
+ */
+export interface SharedExpenseView extends SharedExpense {
+  total_amount: number;
+  my_share_amount: number;
+  currency: CurrencyCode;
+  exchange_rate_eur: number;
+  description: string | null;
+  date: string;
+  tx_deleted_at: string | null;
+}
+
+/**
+ * A text category name used in couple budgets.
+ * Stored as TEXT (not FK) so partner cannot resolve the creator's category UUID.
+ */
+export type CoupleSharedBudgetCategory = string;
+
+/** A couple budget entry (couple_budgets table) */
+export interface CoupleBudget {
+  id: string;
+  connection_id: string;
+  couple_category_name: CoupleSharedBudgetCategory;
+  amount: number;
+  currency: CurrencyCode;
+  month: number;
+  year: number;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+}
+
+/** An audit log entry (couple_audit_log table — immutable) */
+export interface CoupleAuditLogEntry {
+  id: string;
+  connection_id: string | null;
+  actor_id: string;
+  action: string;
+  target_id: string | null;
+  metadata: Record<string, unknown>;
+  created_at: string;
+}
