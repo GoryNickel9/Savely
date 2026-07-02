@@ -60,6 +60,8 @@ export default function Transactions() {
   // Couple sharing form states
   const [isShared, setIsShared] = useState(false);
   const [coupleCategory, setCoupleCategory] = useState('');
+  const [splitMode, setSplitMode] = useState<'equal' | 'custom'>('equal');
+  const [partnerAmount, setPartnerAmount] = useState('');
 
   const categories = type === 'income' ? incomeCategories : expenseCategories;
 
@@ -73,6 +75,8 @@ export default function Transactions() {
     setEditingTransaction(null);
     setIsShared(false);
     setCoupleCategory('');
+    setSplitMode('equal');
+    setPartnerAmount('');
   };
 
   const openCreateDialog = () => {
@@ -155,13 +159,23 @@ export default function Transactions() {
         // Mark as shared with partner if toggled
         if (isShared && connection?.id && coupleCategory) {
           try {
+            const customPartner = splitMode === 'custom' ? parseAmount(partnerAmount) : null;
+            if (splitMode === 'custom' && (!Number.isFinite(customPartner) || customPartner <= 0 || customPartner >= parsedAmount)) {
+              throw new Error('La quota del partner deve essere maggiore di zero e minore del totale.');
+            }
             await createSharedExpense.mutateAsync({
               connection_id: connection.id,
               original_tx_id: newTx.id,
               couple_category_name: coupleCategory,
+              split_mode: splitMode,
+              partner_amount: customPartner,
             });
-          } catch {
-            toast({ title: 'Spesa salvata, ma condivisione fallita', variant: 'destructive' });
+          } catch (err) {
+            toast({
+              title: 'Spesa salvata, ma condivisione fallita',
+              description: (err as Error).message,
+              variant: 'destructive',
+            });
           }
         }
         toast({ title: 'Transazione aggiunta!' });
@@ -351,26 +365,69 @@ export default function Transactions() {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <HeartHandshake className="w-4 h-4 text-rose-400" />
-                        <Label className="cursor-pointer">Condividi con il partner (50/50)</Label>
+                        <Label className="cursor-pointer">Condividi con il partner</Label>
                       </div>
                       <Switch checked={isShared} onCheckedChange={setIsShared} />
                     </div>
                     {isShared && (
-                      <div>
-                        <Label className="text-xs text-muted-foreground">Categoria condivisa</Label>
-                        <Select value={coupleCategory} onValueChange={setCoupleCategory}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Seleziona categoria condivisa" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {expenseCategories.map(cat => (
-                              <SelectItem key={cat.id} value={cat.name}>
-                                {cat.icon} {cat.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
+                      <>
+                        <div>
+                          <Label className="text-xs text-muted-foreground">Categoria condivisa</Label>
+                          <Select value={coupleCategory} onValueChange={setCoupleCategory}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Seleziona categoria condivisa" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {expenseCategories.map(cat => (
+                                <SelectItem key={cat.id} value={cat.name}>
+                                  {cat.icon} {cat.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label className="text-xs text-muted-foreground">Divisione</Label>
+                          <Select value={splitMode} onValueChange={(v) => setSplitMode(v as 'equal' | 'custom')}>
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="equal">50 / 50 (predefinito)</SelectItem>
+                              <SelectItem value="custom">Importi personalizzati</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        {splitMode === 'custom' && (
+                          <div className="grid grid-cols-2 gap-2">
+                            <div>
+                              <Label className="text-xs text-muted-foreground">Quota tua (€)</Label>
+                              <Input
+                                type="number"
+                                step="0.01"
+                                placeholder="0,00"
+                                value={(() => {
+                                  const total = parseAmount(amount);
+                                  const partner = parseAmount(partnerAmount);
+                                  if (!Number.isFinite(total) || !Number.isFinite(partner)) return '';
+                                  return String(Math.round((total - partner) * 100) / 100);
+                                })()}
+                                disabled
+                              />
+                            </div>
+                            <div>
+                              <Label className="text-xs text-muted-foreground">Quota partner (€)</Label>
+                              <Input
+                                type="number"
+                                step="0.01"
+                                placeholder="0,00"
+                                value={partnerAmount}
+                                onChange={(e) => setPartnerAmount(e.target.value)}
+                              />
+                            </div>
+                          </div>
+                        )}
+                      </>
                     )}
                   </div>
                 )}

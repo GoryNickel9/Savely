@@ -13,6 +13,10 @@ export interface SharedExpenseViewRow {
   created_by: string;
   couple_category_name: string | null;
   split_percentage: number;
+  split_mode: 'equal' | 'custom';
+  partner_amount: number | null;
+  partner_share_amount: number;
+  creator_share_amount: number;
   created_at: string;
   updated_at: string;
   total_amount: number;
@@ -79,12 +83,16 @@ export function useSharedExpenses(connectionId: string | null) {
       connection_id: string;
       original_tx_id: string;
       couple_category_name: string;
+      split_mode?: 'equal' | 'custom';
+      partner_amount?: number | null;
     }) => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { error } = await (supabase as any).from('shared_expenses').insert({
         connection_id: params.connection_id,
         original_tx_id: params.original_tx_id,
         couple_category_name: params.couple_category_name,
+        split_mode: params.split_mode ?? 'equal',
+        partner_amount: params.split_mode === 'custom' ? params.partner_amount : null,
         created_by: user!.id,
       });
       if (error) throw error;

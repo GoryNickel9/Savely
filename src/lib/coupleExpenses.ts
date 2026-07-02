@@ -73,6 +73,53 @@ export function calculateSharedAmount(totalAmount: number): number {
   return partnerCents / 100;
 }
 
+/**
+ * Result of a split calculation: each party's share of a shared expense.
+ * `creatorShare + partnerShare` always equals `totalAmount` (within a cent).
+ */
+export interface SplitResult {
+  creatorShare: number;
+  partnerShare: number;
+}
+
+/**
+ * Calculates the creator's and partner's shares under either split mode.
+ *
+ * - 'equal': 50/50, with the odd cent kept by the creator (same rule as
+ *   calculateSharedAmount, exposed explicitly here).
+ * - 'custom': partnerShare = partnerAmount (validated); creatorShare = total - partner.
+ *
+ * Throws RangeError when:
+ *   - totalAmount < 0
+ *   - mode === 'custom' and partnerAmount is missing, <= 0, or >= totalAmount
+ */
+export function calculateSharedSplit(
+  totalAmount: number,
+  mode: 'equal' | 'custom',
+  partnerAmount?: number | null
+): SplitResult {
+  if (totalAmount < 0) {
+    throw new RangeError('totalAmount must be non-negative');
+  }
+
+  if (mode === 'custom') {
+    if (partnerAmount == null || partnerAmount <= 0 || partnerAmount >= totalAmount) {
+      throw new RangeError(
+        'partnerAmount must be > 0 and < totalAmount for custom split'
+      );
+    }
+    const partner = Math.round(partnerAmount * 100) / 100;
+    const creator = Math.round((totalAmount - partner) * 100) / 100;
+    return { creatorShare: creator, partnerShare: partner };
+  }
+
+  // equal mode
+  const totalCents = Math.round(totalAmount * 100);
+  const partnerCents = Math.floor(totalCents / 2);
+  const creatorCents = totalCents - partnerCents;
+  return { creatorShare: creatorCents / 100, partnerShare: partnerCents / 100 };
+}
+
 // ---------------------------------------------------------------------------
 // Budget statistics for couple shared expenses
 // ---------------------------------------------------------------------------

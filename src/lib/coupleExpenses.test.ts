@@ -3,6 +3,7 @@ import {
   validateCoupleCode,
   canShareExpense,
   calculateSharedAmount,
+  calculateSharedSplit,
   filterSharedExpensesForBudget,
   getMedianMonthlySpendingShared,
   SharedExpenseForStats,
@@ -133,6 +134,52 @@ describe('calculateSharedAmount', () => {
 
   it('throws for negative amounts', () => {
     expect(() => calculateSharedAmount(-1)).toThrow(RangeError);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// calculateSharedSplit — equal + custom modes
+// ---------------------------------------------------------------------------
+describe('calculateSharedSplit', () => {
+  it('equal mode splits an even amount 50/50', () => {
+    expect(calculateSharedSplit(100, 'equal')).toEqual({ creatorShare: 50, partnerShare: 50 });
+  });
+
+  it('equal mode keeps the odd cent with the creator (1.01)', () => {
+    expect(calculateSharedSplit(1.01, 'equal')).toEqual({ creatorShare: 0.51, partnerShare: 0.5 });
+  });
+
+  it('equal mode shares sum to the total', () => {
+    const r = calculateSharedSplit(33.33, 'equal');
+    expect(Math.round((r.creatorShare + r.partnerShare) * 100) / 100).toBe(33.33);
+  });
+
+  it('custom mode assigns partner_amount to partner and the rest to creator', () => {
+    expect(calculateSharedSplit(200, 'custom', 80)).toEqual({ creatorShare: 120, partnerShare: 80 });
+  });
+
+  it('custom mode shares sum to the total', () => {
+    const r = calculateSharedSplit(123.45, 'custom', 45.67);
+    expect(Math.round((r.creatorShare + r.partnerShare) * 100) / 100).toBe(123.45);
+  });
+
+  it('custom mode throws when partnerAmount is missing', () => {
+    expect(() => calculateSharedSplit(100, 'custom')).toThrow(RangeError);
+    expect(() => calculateSharedSplit(100, 'custom', null)).toThrow(RangeError);
+  });
+
+  it('custom mode throws when partnerAmount <= 0', () => {
+    expect(() => calculateSharedSplit(100, 'custom', 0)).toThrow(RangeError);
+    expect(() => calculateSharedSplit(100, 'custom', -5)).toThrow(RangeError);
+  });
+
+  it('custom mode throws when partnerAmount >= total', () => {
+    expect(() => calculateSharedSplit(100, 'custom', 100)).toThrow(RangeError);
+    expect(() => calculateSharedSplit(100, 'custom', 150)).toThrow(RangeError);
+  });
+
+  it('throws for negative total', () => {
+    expect(() => calculateSharedSplit(-1, 'equal')).toThrow(RangeError);
   });
 });
 

@@ -7,11 +7,14 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, TrendingUp, Shield, PieChart, Check, X, MailCheck } from 'lucide-react';
+import { Loader2, TrendingUp, Shield, PieChart, Check, X, MailCheck, KeyRound } from 'lucide-react';
 import { z } from 'zod';
 import { passwordSchema, checkPasswordRequirements, passwordRequirementsList } from '@/lib/passwordValidation';
 import { Checkbox } from '@/components/ui/checkbox';
+import { supabase } from '@/integrations/supabase/client';
+import { challengeAndVerify } from '@/lib/mfa';
 
 const authSchema = z.object({
   email: z.string().email('Email non valida'),
@@ -31,15 +34,22 @@ export default function Auth() {
   const [resetSent, setResetSent] = useState(false);
   const [sentEmail, setSentEmail] = useState('');
   const [privacyAccepted, setPrivacyAccepted] = useState(false);
+  // MFA challenge state: when the user has an active TOTP factor, we require a
+  // second step after the password succeeds.
+  const [mfaFactorId, setMfaFactorId] = useState<string | null>(null);
+  const [mfaCode, setMfaCode] = useState('');
+  const [mfaVerifying, setMfaVerifying] = useState(false);
   const { user, signIn, signUp, resetPassword } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
-    if (user && !resetSent) {
+    // Navigate to "/" only when fully authenticated. During the MFA challenge
+    // step the user exists (aal1) but must not leave /auth until verified.
+    if (user && !resetSent && !mfaFactorId) {
       navigate('/');
     }
-  }, [user, navigate, resetSent]);
+  }, [user, navigate, resetSent, mfaFactorId]);
 
   const validateForm = () => {
     try {
@@ -70,12 +80,58 @@ export default function Auth() {
     if (error) {
       toast({
         title: 'Errore di accesso',
-        description: error.message === 'Invalid login credentials' 
-          ? 'Email o password non corretti' 
+        description: error.message === 'Invalid login credentials'
+          ? 'Email o password non corretti'
           : error.message,
         variant: 'destructive',
       });
+      return;
     }
+
+    // After a successful password login, check whether the user has an enrolled
+    // TOTP factor. If so and the session is only aal1, require the MFA code.
+    try {
+      const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+      if (aal.currentLevel === 'aal1' && aal.nextLevel === 'aal2') {
+        const { data: factorsData } = await supabase.auth.mfa.listFactors();
+        const totpFactor = (factorsData.totp ?? [])[0];
+        if (totpFactor) {
+          setMfaFactorId(totpFactor.id);
+          setMfaCode('');
+          return; // stay on /auth, the MFA step UI will render
+        }
+      }
+    } catch {
+      // If MFA checks fail, proceed to normal navigation.
+    }
+    // No MFA required → the useEffect on `user` will navigate to "/".
+  };
+
+  const handleMfaVerify = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!mfaFactorId || mfaCode.length !== 6) return;
+    setMfaVerifying(true);
+    try {
+      await challengeAndVerify(mfaFactorId, mfaCode);
+      setMfaFactorId(null);
+      setMfaCode('');
+      // Navigation to "/" is handled by the useEffect on `user`.
+    } catch (err) {
+      toast({
+        title: 'Codice 2FA non valido',
+        description: (err as Error).message || 'Verifica non riuscita, riprova',
+        variant: 'destructive',
+      });
+    } finally {
+      setMfaVerifying(false);
+    }
+  };
+
+  const handleMfaCancel = async () => {
+    // Abort the MFA step: sign the partial session out and return to the form.
+    await supabase.auth.signOut();
+    setMfaFactorId(null);
+    setMfaCode('');
   };
 
   const handleSignUp = async (e: React.FormEvent) => {
@@ -220,6 +276,37 @@ export default function Auth() {
                   Torna al login
                 </Button>
               </div>
+            ) : mfaFactorId ? (
+              <form onSubmit={handleMfaVerify} className="space-y-6">
+                <div className="text-center space-y-2">
+                  <div className="mx-auto p-3 rounded-xl bg-primary/10 text-primary w-fit">
+                    <KeyRound className="w-6 h-6" />
+                  </div>
+                  <h2 className="text-xl font-display">Verifica in due passaggi</h2>
+                  <p className="text-sm text-muted-foreground">
+                    Inserisci il codice a 6 cifre dalla tua app di autenticazione.
+                  </p>
+                </div>
+                <div className="flex flex-col items-center gap-3">
+                  <InputOTP maxLength={6} value={mfaCode} onChange={(v) => setMfaCode(v)}>
+                    <InputOTPGroup>
+                      <InputOTPSlot index={0} />
+                      <InputOTPSlot index={1} />
+                      <InputOTPSlot index={2} />
+                      <InputOTPSlot index={3} />
+                      <InputOTPSlot index={4} />
+                      <InputOTPSlot index={5} />
+                    </InputOTPGroup>
+                  </InputOTP>
+                </div>
+                <Button type="submit" className="w-full" disabled={mfaVerifying || mfaCode.length !== 6}>
+                  {mfaVerifying && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Verifica
+                </Button>
+                <Button type="button" variant="link" className="w-full text-muted-foreground" onClick={handleMfaCancel}>
+                  Annulla
+                </Button>
+              </form>
             ) : (
             <Tabs defaultValue="signin" className="w-full">
               <TabsList className="grid w-full grid-cols-2 mb-6">

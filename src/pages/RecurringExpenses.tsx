@@ -34,8 +34,10 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Switch } from '@/components/ui/switch';
 import { CURRENCY_SYMBOLS } from '@/lib/constants';
-import { Plus, Edit2, Trash2, RefreshCw, Calendar } from 'lucide-react';
+import { Plus, Edit2, Trash2, RefreshCw, Calendar, Sparkles, X, Check } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useRecurringCandidates } from '@/hooks/useRecurringCandidates';
+import { Badge } from '@/components/ui/badge';
 
 export default function RecurringExpenses() {
   const { recurringExpenses, isLoading, createRecurringExpense, updateRecurringExpense, deleteRecurringExpense, processDueExpenses } = useRecurringExpenses();
@@ -99,6 +101,22 @@ export default function RecurringExpenses() {
     setWeekInterval(expense.week_interval || 1);
     setNextDueDate(expense.next_due_date);
     setDialogOpen(true);
+  };
+
+  // Detected recurring-expense suggestions.
+  const { candidates, ignore: ignoreCandidate } = useRecurringCandidates();
+
+  const acceptCandidate = (c: (typeof candidates)[0]) => {
+    // Pre-fill the create form with the detected values and open it.
+    setEditingExpense(null);
+    setName(c.description);
+    setAmount(String(c.medianAmount));
+    setCategoryId('');
+    setFrequency(c.frequency);
+    setWeekInterval(1);
+    setNextDueDate(c.suggestedNextDueDate);
+    setDialogOpen(true);
+    ignoreCandidate(c.normalizedKey);
   };
 
   const handleDelete = async (id: string) => {
@@ -230,6 +248,46 @@ export default function RecurringExpenses() {
             </Dialog>
           </div>
         </div>
+
+        {/* Detected recurring-expense suggestions */}
+        {candidates.length > 0 && (
+          <div className="glass rounded-xl p-4 space-y-3">
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-primary" />
+              <h3 className="font-medium">Suggerimenti rilevati</h3>
+              <Badge variant="secondary">{candidates.length}</Badge>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Abbiamo rilevato spese ricorrenti nelle tue transazioni. Aggiungile per automatizzarle.
+            </p>
+            <ul className="space-y-2">
+              {candidates.map((c) => (
+                <li
+                  key={c.normalizedKey}
+                  className="flex items-center justify-between gap-3 rounded-lg border border-border p-3"
+                >
+                  <div className="min-w-0">
+                    <p className="font-medium truncate">{c.description}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {CURRENCY_SYMBOLS.EUR}{c.medianAmount.toLocaleString('it-IT', { minimumFractionDigits: 2 })} ·{' '}
+                      {FREQUENCY_LABELS[c.frequency]} · {c.occurrenceCount} occorrenze
+                      {c.confidence === 'high' && ' · alta affidabilità'}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <Button size="sm" onClick={() => acceptCandidate(c)}>
+                      <Check className="w-4 h-4 mr-1" />
+                      Aggiungi
+                    </Button>
+                    <Button size="icon" variant="ghost" onClick={() => ignoreCandidate(c.normalizedKey)}>
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
         {isLoading ? (
           <div className="text-center py-12 text-muted-foreground">Caricamento...</div>

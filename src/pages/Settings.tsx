@@ -34,6 +34,7 @@ import RevolutImportDialog from '@/components/settings/RevolutImportDialog';
 import BankImportDialog from '@/components/settings/BankImportDialog';
 import ISINMappingsDialog from '@/components/settings/ISINMappingsDialog';
 import CoupleSettingsSection from '@/components/settings/CoupleSettingsSection';
+import SecuritySection from '@/components/settings/SecuritySection';
 import { Category, TransactionType, CurrencyCode } from '@/lib/types';
 import { EMOJI_OPTIONS, COLOR_OPTIONS, CURRENCY_SYMBOLS } from '@/lib/constants';
 import { useProfile } from '@/hooks/useProfile';
@@ -777,6 +778,9 @@ export default function Settings() {
 
           {/* Couple Expenses Section */}
           {permissions?.couple_expenses && <CoupleSettingsSection />}
+
+          {/* Security: 2FA + login activity + sessions */}
+          <SecuritySection />
 
           {/* Privacy & Data (GDPR) */}
           <div className="border-t border-border pt-6 space-y-4">

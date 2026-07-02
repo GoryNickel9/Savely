@@ -249,10 +249,16 @@ export interface SharedExpense {
   original_tx_id: string;
   created_by: string;
   split_percentage: number;
+  /** 'equal' = 50/50 (default), 'custom' = partner_amount is the partner's share. */
+  split_mode: SplitMode;
+  /** The partner's explicit share; only set when split_mode === 'custom'. */
+  partner_amount: number | null;
   couple_category_name: string | null;
   created_at: string;
   updated_at: string;
 }
+
+export type SplitMode = 'equal' | 'custom';
 
 /**
  * Row returned by shared_expenses_view.
@@ -261,6 +267,8 @@ export interface SharedExpense {
 export interface SharedExpenseView extends SharedExpense {
   total_amount: number;
   my_share_amount: number;
+  partner_share_amount: number;
+  creator_share_amount: number;
   currency: CurrencyCode;
   exchange_rate_eur: number;
   description: string | null;

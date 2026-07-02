@@ -2,9 +2,11 @@ import { useTransactions } from '@/hooks/useTransactions';
 import { usePortfolio } from '@/hooks/usePortfolio';
 import { useBudgets } from '@/hooks/useBudgets';
 import { CURRENCY_SYMBOLS } from '@/lib/constants';
+import { calculateNetWorth } from '@/lib/netWorth';
 import StatCard from '@/components/dashboard/StatCard';
 import MainLayout from '@/components/layout/MainLayout';
 import { Wallet, TrendingUp, TrendingDown, PieChart } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 export default function Dashboard() {
   const { transactions } = useTransactions();
@@ -65,21 +67,9 @@ export default function Dashboard() {
     .reduce((sum, t) => sum + Number(t.amount), 0);
 
   const totalBudget = budgets.reduce((sum, b) => sum + Number(b.amount), 0);
-  
-  // Patrimonio Netto = Cashflow (entrate totali - uscite totali) + P&L del portfolio (esclusi liquidità e immobili) + Valore immobili (scontato del 25%)
-  const cashflow = totalIncome - totalExpense;
-  
-  // Calcola valore degli immobili con sconto del 25%
-  const realEstateValue = openAssets
-    .filter(a => a.type === 'real_estate')
-    .reduce((sum, asset) => {
-      const price = asset.current_price ?? asset.purchase_price;
-      return sum + (price * asset.quantity);
-    }, 0);
-  
-  const realEstateDiscountedValue = realEstateValue * 0.75; // Sconto del 25%
-  
-  const netWorth = cashflow + portfolioPL + realEstateDiscountedValue;
+
+  // Patrimonio Netto — formula centralizzata in src/lib/netWorth.ts.
+  const { netWorth } = calculateNetWorth({ transactions, assets: openAssets });
 
   return (
     <MainLayout>
@@ -90,11 +80,13 @@ export default function Dashboard() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-6">
-          <StatCard
-            title="Patrimonio Netto"
-            value={`${CURRENCY_SYMBOLS.EUR}${netWorth.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
-            icon={<Wallet className="w-6 h-6" />}
-          />
+          <Link to="/net-worth" className="block">
+            <StatCard
+              title="Patrimonio Netto"
+              value={`${CURRENCY_SYMBOLS.EUR}${netWorth.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+              icon={<Wallet className="w-6 h-6" />}
+            />
+          </Link>
           <StatCard
             title="Entrate del Mese"
             value={`${CURRENCY_SYMBOLS.EUR}${monthlyIncome.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}

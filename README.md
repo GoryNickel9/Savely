@@ -20,6 +20,7 @@ Web application completa per la gestione delle finanze personali: transazioni, b
 - [Import / Export dati](#import--export-dati)
 - [API e integrazioni esterne](#api-e-integrazioni-esterne)
 - [Sicurezza](#sicurezza)
+- [Testing](#testing)
 - [CI/CD e deploy](#cicd-e-deploy)
 - [Contribuire](#contribuire)
 
@@ -82,6 +83,7 @@ Per gestire le spese che si ripetono nel tempo (affitto, abbonamenti, rate):
 - Per le frequenze settimanali si può impostare l'**intervallo** in settimane (es. ogni 2 settimane).
 - Una **Edge Function cron** (`process-recurring-expenses`) genera automaticamente le transazioni quando arriva la scadenza.
 - Possibilità di processare manualmente le scadenze in ritardo.
+- **Suggerimenti rilevati**: l'app analizza lo storico delle transazioni e propone spese che sembrano ricorrenti (stessa descrizione normalizzata + cadenza regolare + importo consistente), con un bottone "Aggiungi" che precompila il form e "Ignora" per nasconderle (memorizzato localmente). Esclude già le ricorrenze tracciate.
 
 #### 🐷 Budget (`/budget`)
 Per pianificare e monitorare la spesa mensile:
@@ -108,6 +110,19 @@ Analisi visiva delle tue entrate e uscite, suddivisa in tre sezioni:
 
 Tutti i grafici supportano filtri temporali (tutto, anno, mese, da una data, tra due date) e l'aggregazione mensile.
 
+#### 💰 Patrimonio (`/net-worth`)
+Tracciamento storico del **Patrimonio Netto** nel tempo:
+- **Storico giornaliero** popolato da uno snapshot notturno (cron pg_cron `snapshot-net-worth-daily`, alle 01:05 UTC) che ricalcola il patrimonio per ogni utente. Un backfill one-shot ha pre-popolato lo storico dal 2024-01-01.
+- **Formula** (centralizzata in `src/lib/netWorth.ts` e replicata in SQL): cashflow (entrate − uscite di sempre) + P&L realizzato delle posizioni di investimento aperte (escluse liquidità, immobili e "altro") + valore degli immobili scontato del 25%.
+- **Composizione** del patrimonio in card separate (cashflow, P&L investimenti, immobili scontati) e variazione % rispetto al primo punto del periodo visibile.
+- La card "Patrimonio Netto" in Dashboard è cliccabile e porta a questa pagina.
+
+#### 🔮 Previsioni (`/forecast`)
+Proiezione del **saldo di cassa** sui prossimi mesi (3/6/12 selezionabili):
+- Combina un **burn rate giornaliero** derivato dalla spesa mensile mediana (ultimi 730 giorni) con le **spese ricorrenti note**, proiettate in avanti alle rispettive scadenze (logica `nextDueDate` coerente con l'Edge Function `process-recurring-expenses`).
+- Mostra saldo attuale, saldo proiettato a fine periodo e la **prima data di rischio scoperto** (se il saldo va sotto zero), con grafico area e linea rossa sullo zero.
+- La logica è pura e testata in `src/lib/forecast.ts` (`projectCashFlow`).
+
 #### ⚙️ Impostazioni (`/settings`)
 Gestione del proprio account e dei dati:
 - **Informazioni Account**: modifica credenziali (email, password) con verifica della password attuale, logout.
@@ -116,6 +131,9 @@ Gestione del proprio account e dei dati:
 - **Gestione Categorie**: creazione/modifica/eliminazione di categorie personalizzate con icona (emoji) e colore.
 - **Sezione Coppia** (se permesso `couple_expenses`): gestione dell'accoppiamento con il partner.
 - **Mappature ISIN** (per portfolio): collegamento dei simboli agli ISIN per l'aggiornamento automatico dei prezzi.
+- **Sicurezza**:
+  - **Autenticazione a due fattori (2FA)** opt-in via TOTP (Google Authenticator, Authy, 1Password…). Enrollment con QR code + secret testuale, verifica, rimozione. Al login, se l'utente ha un fattore attivo viene richiesto il codice a 6 cifre (livello AAL2).
+  - **Accessi recenti**: storico degli eventi di login/logout/recupero/verifica 2FA con dispositivo e browser riconosciuti (Parsing dello user-agent), e pulsante "Disconnetti altre sessioni".
 
 ---
 
@@ -164,7 +182,7 @@ Catalogo della propria collezione libreria, con valutazione:
 #### 💞 Budget Familiare (permesso `couple_expenses`)
 Per gestire le finanze condivise con un partner:
 - **Accoppiamento**: sistema di invito/accettazione (richiesta → connessione) tra due utenti.
-- **Spese condivise**: una transazione può essere condivisa con il partner con uno **split percentuale** personalizzato; il partner vede l'importo, la valuta, la descrizione e la data, ma **mai la categoria personale** del creatore (per proteggerne la privacy).
+- **Spese condivise**: una transazione può essere condivisa con il partner con **due modalità di divisione**: 50/50 (predefinito) oppure **importi personalizzati** (quota tua / quota partner esplicite); il partner vede l'importo, la valuta, la descrizione e la data, ma **mai la categoria personale** del creatore (per proteggerne la privacy).
 - **Budget condiviso**: budget mensili per "categoria di coppia" (nome testuale condiviso, non legato ai category_id personali).
 - **Suggerimento basato sui dati**: spesa mediana mensile condivisa calcolata sugli storici.
 - **Audit log immutabile** di tutte le azioni sulla connessione (creazione, revoca, ecc.).
@@ -200,11 +218,12 @@ spendy_cloud/
 │   │   ├── fire/            #   Standard/Barista FIRE
 │   │   ├── tcg/             #   Magic / Pokémon / Yu-Gi-Oh
 │   │   ├── libreria/        #   Libri / Fumetti / Manga
-│   │   └── ...              #   Dashboard, Transactions, Portfolio, ecc.
+│   │   └── ...              #   Dashboard, Transactions, Portfolio, NetWorth, Forecast, ecc.
 │   ├── types/               # tipi dominio (import)
 │   ├── App.tsx              # router + route guards
 │   ├── main.tsx             # entry point
 │   └── index.css            # stili globali + Tailwind
+├── e2e/                     # test end-to-end (Playwright)
 ├── supabase/
 │   ├── functions/           # Edge Functions (Deno)
 │   ├── migrations/          # migrazioni database PostgreSQL
@@ -215,6 +234,7 @@ spendy_cloud/
 ├── package.json
 ├── vite.config.ts
 ├── tailwind.config.ts
+├── playwright.config.ts      # configurazione E2E
 └── vercel.json               # SPA rewrites + security headers
 ```
 
@@ -285,7 +305,7 @@ Le Edge Functions leggono invece secret lato server (es. `ALLOWED_ORIGIN`, chiav
 
 ### Database
 
-Lo schema include (tra le altre) le tabelle: `profiles`, `transactions`, `categories`, `budgets`, `savings_goals`, `portfolio_assets`, `recurring_expenses`, `manual_price_updates`, tabelle Poker/Fumo, `tcg_cards`, `library_items`, `couple_connections`, `couple_connection_requests`, `shared_expenses`, `couple_budgets`, `couple_audit_log`, oltre a view e RLS policies. Lo schema è definito interamente tramite **migrazioni** in `supabase/migrations/`.
+Lo schema include (tra le altre) le tabelle: `profiles`, `transactions`, `categories`, `budgets`, `savings_goals`, `portfolio_assets`, `recurring_expenses`, `manual_price_updates`, `net_worth_snapshots`, `login_activity`, tabelle Poker/Fumo, `tcg_cards`, `library_items`, `couple_connections`, `couple_connection_requests`, `shared_expenses` (con `split_mode` e `partner_amount`), `couple_budgets`, `couple_audit_log`, oltre a view (inclusa `shared_expenses_view` con quote calcolate) e RLS policies. Lo schema è definito interamente tramite **migrazioni** in `supabase/migrations/`.
 
 ---
 
@@ -300,6 +320,8 @@ npm run lint         # ESLint
 npm run typecheck    # controllo tipi TypeScript (tsc --noEmit)
 npm run test         # unit test (Vitest)
 npm run test:watch   # test in watch mode
+npm run e2e          # test end-to-end (Playwright)
+npm run e2e:ui       # test E2E in modalità interattiva
 ```
 
 ---
@@ -344,7 +366,7 @@ Esporta tutti i dati in un unico file Excel con i fogli Transazioni, Categorie, 
 
 | Servizio | Uso |
 |----------|-----|
-| **Supabase** | Auth, DB PostgreSQL, Realtime, Storage, Edge Functions |
+| **Supabase** | Auth (incluso MFA TOTP), DB PostgreSQL, Realtime, Storage, Edge Functions, pg_cron |
 | **Frankfurter API** | Tassi di cambio per la conversione multi-valuta in EUR |
 | **CardTrader API** | Prezzi e ricerca carte per il modulo TCG (tramite proxy Edge Function) |
 | **Jikan v4 (MyAnimeList)** | Ricerca manga per il modulo Libreria (tramite Edge Function `mangaworld-proxy`) |
@@ -369,19 +391,58 @@ Esporta tutti i dati in un unico file Excel con i fogli Transazioni, Categorie, 
 
 - **Content Security Policy** e security headers (X-Frame-Options, HSTS, Referrer-Policy, Permissions-Policy) configurati in `vercel.json`.
 - **Row Level Security** di Supabase sul database.
-- **Privacy nelle spese condivise**: le spese condivise di coppia espongono importo/valuta/descrizione ma **mai** il `category_id` personale del creatore (vedi `shared_expenses_view` e i commenti in `src/lib/types.ts`); esiste inoltre un audit log immutabile.
+- **Autenticazione a due fattori (TOTP)** opt-in: enrollment/verifica/rimozione tramite l'API MFA nativa di Supabase; la tabella `login_activity` (RLS per-user, append-only) traccia gli eventi di accesso.
+- **Privacy nelle spese condivise**: le spese condivise di coppia espongono importo/valuta/descrizione ma **mai** il `category_id` personale del creatore (vedi `shared_expenses_view` e i commenti in `src/lib/types.ts`); esiste inoltre un audit log immutabile. La coerenza dello split personalizzato è validata da un trigger SECURITY DEFINER.
 - **Validazione password** e controlli di sicurezza sugli import (`src/lib/passwordValidation.ts`, `src/lib/importFileSecurity.ts`, `src/lib/couple.security.test.ts`).
-- Suite di **unit test** con Vitest su calcoli finanziari, parsing CSV, sicurezza coppia, validazione password e sicurezza degli import.
+- Suite di **unit test** con Vitest su calcoli finanziari, parsing CSV, sicurezza coppia, validazione password, MFA, user-agent parsing e sicurezza degli import.
 
 ### Valute supportate
 EUR, USD, GBP, CHF, JPY, CNY, IDR — con conversione automatica in EUR.
 
 ---
 
+## Testing
+
+Il progetto ha due livelli di test.
+
+### Unit test (Vitest)
+Funzioni pure in `src/lib/*.test.ts`: calcoli finanziari (FIRE, net worth, forecast, statistiche), parsing CSV, sicurezza coppia, validazione password e MFA, parsing user-agent, detection ricorrenze, sicurezza degli import.
+
+```bash
+npm test          # run singolo
+npm run test:watch
+```
+
+### E2E (Playwright)
+Test end-to-end che guidano l'app reale in browser Chromium. Sono divisi in due progetti:
+- **public** (`*.public.spec.ts`): rotte pubbliche (`/auth`, `/privacy`, `/cookies`, `/terms`, NotFound, redirect guard) — non richiedono auth.
+- **authenticated** (`*.auth.spec.ts`): login, CRUD transazioni, route guard sui permessi, FIRE — richiedono credenziali.
+
+I test autenticati si collegano al progetto Supabase reale usando un **utente seedato dedicato** (`e2e-spendy@example.com`, senza permessi di modulo). Le credenziali vengono fornite via variabili d'ambiente:
+
+| Variabile | Descrizione |
+|-----------|-------------|
+| `E2E_USER_EMAIL` | Email dell'utente E2E seedato |
+| `E2E_USER_PASSWORD` | Password dell'utente E2E seedato |
+
+Se le variabili non sono impostate, i test autenticati vengono saltati (gli pubblici girano comunque). L'utente va creato una sola volta via Admin API (vedi `e2e/seed.sql` per la documentazione).
+
+```bash
+# Setup locale
+export E2E_USER_EMAIL=e2e-spendy@example.com
+export E2E_USER_PASSWORD=<password>
+npm run e2e            # run headless
+npm run e2e:ui         # modalità interattiva con UI
+```
+
+In CI i segreti sono configurati come GitHub secrets e il gate E2E gira ad ogni push/PR su `main`.
+
+---
+
 ## CI/CD e deploy
 
 ### CI (GitHub Actions — `.github/workflows/ci.yml`)
-Su push/PR su `main` vengono eseguiti 4 gate paralleli:
+Su push/PR su `main` vengono eseguiti 5 gate paralleli:
 
 | Gate | Cosa verifica |
 |------|---------------|
@@ -389,8 +450,7 @@ Su push/PR su `main` vengono eseguiti 4 gate paralleli:
 | **test** | `npm test` (Vitest) |
 | **typecheck** | `npm run typecheck` |
 | **security** | `npm audit --audit-level=high` |
-
-> Un gate E2E (Playwright) è predisposto ma attualmente disabilitato.
+| **e2e** | `npm run e2e` (Playwright) — richiede i secrets `E2E_USER_EMAIL` / `E2E_USER_PASSWORD`; genera un report caricato come artifact |
 
 ### Deploy
 L'app è pronta per il deploy su **Vercel**: `vercel.json` gestisce i rewrite SPA (tutto a `index.html`) e gli security headers.
@@ -401,7 +461,7 @@ L'app è pronta per il deploy su **Vercel**: `vercel.json` gestisce i rewrite SP
 
 1. Fai un fork del repository
 2. Crea un branch per la feature (`git checkout -b feature/nome-feature`)
-3. Verifica localmente: `npm run lint && npm run typecheck && npm test && npm run build`
+3. Verifica localmente: `npm run lint && npm run typecheck && npm test && npm run build` (e `npm run e2e` se tocchi flussi critici)
 4. Commit (`git commit -m 'feat: descrizione'`)
 5. Push e apri una Pull Request su `main`
 

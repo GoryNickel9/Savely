@@ -18,6 +18,48 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+/**
+ * Map Supabase auth events to login_activity.event_type values.
+ * Returns null for events we don't track (e.g. INITIAL_SESSION, TOKEN_REFRESHED).
+ */
+function authEventToLoginType(
+  event: string
+): 'sign_in' | 'sign_out' | 'sign_up' | 'recovery' | 'mfa_challenge' | null {
+  switch (event) {
+    case 'SIGNED_IN':
+      return 'sign_in';
+    case 'SIGNED_OUT':
+      return 'sign_out';
+    case 'USER_UPDATED':
+      // A successful sign-up fires SIGNED_IN with a session; treat USER_UPDATED
+      // alone as a registration hint if it's the first event.
+      return null;
+    case 'PASSWORD_RECOVERY':
+      return 'recovery';
+    case 'MFA_CHALLENGE_VERIFIED':
+      return 'mfa_challenge';
+    default:
+      return null;
+  }
+}
+
+/**
+ * Insert a login_activity row. Fire-and-forget; failures are swallowed so the
+ * auth flow never breaks on audit errors.
+ */
+function recordLoginEvent(event: string, userId: string | undefined) {
+  const eventType = authEventToLoginType(event);
+  if (!eventType || !userId) return;
+  supabase
+    .from('login_activity')
+    .insert({
+      user_id: userId,
+      event_type: eventType,
+      user_agent: typeof navigator !== 'undefined' ? navigator.userAgent : null,
+    })
+    .then(() => undefined, () => undefined);
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
@@ -31,6 +73,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
+
+        // Best-effort login activity logging (audit). Failures are swallowed.
+        recordLoginEvent(event, session?.user?.id);
 
         if (event === 'PASSWORD_RECOVERY') {
           navigate('/reset-password', { replace: true });

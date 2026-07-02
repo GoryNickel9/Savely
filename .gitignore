@@ -17,6 +17,13 @@ dist-ssr
 ISTRUZIONI_AVVIO.txt
 start_dev_server.py
 plans/
+supabase/.temp/
+
+# Playwright
+e2e/.auth/
+test-results/
+playwright-report/
+/playwright/.cache/
 
 # Editor directories and files
 .vscode/*

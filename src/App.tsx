@@ -18,6 +18,8 @@ import ChartsIncomeExpense from "./pages/ChartsIncomeExpense";
 import ChartsExpense from "./pages/ChartsExpense";
 import ChartsIncome from "./pages/ChartsIncome";
 import Portfolio from "./pages/Portfolio";
+import NetWorth from "./pages/NetWorth";
+import Forecast from "./pages/Forecast";
 import Settings from "./pages/Settings";
 import Admin from "./pages/Admin";
 import Poker from "./pages/Poker";
@@ -275,6 +277,8 @@ function AppRoutes() {
       <Route path="/charts/expense" element={<ProtectedRoute><ChartsExpense /></ProtectedRoute>} />
       <Route path="/charts/income" element={<ProtectedRoute><ChartsIncome /></ProtectedRoute>} />
       <Route path="/portfolio" element={<ProtectedRoute><Portfolio /></ProtectedRoute>} />
+      <Route path="/net-worth" element={<ProtectedRoute><NetWorth /></ProtectedRoute>} />
+      <Route path="/forecast" element={<ProtectedRoute><Forecast /></ProtectedRoute>} />
       <Route path="/fumo" element={<FumoRoute><Fumo /></FumoRoute>} />
       <Route path="/fumo/liquido-sigaretta" element={<FumoRoute><FumoLiquidoSigaretta /></FumoRoute>} />
       <Route path="/fumo/cbd" element={<FumoRoute><FumoCBD /></FumoRoute>} />
