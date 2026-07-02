@@ -98,8 +98,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { error: error as Error | null };
   };
 
+  const siteUrl = import.meta.env.VITE_SITE_URL || window.location.origin;
+
   const signUp = async (email: string, password: string, fullName?: string) => {
-    const redirectUrl = `${window.location.origin}/auth/callback`;
+    const redirectUrl = `${siteUrl}/auth/callback`;
     
     // DEBUG: Log per verificare l'URL di redirect (solo in sviluppo)
     if (import.meta.env.DEV) {
@@ -130,7 +132,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const resetPassword = async (email: string) => {
-    const redirectUrl = `${window.location.origin}/reset-password`;
+    const redirectUrl = `${siteUrl}/reset-password`;
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: redirectUrl,
     });

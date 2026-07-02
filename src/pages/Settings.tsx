@@ -325,6 +325,7 @@ export default function Settings() {
                         placeholder="Inserisci la password attuale per confermare"
                         value={currentPassword}
                         onChange={(e) => setCurrentPassword(e.target.value)}
+                        autoComplete="current-password"
                         required
                       />
                     </div>
@@ -344,6 +345,7 @@ export default function Settings() {
                         placeholder="Lascia vuoto per non cambiare"
                         value={newPassword}
                         onChange={(e) => setNewPassword(e.target.value)}
+                        autoComplete="new-password"
                       />
                       
                       {/* Password Requirements Indicator */}
@@ -376,6 +378,7 @@ export default function Settings() {
                           placeholder="Conferma la nuova password"
                           value={confirmPassword}
                           onChange={(e) => setConfirmPassword(e.target.value)}
+                          autoComplete="new-password"
                           required
                         />
                       </div>

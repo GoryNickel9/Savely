@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,20 +17,24 @@ export default function ResetPassword() {
   const [errors, setErrors] = useState<{ password?: string; confirmPassword?: string }>({});
   const [hasAccess, setHasAccess] = useState(false);
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { toast } = useToast();
 
   useEffect(() => {
-    // Check if user arrived via password reset link
+    // Grant immediate access if arriving via recovery email (type param in URL)
+    const isRecoveryLink = searchParams.get('type') === 'recovery';
+    if (isRecoveryLink) {
+      setHasAccess(true);
+    }
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'PASSWORD_RECOVERY') {
         setHasAccess(true);
       } else if (session) {
-        // User is already logged in, allow password change
         setHasAccess(true);
       }
     });
 
-    // Also check current session
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
         setHasAccess(true);
@@ -40,7 +44,7 @@ export default function ResetPassword() {
     return () => {
       subscription.unsubscribe();
     };
-  }, []);
+  }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
