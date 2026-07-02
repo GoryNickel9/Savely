@@ -106,11 +106,10 @@ jobs:
   # ─────────────────────────────────────────
   # Priority 3 — E2E gate (Playwright)
   # Richiede i secrets:
-  #   - VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY: valori pubblici del progetto
-  #     Supabase (servono al dev server per inizializzare l'app; la sicurezza è
-  #     garantita da RLS, non dalla chiave anon).
   #   - E2E_USER_EMAIL / E2E_USER_PASSWORD: utente seedato (e2e/seed.sql).
   #     Se mancanti, i test autenticati vengono saltati ma il gate pubblico gira.
+  # I valori Supabase (URL + anon key) sono hard-coded nel workflow perché
+  # pubblici per design (la chiave anon vive nel bundle client; sicurezza via RLS).
   # ─────────────────────────────────────────
   e2e:
     name: E2E gate (Playwright)
@@ -132,16 +131,18 @@ jobs:
         run: npx playwright install --with-deps chromium
 
       - name: Write app env for E2E
-        env:
-          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
-          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+        # I valori Supabase (URL + chiave anon) sono PUBBLICI per design: la chiave
+        # anon è pensata per essere embedded nel bundle JavaScript del browser
+        # (vive in .env.local del progetto). La sicurezza è garantita da Row Level
+        # Security di Supabase, non dalla segretezza della chiave. Per questo li
+        # hardcodiamo qui invece di gestirli come secret — evita failure silenti
+        # della CI se i secret non sono configurati correttamente.
         run: |
-          if [ -z "$VITE_SUPABASE_URL" ] || [ -z "$VITE_SUPABASE_ANON_KEY" ]; then
-            echo "::error::I secrets VITE_SUPABASE_URL e/o VITE_SUPABASE_ANON_KEY non sono impostati. L'app non può inizializzarsi in CI (pagina bianca)."
-            exit 1
-          fi
-          printf 'VITE_SUPABASE_URL=%s\nVITE_SUPABASE_ANON_KEY=%s\n' "$VITE_SUPABASE_URL" "$VITE_SUPABASE_ANON_KEY" > .env.local
-          echo ".env.local scritto (lunghezza chiave: ${#VITE_SUPABASE_ANON_KEY})"
+          printf 'VITE_SUPABASE_URL=%s\nVITE_SUPABASE_ANON_KEY=%s\n' \
+            'https://crqnfbahytzenisospcx.supabase.co' \
+            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNycW5mYmFoeXR6ZW5pc29zcGN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc1MzI4ODUsImV4cCI6MjA4MzEwODg4NX0.2DUoXTd-Mo40TIxJpH0JRBzCg8o18WQsRZS5R9Up9os' \
+            > .env.local
+          echo ".env.local scritto per il dev server"
 
       - name: Run Playwright tests
         env:
