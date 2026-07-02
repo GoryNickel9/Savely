@@ -30,17 +30,19 @@ COMMENT ON FUNCTION public.is_couple_expenses_enabled() IS
 -- ============================================================
 CREATE OR REPLACE FUNCTION public.is_in_connection(p_connection_id UUID)
 RETURNS boolean
-LANGUAGE sql
+LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public
 AS $$
-  SELECT EXISTS (
+BEGIN
+  RETURN EXISTS (
     SELECT 1
     FROM public.couple_connections cc
     WHERE cc.id = p_connection_id
       AND cc.revoked_at IS NULL
       AND (cc.user_a = auth.uid() OR cc.user_b = auth.uid())
   );
+END;
 $$;
 
 COMMENT ON FUNCTION public.is_in_connection(UUID) IS
@@ -53,16 +55,18 @@ COMMENT ON FUNCTION public.is_in_connection(UUID) IS
 -- ============================================================
 CREATE OR REPLACE FUNCTION public.is_in_connection_any(p_connection_id UUID)
 RETURNS boolean
-LANGUAGE sql
+LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public
 AS $$
-  SELECT EXISTS (
+BEGIN
+  RETURN EXISTS (
     SELECT 1
     FROM public.couple_connections cc
     WHERE cc.id = p_connection_id
       AND (cc.user_a = auth.uid() OR cc.user_b = auth.uid())
   );
+END;
 $$;
 
 COMMENT ON FUNCTION public.is_in_connection_any(UUID) IS

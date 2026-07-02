@@ -109,31 +109,35 @@ $$;
 
 CREATE OR REPLACE FUNCTION public.is_in_connection(p_connection_id UUID)
 RETURNS boolean
-LANGUAGE sql
+LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public
 AS $$
-  SELECT EXISTS (
+BEGIN
+  RETURN EXISTS (
     SELECT 1
     FROM public.couple_connections cc
     WHERE cc.id = p_connection_id
       AND cc.revoked_at IS NULL
       AND (cc.user_a = auth.uid() OR cc.user_b = auth.uid())
   );
+END;
 $$;
 
 CREATE OR REPLACE FUNCTION public.is_in_connection_any(p_connection_id UUID)
 RETURNS boolean
-LANGUAGE sql
+LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public
 AS $$
-  SELECT EXISTS (
+BEGIN
+  RETURN EXISTS (
     SELECT 1
     FROM public.couple_connections cc
     WHERE cc.id = p_connection_id
       AND (cc.user_a = auth.uid() OR cc.user_b = auth.uid())
   );
+END;
 $$;
 
 CREATE OR REPLACE FUNCTION public.find_user_by_couple_code(p_code TEXT)
