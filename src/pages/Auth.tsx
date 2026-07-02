@@ -11,6 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, TrendingUp, Shield, PieChart, Check, X, MailCheck } from 'lucide-react';
 import { z } from 'zod';
 import { passwordSchema, checkPasswordRequirements, passwordRequirementsList } from '@/lib/passwordValidation';
+import { Checkbox } from '@/components/ui/checkbox';
 
 const authSchema = z.object({
   email: z.string().email('Email non valida'),
@@ -29,6 +30,7 @@ export default function Auth() {
   const [resetDialogOpen, setResetDialogOpen] = useState(false);
   const [resetSent, setResetSent] = useState(false);
   const [sentEmail, setSentEmail] = useState('');
+  const [privacyAccepted, setPrivacyAccepted] = useState(false);
   const { user, signIn, signUp, resetPassword } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -79,6 +81,15 @@ export default function Auth() {
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateForm()) return;
+
+    if (!privacyAccepted) {
+      toast({
+        title: 'Consenso obbligatorio',
+        description: 'Devi accettare la Privacy Policy, la Cookie Policy e i Termini di servizio per registrarti.',
+        variant: 'destructive',
+      });
+      return;
+    }
 
     setLoading(true);
     const { error } = await signUp(email, password, fullName);
@@ -169,6 +180,17 @@ export default function Auth() {
         </div>
         
         <p className="text-sm text-muted-foreground">© 2024 Spendy. Tutti i diritti riservati.</p>
+        <div className="flex gap-4 text-sm text-muted-foreground">
+          <a href="/privacy" target="_blank" rel="noopener noreferrer" className="hover:text-foreground hover:underline">
+            Privacy
+          </a>
+          <a href="/cookies" target="_blank" rel="noopener noreferrer" className="hover:text-foreground hover:underline">
+            Cookie
+          </a>
+          <a href="/terms" target="_blank" rel="noopener noreferrer" className="hover:text-foreground hover:underline">
+            Termini
+          </a>
+        </div>
       </div>
 
       {/* Right side - Auth form */}
@@ -325,6 +347,29 @@ export default function Auth() {
                         })}
                       </div>
                     )}
+                  </div>
+                  <div className="flex items-start gap-3 rounded-lg border border-border p-3 bg-muted/30">
+                    <Checkbox
+                      id="privacy-consent"
+                      checked={privacyAccepted}
+                      onCheckedChange={(v) => setPrivacyAccepted(v === true)}
+                      className="mt-0.5"
+                    />
+                    <label htmlFor="privacy-consent" className="text-sm text-muted-foreground cursor-pointer leading-relaxed">
+                      Ho letto e accetto la{' '}
+                      <a href="/privacy" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                        Privacy Policy
+                      </a>
+                      , la{' '}
+                      <a href="/cookies" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                        Cookie Policy
+                      </a>{' '}
+                      e i{' '}
+                      <a href="/terms" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                        Termini di servizio
+                      </a>
+                      .
+                    </label>
                   </div>
                   <Button type="submit" className="w-full" disabled={loading}>
                     {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

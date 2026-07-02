@@ -151,4 +151,29 @@
   .glow-accent {
     box-shadow: 0 0 40px hsl(var(--accent) / 0.15);
   }
+
+  /* Tipografia per le pagine legali (Privacy, Cookie, Termini) */
+  .prose-legal {
+    @apply text-sm sm:text-base;
+  }
+
+  .prose-legal p {
+    @apply text-muted-foreground;
+  }
+
+  .prose-legal ul {
+    @apply list-disc pl-5 space-y-1 text-muted-foreground marker:text-primary/60;
+  }
+
+  .prose-legal a {
+    @apply text-primary hover:underline underline-offset-2;
+  }
+
+  .prose-legal strong {
+    @apply text-foreground font-medium;
+  }
+
+  .prose-legal .callout {
+    @apply rounded-lg border border-border bg-muted/40 p-4 text-sm text-muted-foreground;
+  }
 }

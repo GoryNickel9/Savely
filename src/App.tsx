@@ -40,6 +40,10 @@ import LibreriaIndex from "./pages/libreria/Index";
 import LibreriaLibri from "./pages/libreria/Libri";
 import LibreriaFumetti from "./pages/libreria/Fumetti";
 import LibreriaManga from "./pages/libreria/Manga";import CoupleBudget from './pages/CoupleBudget';import NotFound from "./pages/NotFound";
+import Privacy from "./pages/Privacy";
+import Cookies from "./pages/Cookies";
+import Termini from "./pages/Termini";
+import CookieBanner from "@/components/CookieBanner";
 
 const queryClient = new QueryClient();
 
@@ -258,6 +262,9 @@ function AppRoutes() {
       <Route path="/auth" element={<Auth />} />
       <Route path="/auth/callback" element={<AuthCallback />} />
       <Route path="/reset-password" element={<ResetPassword />} />
+      <Route path="/privacy" element={<Privacy />} />
+      <Route path="/cookies" element={<Cookies />} />
+      <Route path="/terms" element={<Termini />} />
       <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
       <Route path="/transactions" element={<ProtectedRoute><Transactions /></ProtectedRoute>} />
       <Route path="/recurring" element={<ProtectedRoute><RecurringExpenses /></ProtectedRoute>} />
@@ -304,6 +311,7 @@ const App = () => (
           <Toaster />
           <Sonner />
           <AppRoutes />
+          <CookieBanner />
         </TooltipProvider>
       </AuthProvider>
     </BrowserRouter>

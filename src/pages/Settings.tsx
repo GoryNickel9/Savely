@@ -4,11 +4,12 @@ import { useCategories } from '@/hooks/useCategories';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { LogOut, User, Download, Upload, FileSpreadsheet, Trash2, Settings2, Edit2, FolderPlus, Folder, FolderPen, Check, X } from 'lucide-react';
+import { LogOut, User, Download, Upload, FileSpreadsheet, Trash2, Settings2, Edit2, FolderPlus, Folder, FolderPen, Check, X, ShieldCheck, FileText } from 'lucide-react';
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { passwordSchema, confirmPasswordSchema, checkPasswordRequirements, passwordRequirementsList } from '@/lib/passwordValidation';
 import {
   AlertDialog,
@@ -86,22 +87,54 @@ export default function Settings() {
     setIsExporting(true);
 
     try {
-      // Fetch all data
-      const [transactionsRes, categoriesRes, budgetsRes, savingsRes, portfolioRes] = await Promise.all([
-        supabase.from('transactions').select('*'),
-        supabase.from('categories').select('*'),
-        supabase.from('budgets').select('*'),
-        supabase.from('savings_goals').select('*'),
-        supabase.from('portfolio_assets').select('*'),
-      ]);
+      // Fetch all data — include every user-scoped table for GDPR portability (art. 20).
+      // Tabelle non presenti nei tipi generati vengono interrogate con cast `any`.
+      const tables = [
+        'transactions',
+        'categories',
+        'budgets',
+        'savings_goals',
+        'portfolio_assets',
+        'asset_price_history',
+        'recurring_expenses',
+        'category_mappings',
+        'isin_mappings',
+        'manual_price_updates',
+        'poker_manual_expenses',
+        'poker_monthly_expenses',
+        'poker_next_cut',
+        'poker_hourly_earnings',
+        'poker_rakeback',
+        'liquido_sigaretta',
+        'cbd',
+        'thc',
+        'tgc_cards',
+        'library_items',
+        'couple_connection_requests',
+        'couple_connections',
+        'couple_budgets',
+        'shared_expenses',
+      ] as const;
 
-      const rows = [
-        ...(transactionsRes.data ?? []).map(row => ({ entity: 'transactions', ...row })),
-        ...(categoriesRes.data ?? []).map(row => ({ entity: 'categories', ...row })),
-        ...(budgetsRes.data ?? []).map(row => ({ entity: 'budgets', ...row })),
-        ...(savingsRes.data ?? []).map(row => ({ entity: 'savings_goals', ...row })),
-        ...(portfolioRes.data ?? []).map(row => ({ entity: 'portfolio_assets', ...row })),
-      ];
+      const results = await Promise.all(
+        tables.map((t) =>
+          (supabase.from(t as unknown as keyof typeof supabase) as unknown as { select: (q: string) => Promise<{ data: unknown[] | null; error: { message: string } | null }> })
+            .select('*')
+            .then((res) => ({ table: t, ...res }))
+            // Tabelle non ancora create nel DB o senza RLS tornerebbero errore:
+            // le ignoriamo per non bloccare l'export delle altre.
+            .catch((err) => ({ table: t, data: null, error: { message: String(err) } }))
+        )
+      );
+
+      const rows: Array<Record<string, unknown>> = [];
+      for (const r of results) {
+        if (r.data && Array.isArray(r.data)) {
+          for (const row of r.data) {
+            rows.push({ entity: r.table, ...(row as Record<string, unknown>) });
+          }
+        }
+      }
 
       if (rows.length === 0) {
         toast({
@@ -744,6 +777,41 @@ export default function Settings() {
 
           {/* Couple Expenses Section */}
           {permissions?.couple_expenses && <CoupleSettingsSection />}
+
+          {/* Privacy & Data (GDPR) */}
+          <div className="border-t border-border pt-6 space-y-4">
+            <h3 className="font-medium flex items-center gap-2">
+              <ShieldCheck className="w-5 h-5" />
+              Privacy e Dati
+            </h3>
+            <p className="text-sm text-muted-foreground">
+              In conformityà al Regolamento (UE) 2016/679 (GDPR), hai diritto di accedere, rettificare, cancellare,
+              esportare (portabilità) e opporti al trattamento dei tuoi dati personali.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setImportExportDialogOpen(true)}
+                className="w-full sm:w-auto"
+              >
+                <Download className="w-4 h-4 mr-2" />
+                Esporta tutti i miei dati
+              </Button>
+              <Button asChild variant="outline" className="w-full sm:w-auto">
+                <Link to="/privacy">
+                  <FileText className="w-4 h-4 mr-2" />
+                  Privacy Policy
+                </Link>
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Per richieste relative ai tuoi dati scrivi a{' '}
+              <a href="mailto:[EMAIL RIMOSSA]" className="text-primary hover:underline">
+                [EMAIL RIMOSSA]
+              </a>
+              . Per cancellare definitivamente il tuo account, vedi la sezione "Zona Pericolo" sottostante.
+            </p>
+          </div>
 
           {/* Danger Zone */}
           <div className="border-t border-border pt-6 space-y-4">
