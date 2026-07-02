@@ -54,20 +54,36 @@ export default function Sidebar() {
         {navigation.map((item) => {
           const isActive = location.pathname === item.href;
           return (
-            <Link
-              key={item.name}
-              to={item.href}
-              onClick={() => setMobileOpen(false)}
-              className={cn(
-                'flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200',
-                isActive
-                  ? 'bg-primary text-primary-foreground shadow-lg glow-primary'
-                  : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
+            <div key={item.name}>
+              <Link
+                to={item.href}
+                onClick={() => setMobileOpen(false)}
+                className={cn(
+                  'flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200',
+                  isActive
+                    ? 'bg-primary text-primary-foreground shadow-lg glow-primary'
+                    : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
+                )}
+              >
+                <item.icon className="w-5 h-5" />
+                {item.name}
+              </Link>
+              {item.name === 'Budget' && permissions?.couple_expenses && (
+                <Link
+                  to="/couple-budget"
+                  onClick={() => setMobileOpen(false)}
+                  className={cn(
+                    'flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 pl-10',
+                    location.pathname === '/couple-budget'
+                      ? 'bg-primary text-primary-foreground shadow-lg glow-primary'
+                      : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
+                  )}
+                >
+                  <HeartHandshake className="w-5 h-5" />
+                  Budget Coppia
+                </Link>
               )}
-            >
-              <item.icon className="w-5 h-5" />
-              {item.name}
-            </Link>
+            </div>
           );
         })}
 
@@ -170,23 +186,6 @@ export default function Sidebar() {
           >
             <TrendingUp className="w-5 h-5" />
             Statistiche Deep Dive
-          </Link>
-        )}
-
-        {/* Sezione Budget Coppia - visibile solo agli utenti con permesso couple_expenses */}
-        {permissions?.couple_expenses && (
-          <Link
-            to="/couple-budget"
-            onClick={() => setMobileOpen(false)}
-            className={cn(
-              'flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200',
-              location.pathname === '/couple-budget'
-                ? 'bg-primary text-primary-foreground shadow-lg glow-primary'
-                : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
-            )}
-          >
-            <HeartHandshake className="w-5 h-5" />
-            Budget Coppia
           </Link>
         )}
 
