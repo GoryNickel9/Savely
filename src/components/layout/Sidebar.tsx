@@ -20,6 +20,7 @@ import {
   Flame,
   Library,
   BookOpen,
+  HeartHandshake,
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -169,6 +170,23 @@ export default function Sidebar() {
           >
             <TrendingUp className="w-5 h-5" />
             Statistiche Deep Dive
+          </Link>
+        )}
+
+        {/* Sezione Budget Coppia - visibile solo agli utenti con permesso couple_expenses */}
+        {permissions?.couple_expenses && (
+          <Link
+            to="/couple-budget"
+            onClick={() => setMobileOpen(false)}
+            className={cn(
+              'flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200',
+              location.pathname === '/couple-budget'
+                ? 'bg-primary text-primary-foreground shadow-lg glow-primary'
+                : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
+            )}
+          >
+            <HeartHandshake className="w-5 h-5" />
+            Budget Coppia
           </Link>
         )}
 

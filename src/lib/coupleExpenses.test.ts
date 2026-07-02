@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { validateCoupleCode, canShareExpense, calculateSharedAmount } from './coupleExpenses';
+import {
+  validateCoupleCode,
+  canShareExpense,
+  calculateSharedAmount,
+  filterSharedExpensesForBudget,
+  getMedianMonthlySpendingShared,
+  SharedExpenseForStats,
+} from './coupleExpenses';
 
 // ---------------------------------------------------------------------------
 // validateCoupleCode
@@ -126,5 +133,106 @@ describe('calculateSharedAmount', () => {
 
   it('throws for negative amounts', () => {
     expect(() => calculateSharedAmount(-1)).toThrow(RangeError);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Helpers for test fixtures
+// ---------------------------------------------------------------------------
+const se = (
+  date: string,
+  amount: number,
+  category: string | null = 'Cibo',
+  deleted: boolean = false
+): SharedExpenseForStats => ({
+  date,
+  my_share_amount: amount,
+  couple_category_name: category,
+  tx_deleted_at: deleted ? '2026-01-15T10:00:00Z' : null,
+});
+
+// ---------------------------------------------------------------------------
+// filterSharedExpensesForBudget
+// ---------------------------------------------------------------------------
+describe('filterSharedExpensesForBudget', () => {
+  it('returns all non-deleted expenses when no category filter', () => {
+    const input = [se('2026-01-10', 10), se('2026-01-15', 5, null, true)];
+    expect(filterSharedExpensesForBudget(input)).toHaveLength(1);
+  });
+
+  it('excludes soft-deleted transactions', () => {
+    const input = [se('2026-01-10', 10, 'Cibo', true)];
+    expect(filterSharedExpensesForBudget(input)).toHaveLength(0);
+  });
+
+  it('filters by category name', () => {
+    const input = [se('2026-01-10', 10, 'Cibo'), se('2026-01-11', 20, 'Trasporti')];
+    expect(filterSharedExpensesForBudget(input, 'Cibo')).toHaveLength(1);
+    expect(filterSharedExpensesForBudget(input, 'Trasporti')).toHaveLength(1);
+  });
+
+  it('returns empty for non-existent category', () => {
+    const input = [se('2026-01-10', 10, 'Cibo')];
+    expect(filterSharedExpensesForBudget(input, 'NonEsiste')).toHaveLength(0);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// getMedianMonthlySpendingShared
+// ---------------------------------------------------------------------------
+describe('getMedianMonthlySpendingShared', () => {
+  it('returns 0 for empty input', () => {
+    expect(getMedianMonthlySpendingShared([])).toBe(0);
+  });
+
+  it('returns 0 when all expenses are deleted', () => {
+    const input = [se('2026-01-10', 10, 'Cibo', true)];
+    expect(getMedianMonthlySpendingShared(input)).toBe(0);
+  });
+
+  it('returns the single month total for one month of data', () => {
+    // Jan 2026: 10 + 20 = 30 → median of [30] = 30
+    const input = [se('2026-01-10', 10), se('2026-01-20', 20)];
+    expect(getMedianMonthlySpendingShared(input)).toBe(30);
+  });
+
+  it('calculates the median of monthly sums (odd number of months)', () => {
+    // Jan=10, Feb=20, Mar=30 → sorted [10, 20, 30] → median = 20
+    const input = [
+      se('2026-01-10', 10),
+      se('2026-02-10', 20),
+      se('2026-03-10', 30),
+    ];
+    expect(getMedianMonthlySpendingShared(input)).toBe(20);
+  });
+
+  it('calculates the median of monthly sums (even number of months)', () => {
+    // Jan=10, Feb=20 → sorted [10, 20] → median = (10+20)/2 = 15
+    const input = [se('2026-01-10', 10), se('2026-02-10', 20)];
+    expect(getMedianMonthlySpendingShared(input)).toBe(15);
+  });
+
+  it('filters by couple_category_name', () => {
+    const input = [
+      se('2026-01-10', 100, 'Cibo'),
+      se('2026-01-10', 50, 'Trasporti'),
+      se('2026-02-10', 200, 'Cibo'),
+    ];
+    // Cibo: Jan=100, Feb=200 → median = 150
+    expect(getMedianMonthlySpendingShared(input, 'Cibo')).toBe(150);
+    // Trasporti: Jan=50 → median = 50
+    expect(getMedianMonthlySpendingShared(input, 'Trasporti')).toBe(50);
+  });
+
+  it('excludes soft-deleted expenses', () => {
+    // Jan: 10 (live) + 90 (deleted) = only 10 counts
+    const input = [se('2026-01-10', 10), se('2026-01-15', 90, 'Cibo', true)];
+    expect(getMedianMonthlySpendingShared(input)).toBe(10);
+  });
+
+  it('rounds median to 2 decimal places', () => {
+    // Jan=10, Feb=11 → median = (10+11)/2 = 10.5 → 10.5
+    const input = [se('2026-01-01', 10), se('2026-02-01', 11)];
+    expect(getMedianMonthlySpendingShared(input)).toBe(10.5);
   });
 });

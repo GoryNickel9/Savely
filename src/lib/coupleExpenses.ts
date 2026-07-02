@@ -72,3 +72,65 @@ export function calculateSharedAmount(totalAmount: number): number {
   const partnerCents = Math.floor(totalCents / 2);
   return partnerCents / 100;
 }
+
+// ---------------------------------------------------------------------------
+// Budget statistics for couple shared expenses
+// ---------------------------------------------------------------------------
+
+/** Minimal shape needed for budget statistics (matches SharedExpenseViewRow). */
+export interface SharedExpenseForStats {
+  couple_category_name: string | null;
+  my_share_amount: number;
+  date: string; // YYYY-MM-DD
+  tx_deleted_at: string | null;
+}
+
+/**
+ * Filters shared expenses for budget calculations:
+ * - Excludes rows where the original transaction was soft-deleted.
+ * - Optionally restricts to a specific couple_category_name.
+ */
+export function filterSharedExpensesForBudget(
+  expenses: SharedExpenseForStats[],
+  categoryName?: string
+): SharedExpenseForStats[] {
+  return expenses.filter(se => {
+    if (se.tx_deleted_at !== null) return false;
+    if (categoryName !== undefined && se.couple_category_name !== categoryName) return false;
+    return true;
+  });
+}
+
+/**
+ * Calculates the median of the monthly summed share amounts from shared expenses.
+ *
+ * Algorithm:
+ *  1. Filter via filterSharedExpensesForBudget (removes deleted; optional category).
+ *  2. Group remaining entries by (YYYY-MM), summing my_share_amount per group.
+ *  3. Return the median of those monthly sums.
+ *
+ * Returns 0 when there are no qualifying entries.
+ */
+export function getMedianMonthlySpendingShared(
+  expenses: SharedExpenseForStats[],
+  categoryName?: string
+): number {
+  const filtered = filterSharedExpensesForBudget(expenses, categoryName);
+  if (filtered.length === 0) return 0;
+
+  // Group by YYYY-MM
+  const monthly = new Map<string, number>();
+  for (const se of filtered) {
+    const key = se.date.slice(0, 7); // "YYYY-MM"
+    monthly.set(key, (monthly.get(key) ?? 0) + se.my_share_amount);
+  }
+
+  const totals = Array.from(monthly.values()).sort((a, b) => a - b);
+  const mid = Math.floor(totals.length / 2);
+  const median =
+    totals.length % 2 === 0
+      ? (totals[mid - 1] + totals[mid]) / 2
+      : totals[mid];
+
+  return Math.round(median * 100) / 100;
+}

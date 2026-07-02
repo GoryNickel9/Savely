@@ -39,8 +39,7 @@ import TcgYugioh from "./pages/tcg/Yugioh";
 import LibreriaIndex from "./pages/libreria/Index";
 import LibreriaLibri from "./pages/libreria/Libri";
 import LibreriaFumetti from "./pages/libreria/Fumetti";
-import LibreriaManga from "./pages/libreria/Manga";
-import NotFound from "./pages/NotFound";
+import LibreriaManga from "./pages/libreria/Manga";import CoupleBudget from './pages/CoupleBudget';import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
@@ -230,6 +229,29 @@ function FumoRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+function CoupleRoute({ children }: { children: React.ReactNode }) {
+  const { user, loading } = useAuth();
+  const { permissions, loading: permissionsLoading } = usePermissions();
+  
+  if (loading || permissionsLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background dark">
+        <div className="animate-pulse text-muted-foreground">Caricamento...</div>
+      </div>
+    );
+  }
+  
+  if (!user) {
+    return <Navigate to="/auth" replace />;
+  }
+  
+  if (!permissions?.couple_expenses) {
+    return <Navigate to="/" replace />;
+  }
+  
+  return <>{children}</>;
+}
+
 function AppRoutes() {
   return (
     <Routes>
@@ -268,6 +290,7 @@ function AppRoutes() {
       <Route path="/libreria/manga" element={<LibreriaRoute><LibreriaManga /></LibreriaRoute>} />
       <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
       <Route path="/admin" element={<AdminRoute><Admin /></AdminRoute>} />
+      <Route path="/couple-budget" element={<CoupleRoute><CoupleBudget /></CoupleRoute>} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
