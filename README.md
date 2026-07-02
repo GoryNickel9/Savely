@@ -1,403 +1,316 @@
-# Spendy Cloud
+# 💰 Spendy Cloud
 
-Una web application completa per la gestione finanziaria personale, il tracciamento del portafoglio di investimenti e il monitoraggio delle spese. Costruita con React, TypeScript, Vite e Supabase.
+> La tua finanza personale semplificata.
 
-![Version](https://img.shields.io/badge/version-0.0.0-blue.svg)
-![License](https://img.shields.io/badge/license-MIT-green.svg)
+Web application completa per la gestione delle finanze personali: transazioni, budget, portafoglio di investimento, spese ricorrenti, statistiche e una serie di moduli specializzati (poker, fumo, FIRE, collezioni TCG e libreria, budget familiare). Costruita con **React + TypeScript + Vite** e backend su **Supabase**.
+
+---
 
 ## 📋 Indice
 
-- [Caratteristiche Principali](#caratteristiche-principali)
-- [Stack Tecnologico](#stack-tecnologico)
+- [Panoramica](#panoramica)
+- [Stack tecnologico](#stack-tecnologico)
+- [Funzionalità](#funzionalità)
+- [Architettura del progetto](#architettura-del-progetto)
+- [Prerequisiti](#prerequisiti)
 - [Installazione](#installazione)
 - [Configurazione](#configurazione)
-- [Struttura del Progetto](#struttura-del-progetto)
-- [Funzionalità per Modulo](#funzionalità-per-modulo)
-- [Sistema di Permessi](#sistema-di-permessi)
-- [Import/Export Dati](#importexport-dati)
-- [Sviluppo](#sviluppo)
-- [Licenza](#licenza)
+- [Script disponibili](#script-disponibili)
+- [Sistema di permessi](#sistema-di-permessi)
+- [Import / Export dati](#import--export-dati)
+- [API e integrazioni esterne](#api-e-integrazioni-esterne)
+- [Sicurezza](#sicurezza)
+- [CI/CD e deploy](#cicd-e-deploy)
+- [Contribuire](#contribuire)
 
-## ✨ Caratteristiche Principali
+---
 
-### Gestione Finanziaria
-- **Dashboard**: Panoramica completa delle finanze con statistiche in tempo reale
-- **Transazioni**: Gestione completa di entrate e uscite
-- **Budget**: Impostazione e monitoraggio dei budget mensili per categoria
-- **Categorie**: Categorizzazione personalizzata con icone e colori
-- **Spese Ricorrenti**: Tracciamento automatico delle spese periodiche
+## Panoramica
 
-### Portfolio e Investimenti
-- **Gestione Portafoglio**: Tracciamento di azioni, ETF, crypto, obbligazioni e altro
-- **Performance**: Monitoraggio P&L in tempo reale
-- **Aggiornamento Prezzi**: Aggiornamento automatico dei prezzi degli asset
-- **Chiusura Posizioni**: Gestione completa delle vendite
+Spendy è un'applicazione multi-modulo orientata alla finanza personale. Ogni utente autenticato ha accesso a un set di funzionalità base (transazioni, budget, portfolio, grafici) e può ottenere accesso a moduli specializzati tramite un **sistema di permessi granulari** gestito a livello di profilo.
 
-### Analisi e Statistiche
-- **Grafici**: Visualizzazione grafica di entrate, uscite e trend
-- **Statistiche Approfondite**: Analisi dettagliate delle spese per categoria
-- **Obiettivi di Risparmio**: Definizione e monitoraggio degli obiettivi finanziari
+L'app è una **single-page application** con autenticazione Supabase, stato server-side gestito con TanStack Query, UI in Tailwind + shadcn/ui, grafici con Recharts e persistenza su database PostgreSQL (Supabase) con Row Level Security.
 
-### Moduli Specializzati
-- **Poker**: Tracciamento delle sessioni di poker, guadagno orario, rakeback e next cut
-- **Fumo**: Monitoraggio dei costi del fumo (sigarette, liquido, CBD, THC)
-- **FIRE**: Calcolatori per Financial Independence, Retire Early (Standard e Barista)
+---
 
-### Gestione Account
-- **Autenticazione**: Login sicuro con Supabase Auth
-- **Permessi Granulari**: Sistema di permessi per moduli specifici
-- **Import/Export**: Importazione da piattaforme esterne (Revolut, BBVA, TradeRepublic, Spendy)
-- **Gestione Dati**: Esportazione in CSV/XLSX e importazione personalizzata
+## Stack tecnologico
 
-## 🛠️ Stack Tecnologico
+| Area | Tecnologia |
+|------|------------|
+| **UI framework** | React 18.3 |
+| **Linguaggio** | TypeScript 5.8 (strict) |
+| **Build tool / dev server** | Vite 8.1 |
+| **Routing** | React Router 6.30 |
+| **Stato server & cache** | TanStack Query 5.83 |
+| **Styling** | Tailwind CSS 3.4 + shadcn/ui (Radix UI) |
+| **Icone** | Lucide React |
+| **Grafici** | Recharts 2.15 |
+| **Backend / Auth / DB** | Supabase (`@supabase/supabase-js` 2.89) |
+| **Form** | react-hook-form 7.61 + zod 3.25 |
+| **Date** | date-fns 3.6 |
+| **Parsing / export** | papaparse 5.5 (CSV) |
+| **Testing** | Vitest 4.1 |
+| **Lint** | ESLint 9 + typescript-eslint |
 
-### Frontend
-- **React 18.3** - Framework UI
-- **TypeScript 5.8** - Tipizzazione statica
-- **Vite 5.4** - Build tool e dev server
-- **React Router 6.30** - Routing dell'applicazione
-- **TanStack Query 5.83** - Gestione stato e cache
+---
 
-### UI e Styling
-- **Tailwind CSS 3.4** - Framework CSS utility-first
-- **shadcn/ui** - Componenti UI pre-costruiti basati su Radix UI
-- **Radix UI** - Componenti accessibili e primitivi
-- **Lucide React** - Icone
-- **Recharts 2.15** - Grafici e visualizzazioni
+## Funzionalità
 
-### Backend e Database
-- **Supabase 2.89** - Backend as a Service
-  - Autenticazione
-  - Database PostgreSQL
-  - Realtime subscriptions
-  - Storage
-  - Edge Functions
+### 🧩 Moduli base (tutti gli utenti autenticati)
 
-### Utility e Librerie
-- **date-fns 3.6** - Manipolazione date
-- **zod 3.25** - Validazione dati
-- **react-hook-form 7.61** - Gestione form
-- **papaparse 5.5** - Parsing CSV
-- **xlsx 0.18** - Gestione Excel
+- **Dashboard** — panoramica patrimonio netto, statistiche mensili/annuali, cashflow, performance portfolio, ultime transazioni.
+- **Transazioni** — entrate/uscite con supporto multi-valuta, conversione automatica in EUR, filtri per data/categoria/tipo, categorizzazione personalizzata.
+- **Uscite Ricorrenti** — spese periodiche (settimanali, mensili, trimestrali, annuali) generate automaticamente da una Edge Function cron.
+- **Budget** — budget mensili per categoria con monitoraggio in tempo reale e indicatori di avanzamento.
+- **Portfolio** — tracciamento asset (azioni, ETF, crypto, obbligazioni, liquidità, immobili, altro) con P&L in tempo reale e aggiornamento automatico dei prezzi.
+- **Grafici** — entrate/uscite, analisi per categoria, trend temporali (sezioni dedicate a entrate, uscite e confronto entrate/uscite).
 
-## 📦 Installazione
+### 🔐 Moduli specializzati (richiedono permesso)
 
-### Requisiti Preliminari
+- **Poker** — Next Cut, Guadagno Orario, Rakeback, Spese Manuali.
+- **Fumo** — Liquido Sigaretta, CBD, THC con statistiche e calcoli derivati.
+- **FIRE** — calcolatori Standard FIRE e Barista FIRE con proiezioni e calcolo anni al FIRE.
+- **Statistiche Deep Dive** — analisi avanzate (medie, mediane, media winsorizzata su finestre di 365/730 giorni).
+- **TCG** — collezione di carte Magic: The Gathering, Pokémon TCG e Yu-Gi-Oh! con valore, P&L e aggiornamento prezzi.
+- **Libreria** — catalogo di Libri, Fumetti e Manga con costo di acquisto, valore di rivendita e ricerca cover via API.
+- **Budget Familiare** — spese condivise e budget condiviso con un partner accoppiato (split percentuale, audit log, privacy delle categorie personali).
 
-- Node.js 18 o superiore
-- npm (Node Package Manager)
-- Un account Supabase
+### ⚙️ Amministrazione
 
-### Passi di Installazione
+- **Admin Panel** — gestione utenti e assegnazione permessi (solo `admin`).
+
+---
+
+## Architettura del progetto
+
+```
+spendy_cloud/
+├── src/
+│   ├── components/          # Componenti React
+│   │   ├── dashboard/       #   widget dashboard
+│   │   ├── fire/            #   calcolatori FIRE
+│   │   ├── layout/          #   layout, sidebar, navigazione
+│   │   ├── portfolio/       #   portfolio
+│   │   ├── settings/        #   impostazioni e import
+│   │   ├── statistics/      #   statistiche e grafici
+│   │   └── ui/              #   componenti shadcn/ui (Radix)
+│   ├── hooks/               # Custom hooks (dati, auth, permessi, ecc.)
+│   ├── integrations/
+│   │   └── supabase/        # client Supabase + tipi generati
+│   ├── lib/                 # utility, tipi, costanti, calcoli, security
+│   │   ├── fire/            #   logica calcoli FIRE
+│   │   └── statistics/      #   logica statistica
+│   ├── pages/               # pagine/route dell'app
+│   │   ├── fire/            #   Standard/Barista FIRE
+│   │   ├── tcg/             #   Magic / Pokémon / Yu-Gi-Oh
+│   │   ├── libreria/        #   Libri / Fumetti / Manga
+│   │   └── ...              #   Dashboard, Transactions, Portfolio, ecc.
+│   ├── types/               # tipi dominio (import)
+│   ├── App.tsx              # router + route guards
+│   ├── main.tsx             # entry point
+│   └── index.css            # stili globali + Tailwind
+├── supabase/
+│   ├── functions/           # Edge Functions (Deno)
+│   ├── migrations/          # migrazioni database PostgreSQL
+│   └── config.toml          # configurazione progetto Supabase
+├── .github/workflows/        # CI (GitHub Actions)
+├── plans/                    # documentazione di sviluppo
+├── index.html
+├── package.json
+├── vite.config.ts
+├── tailwind.config.ts
+└── vercel.json               # SPA rewrites + security headers
+```
+
+### Route guard
+
+L'app definisce guard di rotta che combinano autenticazione e permessi: `ProtectedRoute`, `AdminRoute`, `PokerRoute`, `FumoRoute`, `FireRoute`, `TcgRoute`, `LibreriaRoute`, `StatisticsDeepDiveRoute`, `CoupleRoute`.
+
+---
+
+## Prerequisiti
+
+- **Node.js 22** (vedi CI in `.github/workflows/ci.yml`)
+- **npm**
+- Un account / progetto **Supabase**
+
+---
+
+## Installazione
 
 1. **Clona il repository**
+
    ```bash
    git clone https://github.com/GoryNickel/spendy_cloud.git
    cd spendy_cloud
    ```
 
 2. **Installa le dipendenze**
+
    ```bash
    npm install
    ```
 
-3. **Configura le variabili d'ambiente**
-   
-   Crea un file `.env` nella root del progetto con le seguenti variabili:
-   ```env
-   VITE_SUPABASE_URL=your_supabase_url
-   VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
-   ```
+3. **Configura le variabili d'ambiente** (vedi [Configurazione](#configurazione))
 
-4. **Configura Supabase**
-   
-   Esegui le migrazioni del database:
+4. **Applica le migrazioni del database**
+
    ```bash
    supabase db push
    ```
 
-5. **Avvia l'applicazione**
+5. **Avvia il dev server**
+
    ```bash
    npm run dev
    ```
 
-   L'applicazione sarà disponibile all'indirizzo: http://localhost:5173
-
-## ⚙️ Configurazione
-
-### Variabili d'Ambiente
-
-| Variabile | Descrizione | Obbligatorio |
-|-----------|-------------|--------------|
-| `VITE_SUPABASE_URL` | URL del progetto Supabase | Sì |
-| `VITE_SUPABASE_ANON_KEY` | Chiave anonima di Supabase | Sì |
-
-### Configurazione Supabase
-
-Il progetto include le seguenti tabelle nel database:
-
-- `profiles` - Profili utente e permessi
-- `transactions` - Transazioni finanziarie
-- `categories` - Categorie di spesa/entrata
-- `budgets` - Budget mensili
-- `savings_goals` - Obiettivi di risparmio
-- `portfolio_assets` - Asset del portafoglio
-- `recurring_expenses` - Spese ricorrenti
-- `poker_manual_expenses` - Spese manuali poker
-- `poker_next_cuts` - Next cut poker
-- `poker_hourly_earnings` - Guadagno orario poker
-- `poker_rakeback` - Rakeback poker
-- `fumo_liquido_sigaretta` - Tracciamento liquido sigaretta
-- `fumo_cbd` - Tracciamento CBD
-- `fumo_thc` - Tracciamento THC
-- `manual_price_updates` - Aggiornamenti manuali prezzi
-
-## 📁 Struttura del Progetto
-
-```
-spendy_cloud/
-├── public/                 # File statici
-│   ├── favicon.ico
-│   └── placeholder.svg
-├── src/
-│   ├── components/         # Componenti React
-│   │   ├── dashboard/     # Componenti dashboard
-│   │   ├── fire/          # Componenti calcolatori FIRE
-│   │   ├── layout/        # Layout e navigazione
-│   │   ├── portfolio/     # Componenti portfolio
-│   │   ├── settings/      # Componenti impostazioni
-│   │   ├── statistics/    # Componenti statistiche
-│   │   └── ui/            # Componenti UI shadcn
-│   ├── hooks/             # Custom React hooks
-│   ├── integrations/      # Integrazioni esterne
-│   │   └── supabase/      # Client Supabase
-│   ├── lib/               # Librerie e utility
-│   │   ├── fire/          # Calcoli FIRE
-│   │   └── statistics/    # Calcoli statistici
-│   ├── pages/             # Pagine dell'applicazione
-│   │   ├── fire/          # Pagine calcolatori FIRE
-│   │   ├── Auth.tsx       # Pagina autenticazione
-│   │   ├── Dashboard.tsx  # Dashboard principale
-│   │   ├── Transactions.tsx
-│   │   ├── Budget.tsx
-│   │   ├── Portfolio.tsx
-│   │   ├── Poker.tsx      # Modulo poker
-│   │   ├── Fumo.tsx       # Modulo fumo
-│   │   └── Settings.tsx   # Impostazioni
-│   ├── App.tsx            # App principale
-│   ├── main.tsx           # Entry point
-│   └── index.css          # Stili globali
-├── supabase/              # Configurazione Supabase
-│   ├── functions/         # Edge functions
-│   ├── migrations/        # Migrazioni database
-│   └── config.toml        # Configurazione progetto
-├── plans/                 # Piani di sviluppo
-├── .env                   # Variabili d'ambiente
-├── package.json           # Dipendenze e script
-├── tsconfig.json          # Configurazione TypeScript
-├── vite.config.ts         # Configurazione Vite
-└── tailwind.config.ts     # Configurazione Tailwind
-```
-
-## 🚀 Funzionalità per Modulo
-
-### Dashboard
-- Panoramica del patrimonio netto
-- Statistiche mensili e annuali
-- Cashflow e performance portfolio
-- Ultime transazioni
-
-### Transazioni
-- Aggiunta, modifica ed eliminazione transazioni
-- Filtri per data, categoria e tipo
-- Supporto multi-valuta (EUR, USD, GBP, CHF, JPY, CAD, AUD, CNY)
-- Categorizzazione personalizzata
-
-### Budget
-- Impostazione budget mensili per categoria
-- Monitoraggio in tempo reale
-- Indicatori visivi di avanzamento
-- Alert per superamento budget
-
-### Portfolio
-- Gestione asset (azioni, ETF, crypto, obbligazioni, cash, immobili)
-- Tracciamento P&L in tempo reale
-- Aggiornamento automatico prezzi
-- Chiusura posizioni con registrazione profitto/perdita
-
-### Statistiche
-- Grafici entrate/uscite
-- Analisi per categoria
-- Trend temporali
-- Esportazione dati
-
-### Poker (richiede permesso)
-- **Next Cut**: Calcolo del prossimo livello/stake
-- **Guadagno Orario**: Tracciamento guadagno per ora di gioco
-- **Rakeback**: Monitoraggio rakeback ricevuto
-- **Spese Manuali**: Registrazione spese correlate al poker
-
-### Fumo (richiede permesso)
-- **Liquido Sigaretta**: Tracciamento consumo e costi
-- **CBD**: Monitoraggio consumo CBD
-- **THC**: Monitoraggio consumo THC
-- Statistiche e calcoli derivati
-
-### FIRE (richiede permesso)
-- **Standard FIRE**: Calcolo pensionamento anticipato tradizionale
-- **Barista FIRE**: Calcolo pensionamento con lavoro part-time
-- Proiezioni grafiche
-- Calcolo anni al FIRE
-
-### Impostazioni
-- Gestione profilo utente
-- Modifica email e password
-- Importazione da piattaforme esterne:
-  - Revolut
-  - BBVA
-  - TradeRepublic
-  - Spendy
-- Esportazione dati (CSV/XLSX)
-- Gestione categorie
-- Mappatura ISIN per portfolio
-
-## 🔐 Sistema di Permessi
-
-L'applicazione utilizza un sistema di permessi granulari per controllare l'accesso ai diversi moduli:
-
-### Permessi Disponibili
-
-| Permesso | Descrizione | Moduli Abilitati |
-|----------|-------------|------------------|
-| `admin` | Accesso amministrativo completo | Tutti i moduli + Admin Panel |
-| `poker` | Accesso al modulo Poker | Poker (Next Cut, Guadagno Orario, Rakeback) |
-| `fumo` | Accesso al modulo Fumo | Fumo (Liquido, CBD, THC) |
-| `statistics_deep_dive` | Statistiche approfondite | Statistiche Deep Dive |
-| `fire` | Accesso ai calcolatori FIRE | FIRE (Standard, Barista) |
-
-### Gestione Permessi
-
-I permessi sono assegnati a livello di profilo utente e possono essere modificati solo dagli amministratori. I permessi sono memorizzati nella tabella `profiles` come un oggetto JSON.
-
-### Rotte Protette
-
-L'applicazione implementa diverse rotte protette:
-- **ProtectedRoute**: Richiede autenticazione
-- **AdminRoute**: Richiede permesso `admin`
-- **PokerRoute**: Richiede permesso `poker`
-- **FireRoute**: Richiede permesso `fire`
-- **StatisticsDeepDiveRoute**: Richiede permesso `statistics_deep_dive`
-
-## 📥 Import/Export Dati
-
-### Formati Supportati
-
-- **CSV**: Comma Separated Values
-- **XLSX**: Microsoft Excel
-
-### Importazione
-
-L'applicazione supporta l'importazione da diverse fonti:
-
-#### Importazione Manuale
-Carica un file Excel/CSV con i seguenti fogli:
-- `Transazioni`: Importa transazioni finanziarie
-- `Categorie`: Importa categorie
-- `Obiettivi`: Importa obiettivi di risparmio
-- `Portfolio`: Importa asset del portafoglio
-- `Investimenti`: Importa investimenti con supporto vendite
-
-#### Importazione da Piattaforme
-- **Revolut**: Importa statement Revolut
-- **BBVA**: Importa statement BBVA
-- **TradeRepublic**: Importa statement TradeRepublic
-- **Spendy**: Importa dati Spendy legacy
-
-### Esportazione
-
-Esporta tutti i tuoi dati in un unico file Excel con i seguenti fogli:
-- Transazioni
-- Categorie
-- Budget
-- Obiettivi
-- Portfolio
-
-## 🛠️ Sviluppo
-
-### Script Disponibili
-
-```bash
-# Avvia server di sviluppo
-npm run dev
-
-# Build per produzione
-npm run build
-
-# Build in modalità sviluppo
-npm run build:dev
-
-# Anteprima build di produzione
-npm run preview
-
-# Esegui linter
-npm run lint
-```
-
-### Edge Functions Supabase
-
-Il progetto include edge functions per operazioni asincrone:
-
-- `delete-account`: Eliminazione account utente
-- `update-prices`: Aggiornamento automatico prezzi portfolio (cron job)
-
-### Migrazioni Database
-
-Le migrazioni sono gestite tramite Supabase CLI:
-
-```bash
-# Applica migrazioni
-supabase db push
-
-# Crea nuova migrazione
-supabase migration new migration_name
-```
-
-### Convenzioni di Codice
-
-- **TypeScript**: Strict mode abilitato
-- **ESLint**: Configurazione per React e TypeScript
-- **Componenti**: Functional components con hooks
-- **Styling**: Tailwind CSS con componenti shadcn/ui
-- **Stato**: TanStack Query per gestione stato server-side
-- **Routing**: React Router v6
-
-## 📄 Licenza
-
-Questo progetto è rilasciato sotto la licenza MIT. Vedi il file [LICENSE](LICENSE) per maggiori dettagli.
-
-## 🤝 Contributi
-
-I contributi sono benvenuti! Se vuoi contribuire a questo progetto:
-
-1. Fai un fork del repository
-2. Crea un branch per la tua feature (`git checkout -b feature/AmazingFeature`)
-3. Commit le tue modifiche (`git commit -m 'Add some AmazingFeature'`)
-4. Push al branch (`git push origin feature/AmazingFeature`)
-5. Apri una Pull Request
-
-## 📞 Supporto
-
-Per domande o supporto:
-- Apri una issue su GitHub
-- Contatta il team di sviluppo
-
-## 🙏 Ringraziamenti
-
-- Supabase per l'ottimo backend-as-a-service
-- shadcn per i componenti UI di alta qualità
-- Vercel per Vite
-- La community open source
+   L'app sarà disponibile su `http://localhost:5173`.
 
 ---
 
-**Sviluppato con ❤️ usando React, TypeScript e Supabase**
+## Configurazione
+
+### Variabili d'ambiente
+
+Crea un file `.env.local` (gitignored) nella root del progetto:
+
+```env
+VITE_SUPABASE_URL=<url del progetto Supabase>
+VITE_SUPABASE_ANON_KEY=<chiave anon di Supabase>
+```
+
+| Variabile | Descrizione | Obbligatoria |
+|-----------|-------------|:------------:|
+| `VITE_SUPABASE_URL` | URL del progetto Supabase | ✅ |
+| `VITE_SUPABASE_ANON_KEY` | Chiave anon (public) di Supabase | ✅ |
+
+Le Edge Functions leggono invece secret lato server (es. `ALLOWED_ORIGIN`, chiavi API di CardTrader, ecc.) configurati nel dashboard Supabase.
+
+### Database
+
+Lo schema include (tra le altre) le tabelle: `profiles`, `transactions`, `categories`, `budgets`, `savings_goals`, `portfolio_assets`, `recurring_expenses`, `manual_price_updates`, tabelle Poker/Fumo, `tcg_cards`, `library_items`, `couple_connections`, `couple_connection_requests`, `shared_expenses`, `couple_budgets`, `couple_audit_log`, oltre a view e RLS policies. Lo schema è definito interamente tramite **migrazioni** in `supabase/migrations/`.
+
+---
+
+## Script disponibili
+
+```bash
+npm run dev          # avvia il dev server Vite
+npm run build        # build di produzione
+npm run build:dev    # build in modalità development
+npm run preview      # anteprima del build di produzione
+npm run lint         # ESLint
+npm run typecheck    # controllo tipi TypeScript (tsc --noEmit)
+npm run test         # unit test (Vitest)
+npm run test:watch   # test in watch mode
+```
+
+---
+
+## Sistema di permessi
+
+I permessi sono memorizzati come oggetto JSON nella tabella `profiles` e controllano la visibilità di moduli e rotte. Sono assegnabili solo da un amministratore tramite l'Admin Panel.
+
+| Permesso | Modulo abilitato |
+|----------|------------------|
+| `admin` | Admin Panel + tutti i moduli |
+| `poker` | Poker (Next Cut, Guadagno Orario, Rakeback, Spese) |
+| `fumo` | Fumo (Liquido Sigaretta, CBD, THC) |
+| `fire` | FIRE (Standard, Barista) |
+| `statistics_deep_dive` | Statistiche Deep Dive |
+| `tcg` | TCG (Magic, Pokémon, Yu-Gi-Oh) |
+| `libreria` | Libreria (Libri, Fumetti, Manga) |
+| `couple_expenses` | Budget Familiare (spese/budget condivisi) |
+
+La logica lato client vive in `src/lib/permissions.ts` e `src/hooks/usePermissions.ts`, con cache in-memory (TTL 5 min).
+
+---
+
+## Import / Export dati
+
+### Formati supportati
+- **CSV** (papaparse)
+- **XLSX**
+
+### Importazione
+- **Manuale** — file Excel/CSV con fogli `Transazioni`, `Categorie`, `Obiettivi`, `Portfolio`, `Investimenti`.
+- **Da piattaforme esterne** — Revolut, BBVA, TradeRepublic, Spendy (legacy).
+
+> I file importati passano per controlli di sicurezza (vedi `src/lib/importFileSecurity.ts`).
+
+### Esportazione
+Esporta tutti i dati in un unico file Excel con i fogli Transazioni, Categorie, Budget, Obiettivi, Portfolio.
+
+---
+
+## API e integrazioni esterne
+
+| Servizio | Uso |
+|----------|-----|
+| **Supabase** | Auth, DB PostgreSQL, Realtime, Storage, Edge Functions |
+| **Frankfurter API** | Tassi di cambio per la conversione multi-valuta in EUR |
+| **CardTrader API** | Prezzi e ricerca carte per il modulo TCG (tramite proxy Edge Function) |
+| **Jikan v4 (MyAnimeList)** | Ricerca manga per il modulo Libreria (tramite Edge Function `mangaworld-proxy`) |
+| **Google Books API** | Ricerca libri / cover per il modulo Libreria |
+| **Google Fonts** | Font |
+
+### Edge Functions (Deno, `supabase/functions/`)
+
+| Funzione | Descrizione |
+|----------|-------------|
+| `update-prices` | Aggiornamento automatico prezzi portfolio (cron) |
+| `update-tcg-prices` | Aggiornamento prezzi carte TCG (cron) |
+| `process-recurring-expenses` | Genera transazioni dalle spese ricorrenti (cron) |
+| `cardtrader-proxy` | Proxy verso l'API CardTrader |
+| `mangaworld-proxy` | Ricerca manga via Jikan/MAL |
+| `search-tcg-cards` | Ricerca carte TCG |
+| `delete-account` | Eliminazione account utente |
+
+---
+
+## Sicurezza
+
+- **Content Security Policy** e security headers (X-Frame-Options, HSTS, Referrer-Policy, Permissions-Policy) configurati in `vercel.json`.
+- **Row Level Security** di Supabase sul database.
+- **Privacy nelle spese condivise**: le spese condivise di coppia espongono importo/valuta/descrizione ma **mai** il `category_id` personale del creatore (vedi `shared_expenses_view` e i commenti in `src/lib/types.ts`); esiste inoltre un audit log immutabile.
+- **Validazione password** e controlli di sicurezza sugli import (`src/lib/passwordValidation.ts`, `src/lib/importFileSecurity.ts`, `src/lib/couple.security.test.ts`).
+- Suite di **unit test** con Vitest su calcoli finanziari, parsing CSV, sicurezza coppia, validazione password e sicurezza degli import.
+
+### Valute supportate
+EUR, USD, GBP, CHF, JPY, CNY, IDR — con conversione automatica in EUR.
+
+---
+
+## CI/CD e deploy
+
+### CI (GitHub Actions — `.github/workflows/ci.yml`)
+Su push/PR su `main` vengono eseguiti 4 gate paralleli:
+
+| Gate | Cosa verifica |
+|------|---------------|
+| **quality** | `npm run lint` + `npm run build` |
+| **test** | `npm test` (Vitest) |
+| **typecheck** | `npm run typecheck` |
+| **security** | `npm audit --audit-level=high` |
+
+> Un gate E2E (Playwright) è predisposto ma attualmente disabilitato.
+
+### Deploy
+L'app è pronta per il deploy su **Vercel**: `vercel.json` gestisce i rewrite SPA (tutto a `index.html`) e gli security headers.
+
+---
+
+## Contribuire
+
+1. Fai un fork del repository
+2. Crea un branch per la feature (`git checkout -b feature/nome-feature`)
+3. Verifica localmente: `npm run lint && npm run typecheck && npm test && npm run build`
+4. Commit (`git commit -m 'feat: descrizione'`)
+5. Push e apri una Pull Request su `main`
+
+Le PR devono passare tutti i gate della CI.
+
+---
+
+**Sviluppato con React, TypeScript, Vite e Supabase.**
