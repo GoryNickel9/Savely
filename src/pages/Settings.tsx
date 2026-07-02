@@ -32,15 +32,18 @@ import SpendyImportDialog from '@/components/settings/SpendyImportDialog';
 import RevolutImportDialog from '@/components/settings/RevolutImportDialog';
 import BankImportDialog from '@/components/settings/BankImportDialog';
 import ISINMappingsDialog from '@/components/settings/ISINMappingsDialog';
+import CoupleSettingsSection from '@/components/settings/CoupleSettingsSection';
 import { Category, TransactionType, CurrencyCode } from '@/lib/types';
 import { EMOJI_OPTIONS, COLOR_OPTIONS, CURRENCY_SYMBOLS } from '@/lib/constants';
 import { useProfile } from '@/hooks/useProfile';
+import { usePermissions } from '@/hooks/usePermissions';
 import { serializeCsvRows } from '@/lib/csv';
 
 export default function Settings() {
   const { user, signOut, updateEmail, updatePassword } = useAuth();
   const { categories, createCategory, updateCategory, deleteCategory } = useCategories();
   const { defaultCurrency, updateDefaultCurrency } = useProfile();
+  const { permissions } = usePermissions();
   const { toast } = useToast();
   const navigate = useNavigate();
   const [isExporting, setIsExporting] = useState(false);
@@ -735,6 +738,9 @@ export default function Settings() {
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
+
+          {/* Couple Expenses Section */}
+          {permissions?.couple_expenses && <CoupleSettingsSection />}
 
           {/* Danger Zone */}
           <div className="border-t border-border pt-6 space-y-4">
