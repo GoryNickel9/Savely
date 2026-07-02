@@ -45,14 +45,38 @@ function calculateNextDueDate(currentDate: string, frequency: RecurringFrequency
   return `${y}-${m}-${d}`;
 }
 
+/**
+ * S-3: verifica l'header x-cron-secret contro il valore in cron_config.
+ * Endpoint non più richiamabile anonimamente (impedisce abuso/DoS).
+ */
+async function isCronAuthorized(supabase: any, req: Request): Promise<boolean> {
+  const provided = req.headers.get('x-cron-secret');
+  if (!provided) return false;
+  const { data } = await supabase
+    .from('cron_config')
+    .select('value')
+    .eq('key', 'cron_secret')
+    .maybeSingle();
+  const expected = data?.value;
+  // Rifiuta il placeholder: forza l'operatore a impostare un secret reale
+  return !!expected
+    && expected !== 'CHANGE_ME_GENERATE_A_RANDOM_SECRET'
+    && provided === expected;
+}
+
 // @ts-ignore
-Deno.serve(async (_req: Request) => {
+Deno.serve(async (req: Request) => {
   try {
     // @ts-ignore
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     // @ts-ignore
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // S-3: richiede il secret cron
+    if (!(await isCronAuthorized(supabase, req))) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 });
+    }
 
     const today = new Date();
     const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;

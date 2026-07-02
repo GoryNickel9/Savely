@@ -228,9 +228,9 @@ Deno.serve(async (req: any) => {
 
     // Authenticate the caller.
     // - If Authorization header is present: validate as user JWT (restrict to that user's assets).
-    // - If no Authorization header: treat as internal cron call (update all assets).
-    //   This is safe because verify_jwt = false combined with pg_cron being internal-only
-    //   means the endpoint is not reachable without Supabase infrastructure.
+    // - If no Authorization header: require a valid x-cron-secret header (cron jobs).
+    //   verify_jwt=false rende l'endpoint HTTP pubblico, quindi il secret è obbligatorio
+    //   per impedire abuso anonimo (S-3).
     const authHeader = req.headers.get('Authorization');
 
     // Distinguish user JWT from cron/service call.
@@ -254,7 +254,28 @@ Deno.serve(async (req: any) => {
         });
       }
     } else {
-      // No auth header → cron/service call: allow optional user_id filter from body
+      // No auth header → must be the cron via x-cron-secret (S-3).
+      // In passato questo branch era aperto a chiunque (abuso/DoS possibile).
+      const providedSecret = req.headers.get('x-cron-secret');
+      const { data: secretRow } = await supabase
+        .from('cron_config')
+        .select('value')
+        .eq('key', 'cron_secret')
+        .maybeSingle();
+      const expectedSecret = secretRow?.value;
+      // Rifiuta il placeholder: forza l'operatore a impostare un secret reale
+      const secretOk = !!expectedSecret
+        && expectedSecret !== 'CHANGE_ME_GENERATE_A_RANDOM_SECRET'
+        && providedSecret === expectedSecret;
+
+      if (!secretOk) {
+        return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+          status: 401,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      // Authorized cron call: allow optional user_id filter from body
       try {
         const body = await req.json();
         userId = body?.user_id || null;

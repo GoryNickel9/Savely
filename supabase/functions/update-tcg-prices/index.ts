@@ -22,6 +22,27 @@ function getCorsHeaders(req: any): Record<string, string> {
 
 const CT_API_URL = 'https://api.cardtrader.com/api/v2';
 
+/**
+ * S-3: verifica l'header x-cron-secret contro il valore in cron_config.
+ * Le edge function "cron" non sono internal-only: sono HTTP pubblici, quindi
+ * richiedono questo shared secret per impedire abuso anonimo.
+ * Ritorna true solo se header presente e corrispondente.
+ */
+async function isCronAuthorized(supabase: any, req: any): Promise<boolean> {
+  const provided = req.headers.get('x-cron-secret');
+  if (!provided) return false;
+  const { data } = await supabase
+    .from('cron_config')
+    .select('value')
+    .eq('key', 'cron_secret')
+    .maybeSingle();
+  const expected = data?.value;
+  // Rifiuta il placeholder: forza l'operatore a impostare un secret reale
+  return !!expected
+    && expected !== 'CHANGE_ME_GENERATE_A_RANDOM_SECRET'
+    && provided === expected;
+}
+
 interface TcgCard {
   id: string;
   user_id: string;
@@ -115,6 +136,14 @@ Deno.serve(async (req: any) => {
     }
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // S-3: richiede il secret cron (endpoint non più richiamabile anonimamente)
+    if (!(await isCronAuthorized(supabase, req))) {
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      );
+    }
 
     // Fetch all cards that have a card_id (blueprint_id) to look up
     const { data: cards, error: fetchError } = await supabase

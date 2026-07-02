@@ -275,7 +275,7 @@ $$;
 
 CREATE TABLE IF NOT EXISTS public.shared_expenses (
   id                   UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  connection_id        UUID NOT NULL REFERENCES public.couple_connections(id) ON DELETE RESTRICT,
+  connection_id        UUID NOT NULL REFERENCES public.couple_connections(id) ON DELETE CASCADE,
   original_tx_id       UUID NOT NULL REFERENCES public.transactions(id) ON DELETE CASCADE,
   created_by           UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   split_percentage     DECIMAL(5, 2) NOT NULL DEFAULT 50.00 CHECK (split_percentage = 50.00),
@@ -894,7 +894,7 @@ $$;
 
 CREATE TABLE IF NOT EXISTS public.shared_expenses (
   id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  connection_id       UUID NOT NULL REFERENCES public.couple_connections(id) ON DELETE RESTRICT,
+  connection_id       UUID NOT NULL REFERENCES public.couple_connections(id) ON DELETE CASCADE,
   original_tx_id      UUID NOT NULL REFERENCES public.transactions(id) ON DELETE CASCADE,
   created_by          UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   split_percentage    DECIMAL(5, 2) NOT NULL DEFAULT 50.00 CHECK (split_percentage = 50.00),
