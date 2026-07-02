@@ -105,9 +105,12 @@ jobs:
 
   # ─────────────────────────────────────────
   # Priority 3 — E2E gate (Playwright)
-  # Richiede i secrets E2E_USER_EMAIL ed E2E_USER_PASSWORD (utente seedato
-  # nel progetto Supabase tramite e2e/seed.sql). Se mancanti, i test
-  # autenticati vengono saltati ma il gate pubblico gira comunque.
+  # Richiede i secrets:
+  #   - VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY: valori pubblici del progetto
+  #     Supabase (servono al dev server per inizializzare l'app; la sicurezza è
+  #     garantita da RLS, non dalla chiave anon).
+  #   - E2E_USER_EMAIL / E2E_USER_PASSWORD: utente seedato (e2e/seed.sql).
+  #     Se mancanti, i test autenticati vengono saltati ma il gate pubblico gira.
   # ─────────────────────────────────────────
   e2e:
     name: E2E gate (Playwright)
@@ -127,6 +130,13 @@ jobs:
 
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
+
+      - name: Write app env for E2E
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+        run: |
+          printf 'VITE_SUPABASE_URL=%s\nVITE_SUPABASE_ANON_KEY=%s\n' "$VITE_SUPABASE_URL" "$VITE_SUPABASE_ANON_KEY" > .env.local
 
       - name: Run Playwright tests
         env:
