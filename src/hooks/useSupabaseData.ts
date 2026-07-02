@@ -25,6 +25,8 @@ const VALID_TABLES = [
   'thc',
 ] as const;
 
+const EMPTY_FILTER: { column: string; value: unknown }[] = [];
+
 interface UseSupabaseDataOptions {
   tableName: string;
   orderBy?: string;
@@ -41,7 +43,7 @@ interface UseSupabaseDataReturn<T> {
 export function useSupabaseData<T extends Record<string, unknown>>(
   options: UseSupabaseDataOptions
 ): UseSupabaseDataReturn<T> {
-  const { tableName, orderBy, ascending = false, filter = [] } = options;
+  const { tableName, orderBy, ascending = false, filter = EMPTY_FILTER } = options;
   const { user } = useAuth();
   const { toast } = useToast();
   const [data, setData] = useState<T[]>([]);
