@@ -315,7 +315,7 @@ ALTER TABLE public.shared_expenses ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "se_select" ON public.shared_expenses;
 CREATE POLICY "se_select" ON public.shared_expenses
-  FOR SELECT USING (public.is_couple_expenses_enabled() AND public.is_in_connection_any(connection_id));
+  FOR SELECT USING (public.is_couple_expenses_enabled() AND public.is_in_connection(connection_id));
 
 DROP POLICY IF EXISTS "se_insert" ON public.shared_expenses;
 CREATE POLICY "se_insert" ON public.shared_expenses
@@ -331,7 +331,8 @@ CREATE POLICY "se_insert" ON public.shared_expenses
 
 DROP POLICY IF EXISTS "se_update_creator" ON public.shared_expenses;
 CREATE POLICY "se_update_creator" ON public.shared_expenses
-  FOR UPDATE USING (public.is_couple_expenses_enabled() AND public.is_in_connection(connection_id) AND created_by = auth.uid());
+  FOR UPDATE USING (public.is_couple_expenses_enabled() AND public.is_in_connection(connection_id) AND created_by = auth.uid())
+  WITH CHECK (public.is_couple_expenses_enabled() AND public.is_in_connection(connection_id) AND created_by = auth.uid());
 
 DROP POLICY IF EXISTS "se_delete_creator" ON public.shared_expenses;
 CREATE POLICY "se_delete_creator" ON public.shared_expenses
@@ -346,7 +347,7 @@ SELECT
   t.description, t.date, t.deleted_at AS tx_deleted_at
 FROM public.shared_expenses se
 JOIN public.transactions t ON t.id = se.original_tx_id
-WHERE public.is_couple_expenses_enabled() AND public.is_in_connection_any(se.connection_id);
+WHERE public.is_couple_expenses_enabled() AND public.is_in_connection(se.connection_id);
 
 GRANT SELECT ON public.shared_expenses_view TO authenticated;
 
@@ -408,7 +409,7 @@ ALTER TABLE public.couple_budgets ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "cb_select" ON public.couple_budgets;
 CREATE POLICY "cb_select" ON public.couple_budgets
-  FOR SELECT USING (public.is_couple_expenses_enabled() AND public.is_in_connection_any(connection_id));
+  FOR SELECT USING (public.is_couple_expenses_enabled() AND public.is_in_connection(connection_id));
 
 DROP POLICY IF EXISTS "cb_insert" ON public.couple_budgets;
 CREATE POLICY "cb_insert" ON public.couple_budgets
@@ -444,7 +445,7 @@ ALTER TABLE public.couple_audit_log ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "cal_select" ON public.couple_audit_log;
 CREATE POLICY "cal_select" ON public.couple_audit_log
-  FOR SELECT USING (public.is_couple_expenses_enabled() AND public.is_in_connection_any(connection_id));
+  FOR SELECT USING (public.is_couple_expenses_enabled() AND public.is_in_connection(connection_id));
 
 DROP POLICY IF EXISTS "cal_insert_blocked" ON public.couple_audit_log;
 CREATE POLICY "cal_insert_blocked" ON public.couple_audit_log
@@ -934,7 +935,7 @@ ALTER TABLE public.shared_expenses ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "se_select" ON public.shared_expenses;
 CREATE POLICY "se_select" ON public.shared_expenses
-  FOR SELECT USING (public.is_couple_expenses_enabled() AND public.is_in_connection_any(connection_id));
+  FOR SELECT USING (public.is_couple_expenses_enabled() AND public.is_in_connection(connection_id));
 
 DROP POLICY IF EXISTS "se_insert" ON public.shared_expenses;
 CREATE POLICY "se_insert" ON public.shared_expenses
@@ -961,7 +962,7 @@ SELECT
   t.description, t.date, t.deleted_at AS tx_deleted_at
 FROM public.shared_expenses se
 JOIN public.transactions t ON t.id = se.original_tx_id
-WHERE public.is_couple_expenses_enabled() AND public.is_in_connection_any(se.connection_id);
+WHERE public.is_couple_expenses_enabled() AND public.is_in_connection(se.connection_id);
 
 GRANT SELECT ON public.shared_expenses_view TO authenticated;
 
@@ -1022,7 +1023,7 @@ CREATE TRIGGER trg_cb_updated_at BEFORE UPDATE ON public.couple_budgets FOR EACH
 ALTER TABLE public.couple_budgets ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "cb_select" ON public.couple_budgets;
-CREATE POLICY "cb_select" ON public.couple_budgets FOR SELECT USING (public.is_couple_expenses_enabled() AND public.is_in_connection_any(connection_id));
+CREATE POLICY "cb_select" ON public.couple_budgets FOR SELECT USING (public.is_couple_expenses_enabled() AND public.is_in_connection(connection_id));
 DROP POLICY IF EXISTS "cb_insert" ON public.couple_budgets;
 CREATE POLICY "cb_insert" ON public.couple_budgets FOR INSERT WITH CHECK (public.is_couple_expenses_enabled() AND public.is_in_connection(connection_id) AND created_by=auth.uid());
 DROP POLICY IF EXISTS "cb_update" ON public.couple_budgets;
@@ -1051,7 +1052,7 @@ CREATE INDEX IF NOT EXISTS idx_cal_created_at ON public.couple_audit_log (create
 ALTER TABLE public.couple_audit_log ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "cal_select" ON public.couple_audit_log;
-CREATE POLICY "cal_select" ON public.couple_audit_log FOR SELECT USING (public.is_couple_expenses_enabled() AND public.is_in_connection_any(connection_id));
+CREATE POLICY "cal_select" ON public.couple_audit_log FOR SELECT USING (public.is_couple_expenses_enabled() AND public.is_in_connection(connection_id));
 DROP POLICY IF EXISTS "cal_insert_blocked" ON public.couple_audit_log;
 CREATE POLICY "cal_insert_blocked" ON public.couple_audit_log FOR INSERT WITH CHECK (false);
 
