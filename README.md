@@ -2,7 +2,7 @@
 
 > La tua finanza personale semplificata.
 
-Web application completa per la gestione delle finanze personali: transazioni, budget, portafoglio di investimento, spese ricorrenti, statistiche e una serie di moduli specializzati (poker, fumo, FIRE, collezioni TCG e libreria, budget familiare). Costruita con **React + TypeScript + Vite** e backend su **Supabase**.
+Web application completa per la gestione delle finanze personali: transazioni, budget, portafoglio di investimento, spese ricorrenti, insights automatici, patrimonio storico, previsioni di cassa, statistiche e una serie di moduli specializzati (poker, fumo, FIRE, collezioni TCG e libreria, budget familiare). Costruita con **React + TypeScript + Vite** e backend su **Supabase**.
 
 ---
 
@@ -22,13 +22,14 @@ Web application completa per la gestione delle finanze personali: transazioni, b
 - [Sicurezza](#sicurezza)
 - [Testing](#testing)
 - [CI/CD e deploy](#cicd-e-deploy)
+- [Piani di sviluppo](#piani-di-sviluppo)
 - [Contribuire](#contribuire)
 
 ---
 
 ## Panoramica
 
-Spendy è un'applicazione multi-modulo orientata alla finanza personale. Ogni utente autenticato ha accesso a un set di funzionalità base (transazioni, budget, portfolio, grafici) e può ottenere accesso a moduli specializzati tramite un **sistema di permessi granulari** gestito a livello di profilo.
+Spendy è un'applicazione multi-modulo orientata alla finanza personale. Ogni utente autenticato ha accesso a un set di funzionalità base (dashboard, transazioni, budget, portfolio, patrimonio, previsioni, insights, grafici) e può ottenere accesso a moduli specializzati tramite un **sistema di permessi granulari** gestito a livello di profilo.
 
 L'app è una **single-page application** con autenticazione Supabase, stato server-side gestito con TanStack Query, UI in Tailwind + shadcn/ui, grafici con Recharts e persistenza su database PostgreSQL (Supabase) con Row Level Security.
 
@@ -123,6 +124,19 @@ Proiezione del **saldo di cassa** sui prossimi mesi (3/6/12 selezionabili):
 - Mostra saldo attuale, saldo proiettato a fine periodo e la **prima data di rischio scoperto** (se il saldo va sotto zero), con grafico area e linea rossa sullo zero.
 - La logica è pura e testata in `src/lib/forecast.ts` (`projectCashFlow`).
 
+#### 💡 Insights (`/insights`)
+Segnali automatici generati dai tuoi dati finanziari, senza query aggiuntive (tutto derivato dai dati già in cache):
+- **Anomalie di spesa** — categorie il cui mese corrente è ≥ 1.4× la mediana storica e ≥ 50€, con indicazione della % di scostamento.
+- **Budget superato** — categorie in cui la spesa del mese supera il budget configurato.
+- **Posizioni in perdita** — asset del portfolio con P&L non realizzato ≤ −15%.
+- **Milestone patrimonio** — nuovo massimo storico di patrimonio netto.
+- **Mese di risparmio** — mese corrente con risparmio ≥ 1.2× la media annua.
+- **Trend crescente** — categorie la cui spesa degli ultimi 3 mesi è ≥ 1.25× la mediana a 12 mesi.
+- **Nuove ricorrenze** — le migliori candidate a spesa ricorrente rilevate automaticamente (top 3).
+- **Variazione prezzo ricorrenti** — aumento o ribasso ≥ 10% rispetto all'importo abituale di una spesa ricorrente (es. rincaro abbonamento).
+
+Gli insight sono ordinati per severità (⚠️ attenzione → ✅ positivo → ℹ️ info) e filtrabili per tipo. La logica è pura e completamente testata in `src/lib/insights.ts` (`generateInsights`).
+
 #### ⚙️ Impostazioni (`/settings`)
 Gestione del proprio account e dei dati:
 - **Informazioni Account**: modifica credenziali (email, password) con verifica della password attuale, logout.
@@ -201,12 +215,13 @@ Per gestire le finanze condivise con un partner:
 spendy_cloud/
 ├── src/
 │   ├── components/          # Componenti React
-│   │   ├── dashboard/       #   widget dashboard
-│   │   ├── fire/            #   calcolatori FIRE
+│   │   ├── dashboard/       #   widget dashboard (StatCard)
+│   │   ├── fire/            #   calcolatori FIRE (input, chart, UI)
 │   │   ├── layout/          #   layout, sidebar, navigazione
-│   │   ├── portfolio/       #   portfolio
-│   │   ├── settings/        #   impostazioni e import
-│   │   ├── statistics/      #   statistiche e grafici
+│   │   ├── legal/           #   layout pagine legali
+│   │   ├── portfolio/       #   dialog chiusura posizione
+│   │   ├── settings/        #   impostazioni, import, sicurezza, coppia, ISIN
+│   │   ├── statistics/      #   statistiche e budget indicator
 │   │   └── ui/              #   componenti shadcn/ui (Radix)
 │   ├── hooks/               # Custom hooks (dati, auth, permessi, ecc.)
 │   ├── integrations/
@@ -218,8 +233,7 @@ spendy_cloud/
 │   │   ├── fire/            #   Standard/Barista FIRE
 │   │   ├── tcg/             #   Magic / Pokémon / Yu-Gi-Oh
 │   │   ├── libreria/        #   Libri / Fumetti / Manga
-│   │   └── ...              #   Dashboard, Transactions, Portfolio, NetWorth, Forecast, ecc.
-│   ├── types/               # tipi dominio (import)
+│   │   └── ...              #   Dashboard, Transactions, Insights, Portfolio, NetWorth, Forecast, ecc.
 │   ├── App.tsx              # router + route guards
 │   ├── main.tsx             # entry point
 │   └── index.css            # stili globali + Tailwind
@@ -229,7 +243,7 @@ spendy_cloud/
 │   ├── migrations/          # migrazioni database PostgreSQL
 │   └── config.toml          # configurazione progetto Supabase
 ├── .github/workflows/        # CI (GitHub Actions)
-├── plans/                    # documentazione di sviluppo
+├── plans/                    # documentazione di sviluppo e audit
 ├── index.html
 ├── package.json
 ├── vite.config.ts
@@ -240,7 +254,7 @@ spendy_cloud/
 
 ### Route guard
 
-L'app definisce guard di rotta che combinano autenticazione e permessi: `ProtectedRoute`, `AdminRoute`, `PokerRoute`, `FumoRoute`, `FireRoute`, `TcgRoute`, `LibreriaRoute`, `StatisticsDeepDiveRoute`, `CoupleRoute`.
+L'app definisce guard di rotta che combinano autenticazione e permessi: `ProtectedRoute`, `AdminRoute`, `PokerRoute`, `FumoRoute`, `FireRoute`, `TcgRoute`, `LibreriaRoute`, `StatisticsDeepDiveRoute`, `CoupleRoute`. Il modulo Insights e le altre pagine base (Dashboard, Transazioni, Uscite Ricorrenti, Budget, Portfolio, Patrimonio, Previsioni, Grafici, Impostazioni) sono protette dalla sola `ProtectedRoute`.
 
 ---
 
@@ -281,7 +295,7 @@ L'app definisce guard di rotta che combinano autenticazione e permessi: `Protect
    npm run dev
    ```
 
-   L'app sarà disponibile su `http://localhost:5173`.
+   L'app sarà disponibile su `http://localhost:8080`.
 
 ---
 
@@ -382,7 +396,6 @@ Esporta tutti i dati in un unico file Excel con i fogli Transazioni, Categorie, 
 | `process-recurring-expenses` | Genera transazioni dalle spese ricorrenti (cron) |
 | `cardtrader-proxy` | Proxy verso l'API CardTrader |
 | `mangaworld-proxy` | Ricerca manga via Jikan/MAL |
-| `search-tcg-cards` | Ricerca carte TCG |
 | `delete-account` | Eliminazione account utente |
 
 ---
@@ -406,7 +419,7 @@ EUR, USD, GBP, CHF, JPY, CNY, IDR — con conversione automatica in EUR.
 Il progetto ha due livelli di test.
 
 ### Unit test (Vitest)
-Funzioni pure in `src/lib/*.test.ts`: calcoli finanziari (FIRE, net worth, forecast, statistiche), parsing CSV, sicurezza coppia, validazione password e MFA, parsing user-agent, detection ricorrenze, sicurezza degli import.
+Funzioni pure in `src/lib/*.test.ts`: calcoli finanziari (FIRE, net worth, forecast, statistiche), insights/anomaly detection, parsing CSV, sicurezza coppia, validazione password e MFA, parsing user-agent, detection ricorrenze, sicurezza degli import.
 
 ```bash
 npm test          # run singolo
@@ -454,6 +467,12 @@ Su push/PR su `main` vengono eseguiti 5 gate paralleli:
 
 ### Deploy
 L'app è pronta per il deploy su **Vercel**: `vercel.json` gestisce i rewrite SPA (tutto a `index.html`) e gli security headers.
+
+---
+
+## Piani di sviluppo
+
+La cartella `plans/` contiene documenti di sviluppo, audit e revisioni (es. audit sicurezza, revisioni di codice). Non sono artefatti finali ma traccia delle decisioni prese durante il ciclo di sviluppo.
 
 ---
 
