@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { computeDerived, computeYearlyStats } from './FumoCrudPage';
-import type { FumoBaseEntry } from './FumoCrudPage';
+import { computeDerived, computeYearlyStats } from '@/lib/fumoCrud';
+import type { FumoBaseEntry } from '@/lib/fumoCrud';
 
 describe('FumoCrudPage - computeDerived', () => {
   it('ritorna tutti null quando data_finito è null (record ancora in corso)', () => {
