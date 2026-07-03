@@ -16,12 +16,10 @@ import {
   Shield,
   Dices,
   Cigarette,
-  TrendingUp,
   Flame,
   Library,
   BookOpen,
   HeartHandshake,
-  Sparkles,
   Lightbulb,
 } from 'lucide-react';
 import { useState } from 'react';
@@ -35,7 +33,6 @@ const navigation = [
   { name: 'Uscite Ricorrenti', href: '/recurring', icon: CalendarClock },
   { name: 'Budget', href: '/budget', icon: PiggyBank },
   { name: 'Portfolio', href: '/portfolio', icon: LineChart },
-  { name: 'Previsioni', href: '/forecast', icon: Sparkles },
   { name: 'Insights', href: '/insights', icon: Lightbulb },
   { name: 'Grafici', href: '/charts', icon: BarChart3 },
 ];
@@ -173,23 +170,6 @@ export default function Sidebar() {
           >
             <Cigarette className="w-5 h-5" />
             Fumo
-          </Link>
-        )}
-
-        {/* Sezione Statistiche Deep Dive - visibile solo agli utenti con permesso statistics_deep_dive */}
-        {permissions?.statistics_deep_dive && (
-          <Link
-            to="/statistics-deep-dive"
-            onClick={() => setMobileOpen(false)}
-            className={cn(
-              'flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200',
-              location.pathname === '/statistics-deep-dive'
-                ? 'bg-primary text-primary-foreground shadow-lg glow-primary'
-                : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
-            )}
-          >
-            <TrendingUp className="w-5 h-5" />
-            Statistiche Deep Dive
           </Link>
         )}
 

@@ -191,14 +191,6 @@ export default function Admin() {
                           />
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="text-sm text-muted-foreground w-16">Statistiche</span>
-                          <Switch
-                            checked={userProfile.permissions.statistics_deep_dive || false}
-                            onCheckedChange={() => togglePermission(userProfile.user_id, 'statistics_deep_dive', userProfile.permissions.statistics_deep_dive || false)}
-                            disabled={updating === userProfile.user_id}
-                          />
-                        </div>
-                        <div className="flex items-center gap-2">
                           <span className="text-sm text-muted-foreground w-16">FIRE</span>
                           <Switch
                             checked={userProfile.permissions.fire || false}

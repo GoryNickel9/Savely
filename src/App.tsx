@@ -19,7 +19,6 @@ import ChartsExpense from "./pages/ChartsExpense";
 import ChartsIncome from "./pages/ChartsIncome";
 import Portfolio from "./pages/Portfolio";
 import NetWorth from "./pages/NetWorth";
-import Forecast from "./pages/Forecast";
 import Insights from "./pages/Insights";
 import Settings from "./pages/Settings";
 import Admin from "./pages/Admin";
@@ -31,7 +30,6 @@ import Fumo from "./pages/Fumo";
 import FumoLiquidoSigaretta from "./pages/FumoLiquidoSigaretta";
 import FumoCBD from "./pages/FumoCBD";
 import FumoTHC from "./pages/FumoTHC";
-import StatisticsDeepDive from "./pages/StatisticsDeepDive";
 import FIREIndex from "./pages/fire/Index";
 import StandardFIRE from "./pages/fire/StandardFIRE";
 import BaristaFIRE from "./pages/fire/BaristaFIRE";
@@ -66,7 +64,7 @@ function LoadingScreen() {
 /**
  * Unified route guard. Replaces the previous 9 copy-pasted guards
  * (ProtectedRoute / AdminRoute / PokerRoute / FireRoute / TcgRoute /
- * LibreriaRoute / FumoRoute / CoupleRoute / StatisticsDeepDiveRoute) which
+ * LibreriaRoute / FumoRoute / CoupleRoute) which
  * differed only by the permission key they checked.
  *
  * - `perm` omitted  → only authentication is required (the old ProtectedRoute).
@@ -117,7 +115,6 @@ function AppRoutes() {
       <Route path="/charts/income" element={<PermissionRoute><ChartsIncome /></PermissionRoute>} />
       <Route path="/portfolio" element={<PermissionRoute><Portfolio /></PermissionRoute>} />
       <Route path="/net-worth" element={<PermissionRoute><NetWorth /></PermissionRoute>} />
-      <Route path="/forecast" element={<PermissionRoute><Forecast /></PermissionRoute>} />
       <Route path="/insights" element={<PermissionRoute><Insights /></PermissionRoute>} />
       <Route path="/fumo" element={<PermissionRoute perm="fumo"><Fumo /></PermissionRoute>} />
       <Route path="/fumo/liquido-sigaretta" element={<PermissionRoute perm="fumo"><FumoLiquidoSigaretta /></PermissionRoute>} />
@@ -127,7 +124,6 @@ function AppRoutes() {
       <Route path="/poker/next-cut" element={<PermissionRoute perm="poker"><PokerNextCut /></PermissionRoute>} />
       <Route path="/poker/hourly-earnings" element={<PermissionRoute perm="poker"><PokerHourlyEarnings /></PermissionRoute>} />
       <Route path="/poker/rakeback" element={<PermissionRoute perm="poker"><PokerRakeback /></PermissionRoute>} />
-      <Route path="/statistics-deep-dive" element={<PermissionRoute perm="statistics_deep_dive"><StatisticsDeepDive /></PermissionRoute>} />
       <Route path="/fire" element={<PermissionRoute perm="fire"><FIREIndex /></PermissionRoute>} />
       <Route path="/fire/standard" element={<PermissionRoute perm="fire"><StandardFIRE /></PermissionRoute>} />
       <Route path="/fire/barista" element={<PermissionRoute perm="fire"><BaristaFIRE /></PermissionRoute>} />

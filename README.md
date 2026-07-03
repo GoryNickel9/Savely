@@ -2,7 +2,7 @@
 
 > La tua finanza personale semplificata.
 
-Web application completa per la gestione delle finanze personali: transazioni, budget, portafoglio di investimento, spese ricorrenti, insights automatici, patrimonio storico, previsioni di cassa, statistiche e una serie di moduli specializzati (poker, fumo, FIRE, collezioni TCG e libreria, budget familiare). Costruita con **React + TypeScript + Vite** e backend su **Supabase**.
+Web application completa per la gestione delle finanze personali: transazioni, budget, portafoglio di investimento, spese ricorrenti, insights automatici, patrimonio storico, statistiche e una serie di moduli specializzati (poker, fumo, FIRE, collezioni TCG e libreria, budget familiare). Costruita con **React + TypeScript + Vite** e backend su **Supabase**.
 
 ---
 
@@ -29,7 +29,7 @@ Web application completa per la gestione delle finanze personali: transazioni, b
 
 ## Panoramica
 
-Spendy è un'applicazione multi-modulo orientata alla finanza personale. Ogni utente autenticato ha accesso a un set di funzionalità base (dashboard, transazioni, budget, portfolio, patrimonio, previsioni, insights, grafici) e può ottenere accesso a moduli specializzati tramite un **sistema di permessi granulari** gestito a livello di profilo.
+Spendy è un'applicazione multi-modulo orientata alla finanza personale. Ogni utente autenticato ha accesso a un set di funzionalità base (dashboard, transazioni, budget, portfolio, patrimonio, insights, grafici) e può ottenere accesso a moduli specializzati tramite un **sistema di permessi granulari** gestito a livello di profilo.
 
 L'app è una **single-page application** con autenticazione Supabase, stato server-side gestito con TanStack Query, UI in Tailwind + shadcn/ui, grafici con Recharts e persistenza su database PostgreSQL (Supabase) con Row Level Security.
 
@@ -118,12 +118,6 @@ Tracciamento storico del **Patrimonio Netto** nel tempo:
 - **Composizione** del patrimonio in card separate (cashflow, P&L investimenti, immobili scontati) e variazione % rispetto al primo punto del periodo visibile.
 - La card "Patrimonio Netto" in Dashboard è cliccabile e porta a questa pagina.
 
-#### 🔮 Previsioni (`/forecast`)
-Proiezione del **saldo di cassa** sui prossimi mesi (3/6/12 selezionabili):
-- Combina un **burn rate giornaliero** derivato dalla spesa mensile mediana (ultimi 730 giorni) con le **spese ricorrenti note**, proiettate in avanti alle rispettive scadenze (logica `nextDueDate` coerente con l'Edge Function `process-recurring-expenses`).
-- Mostra saldo attuale, saldo proiettato a fine periodo e la **prima data di rischio scoperto** (se il saldo va sotto zero), con grafico area e linea rossa sullo zero.
-- La logica è pura e testata in `src/lib/forecast.ts` (`projectCashFlow`).
-
 #### 💡 Insights (`/insights`)
 Segnali automatici generati dai tuoi dati finanziari, senza query aggiuntive (tutto derivato dai dati già in cache):
 - **Anomalie di spesa** — categorie il cui mese corrente è ≥ 1.4× la mediana storica e ≥ 50€, con indicazione della % di scostamento.
@@ -173,10 +167,6 @@ Calcolatori per la pianificazione dell'indipendenza finanziaria (Financial Indep
 - **Barista FIRE** (`/fire/barista`): variante in cui un **reddito part-time** copre parte delle spese, riducendo il patrimonio necessario. Calcola il "Barista number" (più basso del FIRE number), la riduzione in valore e percentuale, e gli anni per raggiungerlo.
 - Entrambi i calcolatori offrono valori di default derivati dai tuoi dati (spese medie, patrimonio) e si possono resettare.
 
-#### 📊 Statistiche Deep Dive (permesso `statistics_deep_dive`)
-Analisi statistica avanzata della spesa, oltre i grafici base:
-- **Media**, **mediana** e **media winsorizzata** della spesa su finestre temporali estese (365 giorni per la media, 730 giorni per mediana e media winsorizzata), per cogliere trend reali al netto dei valori anomali.
-
 #### 🃏 TCG (permesso `tcg`)
 Gestione della collezione di carte da gioco, con valore di mercato:
 - Sotto-sezioni dedicate per **Magic: The Gathering**, **Pokémon TCG** e **Yu-Gi-Oh!** (`/tcg/magic`, `/tcg/pokemon`, `/tcg/yugioh`).
@@ -205,7 +195,7 @@ Per gestire le finanze condivise con un partner:
 
 ### ⚙️ Amministrazione
 
-- **Admin Panel** (`/admin`, permesso `admin`): elenco di tutti gli utenti con i relativi permessi e assegnazione/modifica dei permessi (inclusi `admin`, `poker`, `fumo`, `fire`, `statistics_deep_dive`, `tcg`, `libreria`, `couple_expenses`).
+- **Admin Panel** (`/admin`, permesso `admin`): elenco di tutti gli utenti con i relativi permessi e assegnazione/modifica dei permessi (inclusi `admin`, `poker`, `fumo`, `fire`, `tcg`, `libreria`, `couple_expenses`).
 
 ---
 
@@ -233,7 +223,7 @@ spendy_cloud/
 │   │   ├── fire/            #   Standard/Barista FIRE
 │   │   ├── tcg/             #   Magic / Pokémon / Yu-Gi-Oh
 │   │   ├── libreria/        #   Libri / Fumetti / Manga
-│   │   └── ...              #   Dashboard, Transactions, Insights, Portfolio, NetWorth, Forecast, ecc.
+│   │   └── ...              #   Dashboard, Transactions, Insights, Portfolio, NetWorth, ecc.
 │   ├── App.tsx              # router + route guards
 │   ├── main.tsx             # entry point
 │   └── index.css            # stili globali + Tailwind
@@ -254,7 +244,7 @@ spendy_cloud/
 
 ### Route guard
 
-L'app definisce guard di rotta che combinano autenticazione e permessi: `ProtectedRoute`, `AdminRoute`, `PokerRoute`, `FumoRoute`, `FireRoute`, `TcgRoute`, `LibreriaRoute`, `StatisticsDeepDiveRoute`, `CoupleRoute`. Il modulo Insights e le altre pagine base (Dashboard, Transazioni, Uscite Ricorrenti, Budget, Portfolio, Patrimonio, Previsioni, Grafici, Impostazioni) sono protette dalla sola `ProtectedRoute`.
+L'app definisce guard di rotta che combinano autenticazione e permessi: `ProtectedRoute`, `AdminRoute`, `PokerRoute`, `FumoRoute`, `FireRoute`, `TcgRoute`, `LibreriaRoute`, `CoupleRoute`. Il modulo Insights e le altre pagine base (Dashboard, Transazioni, Uscite Ricorrenti, Budget, Portfolio, Patrimonio, Grafici, Impostazioni) sono protette dalla sola `ProtectedRoute`.
 
 ---
 
@@ -350,7 +340,6 @@ I permessi sono memorizzati come oggetto JSON nella tabella `profiles` e control
 | `poker` | Poker (Next Cut, Guadagno Orario, Rakeback, Spese) |
 | `fumo` | Fumo (Liquido Sigaretta, CBD, THC) |
 | `fire` | FIRE (Standard, Barista) |
-| `statistics_deep_dive` | Statistiche Deep Dive |
 | `tcg` | TCG (Magic, Pokémon, Yu-Gi-Oh) |
 | `libreria` | Libreria (Libri, Fumetti, Manga) |
 | `couple_expenses` | Budget Familiare (spese/budget condivisi) |
@@ -419,7 +408,7 @@ EUR, USD, GBP, CHF, JPY, CNY, IDR — con conversione automatica in EUR.
 Il progetto ha due livelli di test.
 
 ### Unit test (Vitest)
-Funzioni pure in `src/lib/*.test.ts`: calcoli finanziari (FIRE, net worth, forecast, statistiche), insights/anomaly detection, parsing CSV, sicurezza coppia, validazione password e MFA, parsing user-agent, detection ricorrenze, sicurezza degli import.
+Funzioni pure in `src/lib/*.test.ts`: calcoli finanziari (FIRE, net worth, statistiche), insights/anomaly detection, parsing CSV, sicurezza coppia, validazione password e MFA, parsing user-agent, detection ricorrenze, sicurezza degli import.
 
 ```bash
 npm test          # run singolo
