@@ -223,12 +223,12 @@ export default function StatisticsDeepDive() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {statistics.map((statistic, index) => {
-              const config = STATISTIC_CONFIGS[index];
+              const statConfig = STATISTIC_CONFIGS[index];
               return (
                 <StatisticCard
                   key={statistic.name}
                   statistic={statistic}
-                  onClick={() => config && setSelectedStatisticType(config.type)}
+                  onClick={() => statConfig && setSelectedStatisticType(statConfig.type)}
                 />
               );
             })}

@@ -58,3 +58,46 @@ export const MEDIAN_CALCULATION_DAYS = 730;
  * Numero di giorni da considerare per il calcolo della media winsorizzata delle spese
  */
 export const WINSORIZED_MEAN_CALCULATION_DAYS = 730;
+
+/**
+ * Singola fonte di verita per le tabelle utente con scope `user_id`.
+ *
+ * Usata da:
+ *  - useSupabaseData (whitelist anti-SQL-injection + VALID_TABLES)
+ *  - Settings.tsx (export GDPR art. 20)
+ *
+ * Aggiungere qui ogni nuova tabella utente creata via migration, in modo che
+ * export e whitelist restino allineati (previene il drift tipo il bug C2 del
+ * round 1, dove `poker_monthly_expenses` era presente nell'export ma mancava
+ * nella whitelist).
+ */
+export const USER_TABLES = [
+  'transactions',
+  'categories',
+  'budgets',
+  'savings_goals',
+  'recurring_expenses',
+  'portfolio_assets',
+  'asset_price_history',
+  'manual_price_updates',
+  'price_update_logs',
+  'category_mappings',
+  'isin_mappings',
+  'poker_manual_expenses',
+  'poker_monthly_expenses',
+  'poker_next_cut',
+  'poker_hourly_earnings',
+  'poker_rakeback',
+  'liquido_sigaretta',
+  'cbd',
+  'thc',
+  'tgc_cards',
+  'library_items',
+  'couple_connection_requests',
+  'couple_connections',
+  'couple_budgets',
+  'shared_expenses',
+] as const;
+
+/** Type alias per i nomi tabella validi (utile per i cast tipizzati). */
+export type UserTableName = (typeof USER_TABLES)[number];

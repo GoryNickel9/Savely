@@ -2,7 +2,7 @@
 import MainLayout from '@/components/layout/MainLayout';
 import { useAuth } from '@/hooks/useAuth';
 import { usePermissions } from '@/hooks/usePermissions';
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
@@ -14,7 +14,7 @@ import { CURRENCY_SYMBOLS } from '@/lib/constants';
 import { Trash2, Edit2, ArrowLeft, Plus } from 'lucide-react';
 import { Link, Navigate } from 'react-router-dom';
 import { useSupabaseData } from '@/hooks/useSupabaseData';
-import { parseAmount } from '@/lib/utils';
+import { parseAmount, todayLocalISO } from '@/lib/utils';
 import { useYearlyData } from '@/hooks/useYearlyData';
 import { useDialogManager } from '@/hooks/useDialogManager';
 import { DataTable, Column } from '@/components/ui/data-table';
@@ -57,7 +57,7 @@ export default function FumoLiquidoSigaretta() {
   // Create dialog state
   const [newCosto, setNewCosto] = useState('');
   const [newMillilitri, setNewMillilitri] = useState('');
-  const [newDataArrivo, setNewDataArrivo] = useState(new Date().toISOString().split('T')[0]);
+  const [newDataArrivo, setNewDataArrivo] = useState(todayLocalISO());
   const [newDataFinito, setNewDataFinito] = useState('');
   const { open: createOpen, openCreate, close: closeCreate } = useDialogManager();
 
@@ -168,7 +168,7 @@ export default function FumoLiquidoSigaretta() {
       closeCreate();
       setNewCosto('');
       setNewMillilitri('');
-      setNewDataArrivo(new Date().toISOString().split('T')[0]);
+      setNewDataArrivo(todayLocalISO());
       setNewDataFinito('');
       await reload();
     } catch (error) {

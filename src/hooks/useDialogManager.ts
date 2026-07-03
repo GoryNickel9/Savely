@@ -18,7 +18,6 @@ interface UseDialogManagerReturn<T> {
   openCreate: () => void;
   openEdit: (item: T) => void;
   close: () => void;
-  isOpen: boolean;
 }
 
 /**
@@ -64,6 +63,5 @@ export function useDialogManager<T extends { id?: string }>(
     openCreate,
     openEdit,
     close,
-    isOpen: open
   };
 }

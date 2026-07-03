@@ -42,220 +42,58 @@ import TcgYugioh from "./pages/tcg/Yugioh";
 import LibreriaIndex from "./pages/libreria/Index";
 import LibreriaLibri from "./pages/libreria/Libri";
 import LibreriaFumetti from "./pages/libreria/Fumetti";
-import LibreriaManga from "./pages/libreria/Manga";import CoupleBudget from './pages/CoupleBudget';import NotFound from "./pages/NotFound";
+import LibreriaManga from "./pages/libreria/Manga";
+import CoupleBudget from "./pages/CoupleBudget";
+import NotFound from "./pages/NotFound";
 import Privacy from "./pages/Privacy";
 import Cookies from "./pages/Cookies";
 import Termini from "./pages/Termini";
 import CookieBanner from "@/components/CookieBanner";
+import type { Permissions } from "@/lib/types";
 
 const queryClient = new QueryClient();
 
-function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth();
-  
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background dark">
-        <div className="animate-pulse text-muted-foreground">Caricamento...</div>
-      </div>
-    );
-  }
-  
-  if (!user) {
-    return <Navigate to="/auth" replace />;
-  }
-  
-  return <>{children}</>;
+// Single reusable full-screen loading state. Replaces the 9 inline copies of
+// this same block that previously lived in each route guard below.
+function LoadingScreen() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-background dark">
+      <div className="animate-pulse text-muted-foreground">Caricamento...</div>
+    </div>
+  );
 }
 
-function AdminRoute({ children }: { children: React.ReactNode }) {
+/**
+ * Unified route guard. Replaces the previous 9 copy-pasted guards
+ * (ProtectedRoute / AdminRoute / PokerRoute / FireRoute / TcgRoute /
+ * LibreriaRoute / FumoRoute / CoupleRoute / StatisticsDeepDiveRoute) which
+ * differed only by the permission key they checked.
+ *
+ * - `perm` omitted  → only authentication is required (the old ProtectedRoute).
+ * - `perm` provided → authentication + the named permission must be true.
+ */
+function PermissionRoute({
+  perm,
+  children,
+}: {
+  perm?: keyof Permissions;
+  children: React.ReactNode;
+}) {
   const { user, loading } = useAuth();
   const { permissions, loading: permissionsLoading } = usePermissions();
-  
-  if (loading || permissionsLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background dark">
-        <div className="animate-pulse text-muted-foreground">Caricamento...</div>
-      </div>
-    );
-  }
-  
-  if (!user) {
-    return <Navigate to="/auth" replace />;
-  }
-  
-  // Verifica se l'utente è admin
-  if (!permissions?.admin) {
-    return <Navigate to="/" replace />;
-  }
-  
-  return <>{children}</>;
-}
 
-function PokerRoute({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth();
-  const { permissions, loading: permissionsLoading } = usePermissions();
-  
-  if (loading || permissionsLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background dark">
-        <div className="animate-pulse text-muted-foreground">Caricamento...</div>
-      </div>
-    );
+  if (loading || (perm && permissionsLoading)) {
+    return <LoadingScreen />;
   }
-  
-  if (!user) {
-    return <Navigate to="/auth" replace />;
-  }
-  
-  // Verifica se l'utente ha il permesso poker
-  if (!permissions?.poker) {
-    return <Navigate to="/" replace />;
-  }
-  
-  return <>{children}</>;
-}
 
-function StatisticsDeepDiveRoute({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth();
-  const { permissions, loading: permissionsLoading } = usePermissions();
-  
-  if (loading || permissionsLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background dark">
-        <div className="animate-pulse text-muted-foreground">Caricamento...</div>
-      </div>
-    );
-  }
-  
   if (!user) {
     return <Navigate to="/auth" replace />;
   }
-  
-  // Verifica se l'utente ha il permesso statistics_deep_dive
-  if (!permissions?.statistics_deep_dive) {
-    return <Navigate to="/" replace />;
-  }
-  
-  return <>{children}</>;
-}
 
-function FireRoute({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth();
-  const { permissions, loading: permissionsLoading } = usePermissions();
-  
-  if (loading || permissionsLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background dark">
-        <div className="animate-pulse text-muted-foreground">Caricamento...</div>
-      </div>
-    );
-  }
-  
-  if (!user) {
-    return <Navigate to="/auth" replace />;
-  }
-  
-  // Verifica se l'utente ha il permesso fire
-  if (!permissions?.fire) {
+  if (perm && !permissions?.[perm]) {
     return <Navigate to="/" replace />;
   }
-  
-  return <>{children}</>;
-}
 
-function TcgRoute({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth();
-  const { permissions, loading: permissionsLoading } = usePermissions();
-  
-  if (loading || permissionsLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background dark">
-        <div className="animate-pulse text-muted-foreground">Caricamento...</div>
-      </div>
-    );
-  }
-  
-  if (!user) {
-    return <Navigate to="/auth" replace />;
-  }
-  
-  // Verifica se l'utente ha il permesso tcg
-  if (!permissions?.tcg) {
-    return <Navigate to="/" replace />;
-  }
-  
-  return <>{children}</>;
-}
-
-function LibreriaRoute({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth();
-  const { permissions, loading: permissionsLoading } = usePermissions();
-  
-  if (loading || permissionsLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background dark">
-        <div className="animate-pulse text-muted-foreground">Caricamento...</div>
-      </div>
-    );
-  }
-  
-  if (!user) {
-    return <Navigate to="/auth" replace />;
-  }
-  
-  // Verifica se l'utente ha il permesso libreria
-  if (!permissions?.libreria) {
-    return <Navigate to="/" replace />;
-  }
-  
-  return <>{children}</>;
-}
-
-function FumoRoute({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth();
-  const { permissions, loading: permissionsLoading } = usePermissions();
-  
-  if (loading || permissionsLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background dark">
-        <div className="animate-pulse text-muted-foreground">Caricamento...</div>
-      </div>
-    );
-  }
-  
-  if (!user) {
-    return <Navigate to="/auth" replace />;
-  }
-  
-  // Verifica se l'utente ha il permesso fumo
-  if (!permissions?.fumo) {
-    return <Navigate to="/" replace />;
-  }
-  
-  return <>{children}</>;
-}
-
-function CoupleRoute({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth();
-  const { permissions, loading: permissionsLoading } = usePermissions();
-  
-  if (loading || permissionsLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background dark">
-        <div className="animate-pulse text-muted-foreground">Caricamento...</div>
-      </div>
-    );
-  }
-  
-  if (!user) {
-    return <Navigate to="/auth" replace />;
-  }
-  
-  if (!permissions?.couple_expenses) {
-    return <Navigate to="/" replace />;
-  }
-  
   return <>{children}</>;
 }
 
@@ -268,42 +106,42 @@ function AppRoutes() {
       <Route path="/privacy" element={<Privacy />} />
       <Route path="/cookies" element={<Cookies />} />
       <Route path="/terms" element={<Termini />} />
-      <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-      <Route path="/transactions" element={<ProtectedRoute><Transactions /></ProtectedRoute>} />
-      <Route path="/recurring" element={<ProtectedRoute><RecurringExpenses /></ProtectedRoute>} />
-      <Route path="/budget" element={<ProtectedRoute><Budget /></ProtectedRoute>} />
-      <Route path="/categories" element={<ProtectedRoute><Categories /></ProtectedRoute>} />
-      <Route path="/charts" element={<ProtectedRoute><ChartsIndex /></ProtectedRoute>} />
-      <Route path="/charts/income-expense" element={<ProtectedRoute><ChartsIncomeExpense /></ProtectedRoute>} />
-      <Route path="/charts/expense" element={<ProtectedRoute><ChartsExpense /></ProtectedRoute>} />
-      <Route path="/charts/income" element={<ProtectedRoute><ChartsIncome /></ProtectedRoute>} />
-      <Route path="/portfolio" element={<ProtectedRoute><Portfolio /></ProtectedRoute>} />
-      <Route path="/net-worth" element={<ProtectedRoute><NetWorth /></ProtectedRoute>} />
-      <Route path="/forecast" element={<ProtectedRoute><Forecast /></ProtectedRoute>} />
-      <Route path="/insights" element={<ProtectedRoute><Insights /></ProtectedRoute>} />
-      <Route path="/fumo" element={<FumoRoute><Fumo /></FumoRoute>} />
-      <Route path="/fumo/liquido-sigaretta" element={<FumoRoute><FumoLiquidoSigaretta /></FumoRoute>} />
-      <Route path="/fumo/cbd" element={<FumoRoute><FumoCBD /></FumoRoute>} />
-      <Route path="/fumo/thc" element={<FumoRoute><FumoTHC /></FumoRoute>} />
-      <Route path="/poker" element={<PokerRoute><Poker /></PokerRoute>} />
-      <Route path="/poker/next-cut" element={<PokerRoute><PokerNextCut /></PokerRoute>} />
-      <Route path="/poker/hourly-earnings" element={<PokerRoute><PokerHourlyEarnings /></PokerRoute>} />
-      <Route path="/poker/rakeback" element={<PokerRoute><PokerRakeback /></PokerRoute>} />
-      <Route path="/statistics-deep-dive" element={<StatisticsDeepDiveRoute><StatisticsDeepDive /></StatisticsDeepDiveRoute>} />
-      <Route path="/fire" element={<FireRoute><FIREIndex /></FireRoute>} />
-      <Route path="/fire/standard" element={<FireRoute><StandardFIRE /></FireRoute>} />
-      <Route path="/fire/barista" element={<FireRoute><BaristaFIRE /></FireRoute>} />
-      <Route path="/tcg" element={<TcgRoute><TcgIndex /></TcgRoute>} />
-      <Route path="/tcg/magic" element={<TcgRoute><TcgMagic /></TcgRoute>} />
-      <Route path="/tcg/pokemon" element={<TcgRoute><TcgPokemon /></TcgRoute>} />
-      <Route path="/tcg/yugioh" element={<TcgRoute><TcgYugioh /></TcgRoute>} />
-      <Route path="/libreria" element={<LibreriaRoute><LibreriaIndex /></LibreriaRoute>} />
-      <Route path="/libreria/libri" element={<LibreriaRoute><LibreriaLibri /></LibreriaRoute>} />
-      <Route path="/libreria/fumetti" element={<LibreriaRoute><LibreriaFumetti /></LibreriaRoute>} />
-      <Route path="/libreria/manga" element={<LibreriaRoute><LibreriaManga /></LibreriaRoute>} />
-      <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-      <Route path="/admin" element={<AdminRoute><Admin /></AdminRoute>} />
-      <Route path="/couple-budget" element={<CoupleRoute><CoupleBudget /></CoupleRoute>} />
+      <Route path="/" element={<PermissionRoute><Dashboard /></PermissionRoute>} />
+      <Route path="/transactions" element={<PermissionRoute><Transactions /></PermissionRoute>} />
+      <Route path="/recurring" element={<PermissionRoute><RecurringExpenses /></PermissionRoute>} />
+      <Route path="/budget" element={<PermissionRoute><Budget /></PermissionRoute>} />
+      <Route path="/categories" element={<PermissionRoute><Categories /></PermissionRoute>} />
+      <Route path="/charts" element={<PermissionRoute><ChartsIndex /></PermissionRoute>} />
+      <Route path="/charts/income-expense" element={<PermissionRoute><ChartsIncomeExpense /></PermissionRoute>} />
+      <Route path="/charts/expense" element={<PermissionRoute><ChartsExpense /></PermissionRoute>} />
+      <Route path="/charts/income" element={<PermissionRoute><ChartsIncome /></PermissionRoute>} />
+      <Route path="/portfolio" element={<PermissionRoute><Portfolio /></PermissionRoute>} />
+      <Route path="/net-worth" element={<PermissionRoute><NetWorth /></PermissionRoute>} />
+      <Route path="/forecast" element={<PermissionRoute><Forecast /></PermissionRoute>} />
+      <Route path="/insights" element={<PermissionRoute><Insights /></PermissionRoute>} />
+      <Route path="/fumo" element={<PermissionRoute perm="fumo"><Fumo /></PermissionRoute>} />
+      <Route path="/fumo/liquido-sigaretta" element={<PermissionRoute perm="fumo"><FumoLiquidoSigaretta /></PermissionRoute>} />
+      <Route path="/fumo/cbd" element={<PermissionRoute perm="fumo"><FumoCBD /></PermissionRoute>} />
+      <Route path="/fumo/thc" element={<PermissionRoute perm="fumo"><FumoTHC /></PermissionRoute>} />
+      <Route path="/poker" element={<PermissionRoute perm="poker"><Poker /></PermissionRoute>} />
+      <Route path="/poker/next-cut" element={<PermissionRoute perm="poker"><PokerNextCut /></PermissionRoute>} />
+      <Route path="/poker/hourly-earnings" element={<PermissionRoute perm="poker"><PokerHourlyEarnings /></PermissionRoute>} />
+      <Route path="/poker/rakeback" element={<PermissionRoute perm="poker"><PokerRakeback /></PermissionRoute>} />
+      <Route path="/statistics-deep-dive" element={<PermissionRoute perm="statistics_deep_dive"><StatisticsDeepDive /></PermissionRoute>} />
+      <Route path="/fire" element={<PermissionRoute perm="fire"><FIREIndex /></PermissionRoute>} />
+      <Route path="/fire/standard" element={<PermissionRoute perm="fire"><StandardFIRE /></PermissionRoute>} />
+      <Route path="/fire/barista" element={<PermissionRoute perm="fire"><BaristaFIRE /></PermissionRoute>} />
+      <Route path="/tcg" element={<PermissionRoute perm="tcg"><TcgIndex /></PermissionRoute>} />
+      <Route path="/tcg/magic" element={<PermissionRoute perm="tcg"><TcgMagic /></PermissionRoute>} />
+      <Route path="/tcg/pokemon" element={<PermissionRoute perm="tcg"><TcgPokemon /></PermissionRoute>} />
+      <Route path="/tcg/yugioh" element={<PermissionRoute perm="tcg"><TcgYugioh /></PermissionRoute>} />
+      <Route path="/libreria" element={<PermissionRoute perm="libreria"><LibreriaIndex /></PermissionRoute>} />
+      <Route path="/libreria/libri" element={<PermissionRoute perm="libreria"><LibreriaLibri /></PermissionRoute>} />
+      <Route path="/libreria/fumetti" element={<PermissionRoute perm="libreria"><LibreriaFumetti /></PermissionRoute>} />
+      <Route path="/libreria/manga" element={<PermissionRoute perm="libreria"><LibreriaManga /></PermissionRoute>} />
+      <Route path="/settings" element={<PermissionRoute><Settings /></PermissionRoute>} />
+      <Route path="/admin" element={<PermissionRoute perm="admin"><Admin /></PermissionRoute>} />
+      <Route path="/couple-budget" element={<PermissionRoute perm="couple_expenses"><CoupleBudget /></PermissionRoute>} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );

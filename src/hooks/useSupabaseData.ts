@@ -2,28 +2,15 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
+import { USER_TABLES } from '@/lib/constants';
 
 /**
- * Whitelist delle tabelle valide per prevenire SQL injection
- * Nota: Le tabelle devono essere presenti nei tipi generati di Supabase
+ * Whitelist delle tabelle valide per prevenire SQL injection.
+ *
+ * Unica fonte di verita: `USER_TABLES` in `@/lib/constants`. Le tabelle devono
+ * inoltre essere presenti nei tipi generati di Supabase.
  */
-const VALID_TABLES = [
-  'transactions',
-  'categories',
-  'budgets',
-  'savings_goals',
-  'recurring_expenses',
-  'portfolio_assets',
-  'asset_price_history',
-  'price_update_logs',
-  'poker_manual_expenses',
-  'poker_next_cut',
-  'poker_hourly_earnings',
-  'poker_rakeback',
-  'cbd',
-  'liquido_sigaretta',
-  'thc',
-] as const;
+const VALID_TABLES = USER_TABLES;
 
 const EMPTY_FILTER: { column: string; value: unknown }[] = [];
 

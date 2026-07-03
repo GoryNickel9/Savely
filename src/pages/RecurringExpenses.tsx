@@ -13,7 +13,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { CategorySelect } from '@/components/CategorySelect';
-import { parseAmount } from '@/lib/utils';
+import { parseAmount, todayLocalISO } from '@/lib/utils';
 import {
   Dialog,
   DialogContent,
@@ -51,7 +51,7 @@ export default function RecurringExpenses() {
   const [categoryId, setCategoryId] = useState('');
   const [frequency, setFrequency] = useState<RecurringFrequency>('monthly');
   const [weekInterval, setWeekInterval] = useState(1);
-  const [nextDueDate, setNextDueDate] = useState(new Date().toISOString().split('T')[0]);
+  const [nextDueDate, setNextDueDate] = useState(todayLocalISO());
 
   const expenseCategories = categories.filter(c => c.type === 'expense');
 
@@ -61,7 +61,7 @@ export default function RecurringExpenses() {
     setCategoryId('');
     setFrequency('monthly');
     setWeekInterval(1);
-    setNextDueDate(new Date().toISOString().split('T')[0]);
+    setNextDueDate(todayLocalISO());
     setEditingExpense(null);
   };
 

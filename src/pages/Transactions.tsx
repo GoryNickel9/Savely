@@ -17,7 +17,7 @@ import { Switch } from '@/components/ui/switch';
 import { TransactionType, Transaction, CurrencyCode } from '@/lib/types';
 import { CategorySelect } from '@/components/CategorySelect';
 import { CURRENCY_SYMBOLS } from '@/lib/constants';
-import { parseAmount } from '@/lib/utils';
+import { parseAmount, todayLocalISO } from '@/lib/utils';
 import { Plus, Trash2, Pencil, Search, Calendar, HeartHandshake } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { startOfMonth, endOfMonth, subMonths, startOfYear, endOfYear, subYears, isWithinInterval, parseISO } from 'date-fns';
@@ -45,7 +45,7 @@ export default function Transactions() {
   const [currency, setCurrency] = useState<CurrencyCode>(defaultCurrency);
   const [categoryId, setCategoryId] = useState('');
   const [description, setDescription] = useState('');
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [date, setDate] = useState(todayLocalISO());
   const [isFetchingRate, setIsFetchingRate] = useState(false);
 
   // Filter states
@@ -71,7 +71,7 @@ export default function Transactions() {
     setCurrency(defaultCurrency);
     setCategoryId('');
     setDescription('');
-    setDate(new Date().toISOString().split('T')[0]);
+    setDate(todayLocalISO());
     setEditingTransaction(null);
     setIsShared(false);
     setCoupleCategory('');

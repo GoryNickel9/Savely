@@ -27,6 +27,25 @@ export function parseLocalDate(dateString: string): Date {
 }
 
 /**
+ * Restituisce la data di oggi in formato ISO `YYYY-MM-DD` nel fuso orario locale.
+ *
+ * Da preferire a `new Date().toISOString().split('T')[0]`, che invece opera in
+ * UTC: di sera in Italia (UTC+1) restituirebbe già la data di "domani", e
+ * viceversa a ovest di UTC restituirebbe "ieri". Risolve il finding L4 del
+ * round 1 per i campi di default (es. `<input type="date">`).
+ *
+ * Per i timestamp completi (datetime su `deleted_at`, `updated_at`, ...) usare
+ * invece `new Date().toISOString()` come prima: in quel caso il valore è un
+ * istante assoluto e UTC è la rappresentazione corretta.
+ */
+export function todayLocalISO(date: Date = new Date()): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
+/**
  * Parsa un importo inserito dall'utente in modo tollerante verso il formato italiano.
  * "10,50" -> 10.5, "1.234,56" -> 1234.56. Ritorna NaN se il valore non è numerico.
  */

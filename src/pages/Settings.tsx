@@ -36,7 +36,7 @@ import ISINMappingsDialog from '@/components/settings/ISINMappingsDialog';
 import CoupleSettingsSection from '@/components/settings/CoupleSettingsSection';
 import SecuritySection from '@/components/settings/SecuritySection';
 import { Category, TransactionType, CurrencyCode } from '@/lib/types';
-import { EMOJI_OPTIONS, COLOR_OPTIONS, CURRENCY_SYMBOLS } from '@/lib/constants';
+import { EMOJI_OPTIONS, COLOR_OPTIONS, CURRENCY_SYMBOLS, USER_TABLES } from '@/lib/constants';
 import { useProfile } from '@/hooks/useProfile';
 import { usePermissions } from '@/hooks/usePermissions';
 import { serializeCsvRows } from '@/lib/csv';
@@ -90,32 +90,8 @@ export default function Settings() {
     try {
       // Fetch all data — include every user-scoped table for GDPR portability (art. 20).
       // Tabelle non presenti nei tipi generati vengono interrogate con cast `any`.
-      const tables = [
-        'transactions',
-        'categories',
-        'budgets',
-        'savings_goals',
-        'portfolio_assets',
-        'asset_price_history',
-        'recurring_expenses',
-        'category_mappings',
-        'isin_mappings',
-        'manual_price_updates',
-        'poker_manual_expenses',
-        'poker_monthly_expenses',
-        'poker_next_cut',
-        'poker_hourly_earnings',
-        'poker_rakeback',
-        'liquido_sigaretta',
-        'cbd',
-        'thc',
-        'tgc_cards',
-        'library_items',
-        'couple_connection_requests',
-        'couple_connections',
-        'couple_budgets',
-        'shared_expenses',
-      ] as const;
+      // Lista centralizzata in `USER_TABLES` (@/lib/constants) per evitare drift.
+      const tables = USER_TABLES;
 
       const results = await Promise.all(
         tables.map((t) =>
@@ -866,8 +842,17 @@ export default function Settings() {
 
                           const response = await supabase.functions.invoke('delete-account');
 
+                          // Trasporto/errore di livello RPC (network, non-2xx senza body JSON).
                           if (response.error) {
                             throw response.error;
+                          }
+                          // Errore logico restituito nel body dalla edge function
+                          // (es. 401 "Invalid user", 500 "Failed to delete account").
+                          // Senza questo check verrebbe ignorato e l'utente sarebbe
+                          // sloggato/redirectato nonostante l'account non sia stato
+                          // effettivamente eliminato (finding L6).
+                          if (response.data?.error) {
+                            throw new Error(response.data.error);
                           }
 
                           toast({ title: 'Account eliminato', description: 'Il tuo account è stato eliminato con successo' });

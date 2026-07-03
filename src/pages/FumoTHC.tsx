@@ -2,7 +2,7 @@
 import MainLayout from '@/components/layout/MainLayout';
 import { useAuth } from '@/hooks/useAuth';
 import { usePermissions } from '@/hooks/usePermissions';
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
@@ -14,7 +14,7 @@ import { CURRENCY_SYMBOLS } from '@/lib/constants';
 import { Plus, Trash2, ArrowLeft, Edit2 } from 'lucide-react';
 import { Link, Navigate } from 'react-router-dom';
 import { useSupabaseData } from '@/hooks/useSupabaseData';
-import { parseAmount } from '@/lib/utils';
+import { parseAmount, todayLocalISO } from '@/lib/utils';
 import { useYearlyData } from '@/hooks/useYearlyData';
 import { useDialogManager } from '@/hooks/useDialogManager';
 import { calculateDerivedFields } from '@/lib/fumoCalculations';
@@ -53,7 +53,7 @@ export default function FumoTHC() {
   // Create dialog state
   const [newCosto, setNewCosto] = useState('');
   const [newGrammi, setNewGrammi] = useState('');
-  const [newDataArrivo, setNewDataArrivo] = useState(new Date().toISOString().split('T')[0]);
+  const [newDataArrivo, setNewDataArrivo] = useState(todayLocalISO());
   const [newDataFinito, setNewDataFinito] = useState('');
   const [newMarca, setNewMarca] = useState('');
   const [newThcContent, setNewThcContent] = useState('');
@@ -161,7 +161,7 @@ export default function FumoTHC() {
       closeCreate();
       setNewCosto('');
       setNewGrammi('');
-      setNewDataArrivo(new Date().toISOString().split('T')[0]);
+      setNewDataArrivo(todayLocalISO());
       setNewDataFinito('');
       setNewMarca('');
       setNewThcContent('');
