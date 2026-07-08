@@ -59,7 +59,6 @@ export default function Transactions() {
 
   // Couple sharing form states
   const [isShared, setIsShared] = useState(false);
-  const [coupleCategory, setCoupleCategory] = useState('');
   const [splitMode, setSplitMode] = useState<'equal' | 'custom'>('equal');
   const [partnerAmount, setPartnerAmount] = useState('');
 
@@ -74,7 +73,6 @@ export default function Transactions() {
     setDate(todayLocalISO());
     setEditingTransaction(null);
     setIsShared(false);
-    setCoupleCategory('');
     setSplitMode('equal');
     setPartnerAmount('');
   };
@@ -157,7 +155,7 @@ export default function Transactions() {
           date,
         });
         // Mark as shared with partner if toggled
-        if (isShared && connection?.id && coupleCategory) {
+        if (isShared && connection?.id) {
           try {
             const customPartner = splitMode === 'custom' ? parseAmount(partnerAmount) : null;
             if (splitMode === 'custom' && (!Number.isFinite(customPartner) || customPartner <= 0 || customPartner >= parsedAmount)) {
@@ -166,7 +164,7 @@ export default function Transactions() {
             await createSharedExpense.mutateAsync({
               connection_id: connection.id,
               original_tx_id: newTx.id,
-              couple_category_name: coupleCategory,
+              couple_category_name: categoryId ? allCategories.find(c => c.id === categoryId)?.name || null : null,
               split_mode: splitMode,
               partner_amount: customPartner,
             });
@@ -284,16 +282,21 @@ export default function Transactions() {
   }, [partnerSharedExpenses, filterPeriod, filterStartDate, filterEndDate, categorySearch, selectedYear, permissions?.couple_expenses, connection]);
 
   // Unified display items (own transactions + partner shared), sorted by date desc
-  type OwnItem = { kind: 'own'; tx: Transaction; sharedId?: string };
+  type OwnItem = { kind: 'own'; tx: Transaction; sharedId?: string; creatorShare?: number; totalAmount?: number };
   type PartnerItem = { kind: 'partner'; se: SharedExpenseViewRow };
   type DisplayItem = OwnItem | PartnerItem;
 
   const displayItems = useMemo((): DisplayItem[] => {
-    const ownItems: OwnItem[] = filteredTransactions.map(tx => ({
-      kind: 'own',
-      tx,
-      sharedId: mySharedExpenses.find(se => se.original_tx_id === tx.id)?.id,
-    }));
+    const ownItems: OwnItem[] = filteredTransactions.map(tx => {
+      const se = mySharedExpenses.find(se => se.original_tx_id === tx.id);
+      return {
+        kind: 'own',
+        tx,
+        sharedId: se?.id,
+        creatorShare: se?.creator_share_amount,
+        totalAmount: se?.total_amount,
+      };
+    });
     const partnerItems: PartnerItem[] = filteredPartnerShared.map(se => ({
       kind: 'partner',
       se,
@@ -372,21 +375,6 @@ export default function Transactions() {
                     {isShared && (
                       <>
                         <div>
-                          <Label className="text-xs text-muted-foreground">Categoria condivisa</Label>
-                          <Select value={coupleCategory} onValueChange={setCoupleCategory}>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Seleziona categoria condivisa" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {expenseCategories.map(cat => (
-                                <SelectItem key={cat.id} value={cat.name}>
-                                  {cat.icon} {cat.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div>
                           <Label className="text-xs text-muted-foreground">Divisione</Label>
                           <Select value={splitMode} onValueChange={(v) => setSplitMode(v as 'equal' | 'custom')}>
                             <SelectTrigger>
@@ -432,7 +420,7 @@ export default function Transactions() {
                   </div>
                 )}
 
-                <Button type="submit" className="w-full" disabled={isFetchingRate || (isShared && !coupleCategory)}>
+                <Button type="submit" className="w-full" disabled={isFetchingRate}>
                   {(() => {
                     if (isFetchingRate) return 'Recupero cambio...';
                     return editingTransaction ? 'Aggiorna' : 'Salva';
@@ -576,7 +564,16 @@ export default function Transactions() {
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="text-right">
-                      {txCurrency === defaultCurrency ? (
+                      {item.sharedId && item.creatorShare != null ? (
+                        <div>
+                          <span className={colorClass}>
+                            {sign}{CURRENCY_SYMBOLS[txCurrency] || txCurrency}{Number(item.creatorShare).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </span>
+                          <p className="text-xs text-muted-foreground">
+                            quota {CURRENCY_SYMBOLS[txCurrency] || txCurrency}{Number(item.creatorShare).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} / totale {CURRENCY_SYMBOLS[txCurrency] || txCurrency}{Number(t.amount).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </p>
+                        </div>
+                      ) : txCurrency === defaultCurrency ? (
                         <span className={colorClass}>
                           {sign}{CURRENCY_SYMBOLS[defaultCurrency]}{Number(t.amount).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </span>
