@@ -26,7 +26,7 @@ export default function SecuritySection() {
   const verify = useVerifyEnrollment();
   const unenroll = useUnenrollFactor();
 
-  const { data: sessions, isLoading: sessionsLoading, refetch: refetchSessions } = useActiveSessions();
+  const { data: sessions, isLoading: sessionsLoading, error: sessionsError, refetch: refetchSessions } = useActiveSessions();
 
   const [enrollOpen, setEnrollOpen] = useState(false);
   const [pendingEnrollment, setPendingEnrollment] = useState<{ factorId: string; uri: string; secret: string } | null>(null);
@@ -191,6 +191,8 @@ export default function SecuritySection() {
 
         {sessionsLoading ? (
           <p className="text-sm text-muted-foreground">Caricamento…</p>
+        ) : sessionsError ? (
+          <p className="text-sm text-destructive">Errore nel caricamento delle sessioni.</p>
         ) : !sessions || sessions.length === 0 ? (
           <p className="text-sm text-muted-foreground">Nessuna sessione attiva.</p>
         ) : (
