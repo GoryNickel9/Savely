@@ -10,9 +10,10 @@ export interface ActiveSessionRow {
 }
 
 /**
- * Lists every active auth session (device) for the current user by calling
- * the SECURITY DEFINER function get_active_sessions() which reads from
- * auth.sessions.
+ * Lists active sessions (devices) for the current user by calling the
+ * SECURITY DEFINER function get_active_sessions() which reads from
+ * login_activity and deduplicates by user_agent (keeps the latest sign_in
+ * per device, excludes devices whose latest event is a sign_out).
  */
 export function useActiveSessions() {
   const { user } = useAuth();
