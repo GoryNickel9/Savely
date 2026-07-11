@@ -29,7 +29,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import SpendyImportDialog from '@/components/settings/SpendyImportDialog';
 import RevolutImportDialog from '@/components/settings/RevolutImportDialog';
 import BankImportDialog from '@/components/settings/BankImportDialog';
 import ISINMappingsDialog from '@/components/settings/ISINMappingsDialog';
@@ -50,7 +49,6 @@ export default function Settings() {
   const navigate = useNavigate();
   const [isExporting, setIsExporting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [spendyDialogOpen, setSpendyDialogOpen] = useState(false);
   const [revolutDialogOpen, setRevolutDialogOpen] = useState(false);
   const [bankImportDialogOpen, setBankImportDialogOpen] = useState(false);
   const [isinMappingsDialogOpen, setIsinMappingsDialogOpen] = useState(false);
@@ -452,36 +450,7 @@ export default function Settings() {
                   <DialogTitle>Import / Export Dati</DialogTitle>
                 </DialogHeader>
                 <div className="space-y-6">
-                  {/* Import from Spendy Desktop */}
-                  <div>
-                    <p className="text-sm text-muted-foreground mb-2">
-                      Importa dati esportati da{' '}
-                      <a 
-                        href="https://drive.proton.me/urls/BAP9T2DZ4R#xeUPYTXklGaD" 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="text-primary hover:underline"
-                      >
-                        Spendy Desktop
-                      </a>
-                      .
-                    </p>
-                    <Button
-                      variant="outline"
-                      onClick={() => setSpendyDialogOpen(true)}
-                      className="w-full sm:w-auto"
-                    >
-                      <Upload className="w-5 h-5 mr-2" />
-                      Importa da Spendy Desktop
-                    </Button>
-                    {user && (
-                      <SpendyImportDialog
-                        open={spendyDialogOpen}
-                        onOpenChange={setSpendyDialogOpen}
-                        userId={user.id}
-                      />
-                    )}
-                  </div>
+
 
                   {/* Import from Banks */}
                   <div>
