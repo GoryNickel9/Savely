@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { useFactors, useEnrollTotp, useVerifyEnrollment, useUnenrollFactor, challengeAndVerify } from '@/hooks/useMfa';
-import { useLoginActivity } from '@/hooks/useLoginActivity';
+import { useActiveSessions } from '@/hooks/useActiveSessions';
 import { supabase } from '@/integrations/supabase/client';
 import { parseUserAgent } from '@/lib/userAgent';
 import { validateTotpCode, extractSecretFromUri } from '@/lib/mfa';
@@ -26,7 +26,7 @@ export default function SecuritySection() {
   const verify = useVerifyEnrollment();
   const unenroll = useUnenrollFactor();
 
-  const { refetch: refetchActivity } = useLoginActivity();
+  const { data: sessions, isLoading: sessionsLoading, refetch: refetchSessions } = useActiveSessions();
 
   const [enrollOpen, setEnrollOpen] = useState(false);
   const [pendingEnrollment, setPendingEnrollment] = useState<{ factorId: string; uri: string; secret: string } | null>(null);
@@ -36,7 +36,6 @@ export default function SecuritySection() {
   const [unenrollVerifying, setUnenrollVerifying] = useState(false);
 
   const currentUa = typeof navigator !== 'undefined' ? navigator.userAgent : '';
-  const currentDevice = parseUserAgent(currentUa);
   const [signingOutOthers, setSigningOutOthers] = useState(false);
 
   const factors = factorsData?.factors ?? [];
@@ -116,7 +115,7 @@ export default function SecuritySection() {
     try {
       const { error } = await supabase.auth.signOut({ scope: 'others' });
       if (error) throw error;
-      await refetchActivity();
+      await refetchSessions();
       toast({ title: 'Altre sessioni chiuse' });
     } catch (err) {
       toast({ title: 'Errore', description: (err as Error).message, variant: 'destructive' });
@@ -190,19 +189,37 @@ export default function SecuritySection() {
           </Button>
         </div>
 
-        {/* Current session */}
-        <div className="flex items-center gap-3 text-sm py-1.5 rounded-md bg-primary/5 p-3">
-          {currentDevice.kind === 'mobile' ? (
-            <Smartphone className="w-4 h-4 text-primary flex-shrink-0" />
-          ) : (
-            <Monitor className="w-4 h-4 text-primary flex-shrink-0" />
-          )}
-          <div className="flex-1 min-w-0">
-            <span className="font-medium">{currentDevice.browser} su {currentDevice.os}</span>
-            <span className="text-muted-foreground"> · Questo dispositivo</span>
-          </div>
-          <Badge variant="secondary" className="text-xs">Attuale</Badge>
-        </div>
+        {sessionsLoading ? (
+          <p className="text-sm text-muted-foreground">Caricamento…</p>
+        ) : !sessions || sessions.length === 0 ? (
+          <p className="text-sm text-muted-foreground">Nessuna sessione attiva.</p>
+        ) : (
+          <ul className="space-y-2 max-h-64 overflow-y-auto">
+            {sessions.map((session) => {
+              const ua = parseUserAgent(session.user_agent);
+              const Icon = ua.kind === 'mobile' ? Smartphone : Monitor;
+              const isCurrent = session.user_agent === currentUa;
+              return (
+                <li
+                  key={session.id}
+                  className={`flex items-center gap-3 text-sm py-1.5 ${isCurrent ? 'rounded-md bg-primary/5 p-3' : 'border-b border-border/50 last:border-0'}`}
+                >
+                  <Icon className={`w-4 h-4 flex-shrink-0 ${isCurrent ? 'text-primary' : 'text-muted-foreground'}`} />
+                  <div className="flex-1 min-w-0">
+                    <span className="font-medium">{ua.browser} su {ua.os}</span>
+                    {isCurrent && <span className="text-muted-foreground"> · Questo dispositivo</span>}
+                  </div>
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    {isCurrent && <Badge variant="secondary" className="text-xs">Attuale</Badge>}
+                    <span className="text-xs text-muted-foreground">
+                      {new Date(session.created_at).toLocaleString('it-IT', { dateStyle: 'short', timeStyle: 'short' })}
+                    </span>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        )}
       </div>
 
       {/* Enrollment dialog */}
