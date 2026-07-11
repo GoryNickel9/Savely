@@ -489,7 +489,7 @@ export default function Settings() {
                       Importa transazioni dalla tua banca.{' '}
                       Non hai file CSV?{' '}
                       <a
-                        href="https://bank2-csv-khaki.vercel.app/"
+                        href="bank.baldeddu.cc"
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-primary hover:underline"
