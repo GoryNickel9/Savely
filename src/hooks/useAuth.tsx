@@ -44,10 +44,22 @@ function authEventToLoginType(
 }
 
 /**
+ * Decode the session ID from the access_token JWT payload.
+ */
+function getSessionId(session: Session | null): string | null {
+  if (!session?.access_token) return null;
+  try {
+    return JSON.parse(atob(session.access_token.split('.')[1])).sid ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Insert a login_activity row. Fire-and-forget; failures are swallowed so the
  * auth flow never breaks on audit errors.
  */
-function recordLoginEvent(event: string, userId: string | undefined) {
+function recordLoginEvent(event: string, userId: string | undefined, session: Session | null) {
   const eventType = authEventToLoginType(event);
   if (!eventType || !userId) return;
   supabase
@@ -56,6 +68,7 @@ function recordLoginEvent(event: string, userId: string | undefined) {
       user_id: userId,
       event_type: eventType,
       user_agent: typeof navigator !== 'undefined' ? navigator.userAgent : null,
+      session_id: getSessionId(session),
     })
     .then(() => undefined, () => undefined);
 }
@@ -75,7 +88,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setLoading(false);
 
         // Best-effort login activity logging (audit). Failures are swallowed.
-        recordLoginEvent(event, session?.user?.id);
+        recordLoginEvent(event, session?.user?.id, session);
 
         if (event === 'PASSWORD_RECOVERY') {
           navigate('/reset-password', { replace: true });
