@@ -44,12 +44,14 @@ export default function Auth() {
   const { toast } = useToast();
 
   useEffect(() => {
-    // Navigate to "/" only when fully authenticated. During the MFA challenge
-    // step the user exists (aal1) but must not leave /auth until verified.
-    if (user && !resetSent && !mfaFactorId) {
+    // Navigate to "/" only when fully authenticated and no MFA is pending.
+    // The `loading` guard ensures we don't navigate during the MFA check
+    // (which happens after a successful password sign-in, before `loading`
+    // is set to false).
+    if (user && !resetSent && !loading && !mfaFactorId) {
       navigate('/');
     }
-  }, [user, navigate, resetSent, mfaFactorId]);
+  }, [user, navigate, resetSent, loading, mfaFactorId]);
 
   const validateForm = () => {
     try {
@@ -75,9 +77,9 @@ export default function Auth() {
 
     setLoading(true);
     const { error } = await signIn(email, password);
-    setLoading(false);
 
     if (error) {
+      setLoading(false);
       toast({
         title: 'Errore di accesso',
         description: error.message === 'Invalid login credentials'
@@ -98,13 +100,16 @@ export default function Auth() {
         if (totpFactor) {
           setMfaFactorId(totpFactor.id);
           setMfaCode('');
+          setLoading(false);
           return; // stay on /auth, the MFA step UI will render
         }
       }
     } catch {
       // If MFA checks fail, proceed to normal navigation.
     }
-    // No MFA required → the useEffect on `user` will navigate to "/".
+    // No MFA required → navigate to the dashboard.
+    setLoading(false);
+    navigate('/');
   };
 
   const handleMfaVerify = async (e: React.FormEvent) => {
