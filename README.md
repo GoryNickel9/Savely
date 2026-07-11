@@ -141,7 +141,7 @@ Gestione del proprio account e dei dati:
 - **Mappature ISIN** (per portfolio): collegamento dei simboli agli ISIN per l'aggiornamento automatico dei prezzi.
 - **Sicurezza**:
   - **Autenticazione a due fattori (2FA)** opt-in via TOTP (Google Authenticator, Authy, 1Password…). Enrollment con QR code + secret testuale, verifica, rimozione. Al login, se l'utente ha un fattore attivo viene richiesto il codice a 6 cifre (livello AAL2).
-  - **Accessi recenti**: storico degli eventi di login/logout/recupero/verifica 2FA con dispositivo e browser riconosciuti (Parsing dello user-agent), e pulsante "Disconnetti altre sessioni".
+  - **Accessi attuali**: sessione corrente e storico degli accessi con dispositivo e browser riconosciuti (Parsing dello user-agent), e pulsante "Disconnetti altre sessioni".
 
 ---
 

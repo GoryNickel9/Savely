@@ -3,7 +3,7 @@
 -- Tracks sign-in / sign-out / recovery / mfa_challenge events per user, written
 -- client-side from useAuth's onAuthStateChange handler. IP is NULL client-side
 -- (no edge-function enrichment in scope). User-agent is captured for device
--- recognition in the "Accessi recenti" UI.
+-- recognition in the "Accessi attuali" UI.
 -- ============================================================================
 
 create table if not exists public.login_activity (

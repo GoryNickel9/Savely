@@ -2,26 +2,21 @@ import { useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { Shield, ShieldCheck, ShieldX, Smartphone, Monitor, Trash2, Loader2, LogOut, KeyRound, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from '@/components/ui/dialog';
-import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
-  AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
-import { useFactors, useEnrollTotp, useVerifyEnrollment, useUnenrollFactor } from '@/hooks/useMfa';
+import { useFactors, useEnrollTotp, useVerifyEnrollment, useUnenrollFactor, challengeAndVerify } from '@/hooks/useMfa';
 import { useLoginActivity } from '@/hooks/useLoginActivity';
 import { supabase } from '@/integrations/supabase/client';
 import { parseUserAgent } from '@/lib/userAgent';
 import { validateTotpCode, extractSecretFromUri } from '@/lib/mfa';
 
 /**
- * Security section: 2FA (TOTP) enrollment/management + recent login activity +
+ * Security section: 2FA (TOTP) enrollment/management + current accesses +
  * "sign out other sessions". Rendered inside Settings.tsx.
  */
 export default function SecuritySection() {
@@ -37,6 +32,11 @@ export default function SecuritySection() {
   const [pendingEnrollment, setPendingEnrollment] = useState<{ factorId: string; uri: string; secret: string } | null>(null);
   const [code, setCode] = useState('');
   const [unenrollTarget, setUnenrollTarget] = useState<string | null>(null);
+  const [unenrollCode, setUnenrollCode] = useState('');
+  const [unenrollVerifying, setUnenrollVerifying] = useState(false);
+
+  const currentUa = typeof navigator !== 'undefined' ? navigator.userAgent : '';
+  const currentDevice = parseUserAgent(currentUa);
   const [signingOutOthers, setSigningOutOthers] = useState(false);
 
   const factors = factorsData?.factors ?? [];
@@ -90,14 +90,24 @@ export default function SecuritySection() {
     setCode('');
   };
 
-  const handleUnenroll = async () => {
+  const handleUnenrollVerify = async () => {
     if (!unenrollTarget) return;
+    const codeErr = validateTotpCode(unenrollCode);
+    if (codeErr) {
+      toast({ title: 'Codice non valido', description: codeErr, variant: 'destructive' });
+      return;
+    }
+    setUnenrollVerifying(true);
     try {
+      await challengeAndVerify(unenrollTarget, unenrollCode);
       await unenroll.mutateAsync(unenrollTarget);
       toast({ title: '2FA disattivato' });
       setUnenrollTarget(null);
+      setUnenrollCode('');
     } catch (err) {
       toast({ title: 'Errore', description: (err as Error).message, variant: 'destructive' });
+    } finally {
+      setUnenrollVerifying(false);
     }
   };
 
@@ -165,10 +175,10 @@ export default function SecuritySection() {
         {factorsLoading && <p className="text-sm text-muted-foreground">Caricamento…</p>}
       </div>
 
-      {/* Recent login activity */}
+      {/* Current accesses */}
       <div className="glass rounded-lg p-4 space-y-3">
         <div className="flex items-center justify-between">
-          <p className="font-medium">Accessi recenti</p>
+          <p className="font-medium">Accessi attuali</p>
           <Button
             variant="outline"
             size="sm"
@@ -179,26 +189,43 @@ export default function SecuritySection() {
             Disconnetti altre sessioni
           </Button>
         </div>
-        {!activity || activity.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Nessun accesso registrato.</p>
+
+        {/* Current session */}
+        <div className="flex items-center gap-3 text-sm py-1.5 rounded-md bg-primary/5 p-3">
+          {currentDevice.kind === 'mobile' ? (
+            <Smartphone className="w-4 h-4 text-primary flex-shrink-0" />
+          ) : (
+            <Monitor className="w-4 h-4 text-primary flex-shrink-0" />
+          )}
+          <div className="flex-1 min-w-0">
+            <span className="font-medium">{currentDevice.browser} su {currentDevice.os}</span>
+            <span className="text-muted-foreground"> · Questo dispositivo</span>
+          </div>
+          <Badge variant="secondary" className="text-xs">Attuale</Badge>
+        </div>
+
+        {(!activity || activity.length === 0) ? (
+          <p className="text-sm text-muted-foreground">Nessun altro accesso registrato.</p>
         ) : (
           <ul className="space-y-2 max-h-64 overflow-y-auto">
-            {activity.slice(0, 10).map((row) => {
-              const ua = parseUserAgent(row.user_agent);
-              const Icon = ua.kind === 'mobile' ? Smartphone : Monitor;
-              return (
-                <li key={row.id} className="flex items-center gap-3 text-sm py-1.5 border-b border-border/50 last:border-0">
-                  <Icon className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <span className="font-medium">{eventLabel(row.event_type)}</span>
-                    <span className="text-muted-foreground"> · {ua.browser} su {ua.os}</span>
-                  </div>
-                  <span className="text-xs text-muted-foreground flex-shrink-0">
-                    {new Date(row.created_at).toLocaleString('it-IT', { dateStyle: 'short', timeStyle: 'short' })}
-                  </span>
-                </li>
-              );
-            })}
+            {activity
+              .filter((row) => row.event_type === 'sign_in' || row.event_type === 'sign_up')
+              .slice(0, 9)
+              .map((row) => {
+                const ua = parseUserAgent(row.user_agent);
+                const Icon = ua.kind === 'mobile' ? Smartphone : Monitor;
+                return (
+                  <li key={row.id} className="flex items-center gap-3 text-sm py-1.5 border-b border-border/50 last:border-0">
+                    <Icon className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <span className="font-medium">{ua.browser} su {ua.os}</span>
+                    </div>
+                    <span className="text-xs text-muted-foreground flex-shrink-0">
+                      {new Date(row.created_at).toLocaleString('it-IT', { dateStyle: 'short', timeStyle: 'short' })}
+                    </span>
+                  </li>
+                );
+              })}
           </ul>
         )}
       </div>
@@ -258,38 +285,45 @@ export default function SecuritySection() {
         </DialogContent>
       </Dialog>
 
-      {/* Unenroll confirmation */}
-      <AlertDialog open={!!unenrollTarget} onOpenChange={(o) => !o && setUnenrollTarget(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Disattivare il 2FA?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Il tuo account sarà protetto solo dalla password. Puoi riattivarlo in qualsiasi momento.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Annulla</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleUnenroll}
-              disabled={unenroll.isPending}
+      {/* Unenroll 2FA verification */}
+      <Dialog open={!!unenrollTarget} onOpenChange={(o) => { if (!o) { setUnenrollTarget(null); setUnenrollCode(''); } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Disattivare il 2FA?</DialogTitle>
+            <DialogDescription>
+              Inserisci il codice della tua app di autenticazione per confermare la disattivazione.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Codice di verifica</Label>
+              <InputOTP maxLength={6} value={unenrollCode} onChange={(v) => setUnenrollCode(v.replace(/\D/g, ''))}>
+                <InputOTPGroup>
+                  <InputOTPSlot index={0} />
+                  <InputOTPSlot index={1} />
+                  <InputOTPSlot index={2} />
+                  <InputOTPSlot index={3} />
+                  <InputOTPSlot index={4} />
+                  <InputOTPSlot index={5} />
+                </InputOTPGroup>
+              </InputOTP>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setUnenrollTarget(null); setUnenrollCode(''); }}>
+              Annulla
+            </Button>
+            <Button
+              onClick={handleUnenrollVerify}
+              disabled={unenrollVerifying || unenrollCode.length !== 6}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              {unenroll.isPending ? 'Disattivazione…' : 'Disattiva'}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+              {unenrollVerifying && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+              Disattiva
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
-}
-
-function eventLabel(event: string): string {
-  switch (event) {
-    case 'sign_in': return 'Accesso';
-    case 'sign_out': return 'Disconnessione';
-    case 'sign_up': return 'Registrazione';
-    case 'recovery': return 'Recupero password';
-    case 'mfa_challenge': return 'Verifica 2FA';
-    default: return event;
-  }
 }

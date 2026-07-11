@@ -1,6 +1,6 @@
 /**
  * User-agent parsing helpers (pure, unit-tested).
- * Used by the "Accessi recenti" UI to show a friendly device/browser label
+ * Used by the "Accessi attuali" UI to show a friendly device/browser label
  * instead of a raw UA string.
  */
 
