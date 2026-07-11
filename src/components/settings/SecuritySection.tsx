@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { useFactors, useEnrollTotp, useVerifyEnrollment, useUnenrollFactor, challengeAndVerify } from '@/hooks/useMfa';
-import { useActiveSessions } from '@/hooks/useActiveSessions';
+import { useActiveSessions, useDeleteSession } from '@/hooks/useActiveSessions';
 import { supabase } from '@/integrations/supabase/client';
 import { parseUserAgent } from '@/lib/userAgent';
 import { validateTotpCode, extractSecretFromUri } from '@/lib/mfa';
@@ -27,6 +27,7 @@ export default function SecuritySection() {
   const unenroll = useUnenrollFactor();
 
   const { data: sessions, isLoading: sessionsLoading, error: sessionsError, refetch: refetchSessions } = useActiveSessions();
+  const deleteSession = useDeleteSession();
 
   const [enrollOpen, setEnrollOpen] = useState(false);
   const [pendingEnrollment, setPendingEnrollment] = useState<{ factorId: string; uri: string; secret: string } | null>(null);
@@ -37,6 +38,7 @@ export default function SecuritySection() {
 
   const currentUa = typeof navigator !== 'undefined' ? navigator.userAgent : '';
   const [signingOutOthers, setSigningOutOthers] = useState(false);
+  const [disconnectingId, setDisconnectingId] = useState<string | null>(null);
 
   const factors = factorsData?.factors ?? [];
   const aal = factorsData?.aalCurrent ?? 'aal1';
@@ -121,6 +123,18 @@ export default function SecuritySection() {
       toast({ title: 'Errore', description: (err as Error).message, variant: 'destructive' });
     } finally {
       setSigningOutOthers(false);
+    }
+  };
+
+  const handleDisconnectSession = async (sessionId: string) => {
+    setDisconnectingId(sessionId);
+    try {
+      await deleteSession.mutateAsync(sessionId);
+      toast({ title: 'Dispositivo disconnesso' });
+    } catch (err) {
+      toast({ title: 'Errore', description: (err as Error).message, variant: 'destructive' });
+    } finally {
+      setDisconnectingId(null);
     }
   };
 
@@ -213,6 +227,18 @@ export default function SecuritySection() {
                   </div>
                   <div className="flex items-center gap-2 flex-shrink-0">
                     {isCurrent && <Badge variant="secondary" className="text-xs">Attuale</Badge>}
+                    {!isCurrent && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="w-7 h-7 text-muted-foreground hover:text-destructive"
+                        onClick={() => handleDisconnectSession(session.id)}
+                        disabled={disconnectingId === session.id}
+                        title="Disconnetti questo dispositivo"
+                      >
+                        {disconnectingId === session.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <LogOut className="w-3 h-3" />}
+                      </Button>
+                    )}
                     <span className="text-xs text-muted-foreground">
                       {new Date(session.created_at).toLocaleString('it-IT', { dateStyle: 'short', timeStyle: 'short' })}
                     </span>

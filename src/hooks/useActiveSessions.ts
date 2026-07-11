@@ -1,4 +1,4 @@
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 
@@ -12,8 +12,7 @@ export interface ActiveSessionRow {
 /**
  * Lists active sessions (devices) for the current user by calling the
  * SECURITY DEFINER function get_active_sessions() which reads from
- * login_activity and deduplicates by user_agent (keeps the latest sign_in
- * per device, excludes devices whose latest event is a sign_out).
+ * auth.sessions.
  */
 export function useActiveSessions() {
   const { user } = useAuth();
@@ -30,4 +29,19 @@ export function useActiveSessions() {
     }),
     invalidate: () => qc.invalidateQueries({ queryKey: ['active-sessions'] }),
   };
+}
+
+/**
+ * Disconnect (delete) a single auth session by its id.
+ * Only the owning user can delete their own sessions.
+ */
+export function useDeleteSession() {
+  const qc = useQueryClient();
+  return useMutation<void, Error, string>({
+    mutationFn: async (sessionId) => {
+      const { error } = await supabase.rpc('delete_session', { p_session_id: sessionId });
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['active-sessions'] }),
+  });
 }
