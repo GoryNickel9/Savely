@@ -26,7 +26,7 @@ export default function SecuritySection() {
   const verify = useVerifyEnrollment();
   const unenroll = useUnenrollFactor();
 
-  const { data: activity, refetch: refetchActivity } = useLoginActivity();
+  const { refetch: refetchActivity } = useLoginActivity();
 
   const [enrollOpen, setEnrollOpen] = useState(false);
   const [pendingEnrollment, setPendingEnrollment] = useState<{ factorId: string; uri: string; secret: string } | null>(null);
@@ -203,31 +203,6 @@ export default function SecuritySection() {
           </div>
           <Badge variant="secondary" className="text-xs">Attuale</Badge>
         </div>
-
-        {(!activity || activity.length === 0) ? (
-          <p className="text-sm text-muted-foreground">Nessun altro accesso registrato.</p>
-        ) : (
-          <ul className="space-y-2 max-h-64 overflow-y-auto">
-            {activity
-              .filter((row) => row.event_type === 'sign_in' || row.event_type === 'sign_up')
-              .slice(0, 9)
-              .map((row) => {
-                const ua = parseUserAgent(row.user_agent);
-                const Icon = ua.kind === 'mobile' ? Smartphone : Monitor;
-                return (
-                  <li key={row.id} className="flex items-center gap-3 text-sm py-1.5 border-b border-border/50 last:border-0">
-                    <Icon className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <span className="font-medium">{ua.browser} su {ua.os}</span>
-                    </div>
-                    <span className="text-xs text-muted-foreground flex-shrink-0">
-                      {new Date(row.created_at).toLocaleString('it-IT', { dateStyle: 'short', timeStyle: 'short' })}
-                    </span>
-                  </li>
-                );
-              })}
-          </ul>
-        )}
       </div>
 
       {/* Enrollment dialog */}
