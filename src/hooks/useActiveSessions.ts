@@ -7,6 +7,7 @@ export interface ActiveSessionRow {
   created_at: string;
   user_agent: string | null;
   ip: string | null;
+  session_id?: string | null;
 }
 
 /**

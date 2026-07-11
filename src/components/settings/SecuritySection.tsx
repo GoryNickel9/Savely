@@ -227,16 +227,16 @@ export default function SecuritySection() {
                   </div>
                   <div className="flex items-center gap-2 flex-shrink-0">
                     {isCurrent && <Badge variant="secondary" className="text-xs">Attuale</Badge>}
-                    {!isCurrent && (
+                    {!isCurrent && session.session_id && (
                       <Button
                         variant="ghost"
                         size="icon"
                         className="w-7 h-7 text-muted-foreground hover:text-destructive"
-                        onClick={() => handleDisconnectSession(session.id)}
-                        disabled={disconnectingId === session.id}
+                        onClick={() => handleDisconnectSession(session.session_id!)}
+                        disabled={disconnectingId === session.session_id}
                         title="Disconnetti questo dispositivo"
                       >
-                        {disconnectingId === session.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <LogOut className="w-3 h-3" />}
+                        {disconnectingId === session.session_id ? <Loader2 className="w-3 h-3 animate-spin" /> : <LogOut className="w-3 h-3" />}
                       </Button>
                     )}
                     <span className="text-xs text-muted-foreground">
