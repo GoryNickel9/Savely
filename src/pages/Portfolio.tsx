@@ -270,7 +270,8 @@ export default function Portfolio() {
   }, 0);
   const totalCostForReturn = assetsForReturn.reduce((sum, a) => sum + a.purchase_price * a.quantity, 0);
   const totalGainForReturn = totalValueForReturn - totalCostForReturn;
-  const totalGainPercentExcludingCashAndRealEstate = (totalCostForReturn + tcgTotalCost) > 0 ? ((totalGainForReturn + tcgTotalGain) / (totalCostForReturn + tcgTotalCost)) * 100 : 0;
+  // Rendimento calcolato solo sugli asset finanziari (le carte TCG sono escluse dal calcolo del rendimento)
+  const totalGainPercentExcludingCashAndRealEstate = totalCostForReturn > 0 ? (totalGainForReturn / totalCostForReturn) * 100 : 0;
 
   // Calcola profitto/perdita escludendo liquidità e altro (come richiesto)
   const assetsForGain = openAssets.filter(a => a.type !== 'cash' && a.type !== 'other');
@@ -279,7 +280,8 @@ export default function Portfolio() {
     return sum + (price * a.quantity);
   }, 0);
   const totalCostForGain = assetsForGain.reduce((sum, a) => sum + a.purchase_price * a.quantity, 0);
-  const totalGainExcludingCashAndOther = totalValueForGain - totalCostForGain + tcgTotalGain;
+  // Profitto/Perdita calcolato solo sugli asset finanziari (le carte TCG sono escluse)
+  const totalGainExcludingCashAndOther = totalValueForGain - totalCostForGain;
 
   // Calcola valore liquido (stock, etf, crypto, bond, cash)
   const liquidAssets = openAssets.filter(a => ['stock', 'etf', 'crypto', 'bond', 'cash'].includes(a.type));
