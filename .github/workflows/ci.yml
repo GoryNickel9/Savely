@@ -24,9 +24,9 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          # react-router@8 richiede node >=22.22.0 (vedi engines). Pin esplicito
-          # perché "22" risolve all'ultima 22.x, che non è garantito essere >=22.22.
-          node-version: 22.22
+          # Node Active LTS più recente. Soddisfa react-router@8 (>=22.22) e
+          # garantisce security + bug fix attivi (Node 22 è in Maintenance LTS).
+          node-version: 24
           cache: npm
 
       - name: Install dependencies
@@ -51,9 +51,9 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          # react-router@8 richiede node >=22.22.0 (vedi engines). Pin esplicito
-          # perché "22" risolve all'ultima 22.x, che non è garantito essere >=22.22.
-          node-version: 22.22
+          # Node Active LTS più recente. Soddisfa react-router@8 (>=22.22) e
+          # garantisce security + bug fix attivi (Node 22 è in Maintenance LTS).
+          node-version: 24
           cache: npm
 
       - name: Install dependencies
@@ -75,9 +75,9 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          # react-router@8 richiede node >=22.22.0 (vedi engines). Pin esplicito
-          # perché "22" risolve all'ultima 22.x, che non è garantito essere >=22.22.
-          node-version: 22.22
+          # Node Active LTS più recente. Soddisfa react-router@8 (>=22.22) e
+          # garantisce security + bug fix attivi (Node 22 è in Maintenance LTS).
+          node-version: 24
           cache: npm
 
       - name: Install dependencies
@@ -99,9 +99,9 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          # react-router@8 richiede node >=22.22.0 (vedi engines). Pin esplicito
-          # perché "22" risolve all'ultima 22.x, che non è garantito essere >=22.22.
-          node-version: 22.22
+          # Node Active LTS più recente. Soddisfa react-router@8 (>=22.22) e
+          # garantisce security + bug fix attivi (Node 22 è in Maintenance LTS).
+          node-version: 24
           cache: npm
 
       - name: Install dependencies
@@ -129,9 +129,9 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          # react-router@8 richiede node >=22.22.0 (vedi engines). Pin esplicito
-          # perché "22" risolve all'ultima 22.x, che non è garantito essere >=22.22.
-          node-version: 22.22
+          # Node Active LTS più recente. Soddisfa react-router@8 (>=22.22) e
+          # garantisce security + bug fix attivi (Node 22 è in Maintenance LTS).
+          node-version: 24
           cache: npm
 
       - name: Install dependencies
