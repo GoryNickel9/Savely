@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import MainLayout from '@/components/layout/MainLayout';
 import { useLibraryItems } from '@/hooks/useLibraryItems';
 import { LIBRARY_CATEGORY_LABELS, LibraryCategory } from '@/lib/types';

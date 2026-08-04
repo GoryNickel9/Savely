@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import MainLayout from '@/components/layout/MainLayout';
 import { useTcgCards } from '@/hooks/useTcgCards';
 import { CARD_CONDITION_LABELS, CardCondition, TcgCard, TcgGame } from '@/lib/types';

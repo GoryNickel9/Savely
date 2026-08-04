@@ -1,4 +1,4 @@
-import { useSearchParams } from 'react-router-dom'
+import { useSearchParams } from 'react-router'
 import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { useFireDefaultsFromDB } from './useFireDefaultsFromDB'
 import type { FireDefaults } from './useFireDefaultsFromDB'

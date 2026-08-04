@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import MainLayout from '@/components/layout/MainLayout';
 import { useLibraryItems } from '@/hooks/useLibraryItems';
 import { LibraryItem } from '@/lib/types';

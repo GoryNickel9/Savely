@@ -6,7 +6,7 @@ import { calculateNetWorth } from '@/lib/netWorth';
 import StatCard from '@/components/dashboard/StatCard';
 import MainLayout from '@/components/layout/MainLayout';
 import { Wallet, TrendingUp, TrendingDown, PieChart } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 
 export default function Dashboard() {
   const { transactions } = useTransactions();
