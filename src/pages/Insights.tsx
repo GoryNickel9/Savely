@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import MainLayout from '@/components/layout/MainLayout';
 import { useInsights } from '@/hooks/useInsights';
 import type { Insight, InsightKind, InsightSeverity } from '@/lib/insights';

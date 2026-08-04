@@ -8,7 +8,7 @@ import { ProjectionChart } from '@/components/fire/charts'
 import MainLayout from '@/components/layout/MainLayout'
 import { Card, CardHeader, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Link } from 'react-router-dom'
+import { Link } from 'react-router'
 import { ArrowLeft, RotateCcw } from 'lucide-react'
 
 export default function StandardFIRE() {

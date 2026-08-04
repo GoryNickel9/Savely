@@ -9,7 +9,7 @@ import {
 } from 'recharts';
 import { format, parseISO } from 'date-fns';
 import { it } from 'date-fns/locale';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import { ArrowLeft, Wallet, TrendingUp, TrendingDown, Home, PiggyBank } from 'lucide-react';
 
 const eur = (n: number) =>

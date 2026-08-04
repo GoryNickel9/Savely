@@ -3,7 +3,7 @@ import { CURRENCY_SYMBOLS } from '@/lib/constants';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import { ArrowLeft } from 'lucide-react';
 import {
   PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Legend, LineChart, Line,

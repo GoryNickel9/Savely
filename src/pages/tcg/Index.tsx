@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import MainLayout from '@/components/layout/MainLayout';
 import { useTcgCards } from '@/hooks/useTcgCards';
 import { TCG_GAME_LABELS, TcgGame } from '@/lib/types';

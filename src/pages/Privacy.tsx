@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import LegalLayout, { LegalSection } from '@/components/legal/LegalLayout';
 import { LEGAL_OWNER, LEGAL_APP, LEGAL_SUBPROCESSORS, privacyMailtoHref } from '@/lib/legalContents';
 

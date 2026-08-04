@@ -11,7 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { CURRENCY_SYMBOLS } from '@/lib/constants';
 import { Plus, Trash2, ArrowLeft, Edit2 } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import { useSupabaseData } from '@/hooks/useSupabaseData';
 import { parseAmount, todayLocalISO } from '@/lib/utils';
 import { useDialogManager } from '@/hooks/useDialogManager';
