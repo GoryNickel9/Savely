@@ -2,25 +2,8 @@ import MainLayout from '@/components/layout/MainLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowRight, Cigarette, Cannabis } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { usePermissions } from '@/hooks/usePermissions';
-import { Navigate } from 'react-router-dom';
 
 export default function Fumo() {
-  const { permissions, loading } = usePermissions();
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="animate-pulse text-muted-foreground">Caricamento...</div>
-      </div>
-    );
-  }
-
-  // Verifica se l'utente ha il permesso fumo
-  if (!permissions?.fumo) {
-    return <Navigate to="/" replace />;
-  }
-
   return (
     <MainLayout>
       <div className="space-y-6">

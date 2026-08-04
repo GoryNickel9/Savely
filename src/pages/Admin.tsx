@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { useAuth } from '@/hooks/useAuth';
 import { usePermissions } from '@/hooks/usePermissions';
-import { Navigate } from 'react-router-dom';
 import { getAllUsersWithPermissions, updateUserPermissions } from '@/lib/permissions';
 import { useToast } from '@/hooks/use-toast';
 
@@ -19,7 +18,7 @@ interface UserProfile {
 
 export default function Admin() {
   const { user } = useAuth();
-  const { permissions, loading: permissionsLoading } = usePermissions();
+  const { permissions } = usePermissions();
   const { toast } = useToast();
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
@@ -48,27 +47,11 @@ export default function Admin() {
 
   useEffect(() => {
     // Carica gli utenti solo quando l'utente è autenticato e ha i permessi admin
+    // (permesso garantito a livello di rotta da <PermissionRoute perm="admin">)
     if (user?.id && permissions?.admin) {
       loadUsers();
     }
   }, [loadUsers, user?.id, permissions?.admin]);
-
-  if (permissionsLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="animate-pulse text-muted-foreground">Caricamento...</div>
-      </div>
-    );
-  }
-
-  // Verifica se l'utente ha il permesso admin
-  if (!permissions?.admin) {
-    return <Navigate to="/" replace />;
-  }
-
-  if (!user?.id) {
-    return <Navigate to="/auth" replace />;
-  }
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
