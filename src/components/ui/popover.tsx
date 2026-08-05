@@ -9,9 +9,18 @@ const PopoverTrigger = PopoverPrimitive.Trigger;
 
 const PopoverContent = React.forwardRef<
   React.ElementRef<typeof PopoverPrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof PopoverPrimitive.Content>
->(({ className, align = "center", sideOffset = 4, ...props }, ref) => (
-  <PopoverPrimitive.Portal>
+  React.ComponentPropsWithoutRef<typeof PopoverPrimitive.Content> & {
+    /**
+     * Render the content inline (no Portal) instead of portalling to <body>.
+     * Needed when the popover is nested inside a Radix modal Dialog: the
+     * dialog's focus trap and pointer-events scope only cover its own subtree,
+     * so a portalled popover can't receive focus/clicks (e.g. cmdk search and
+     * item selection stop working). Keeping the content in-tree fixes that.
+     */
+    disablePortal?: boolean;
+  }
+>(({ className, align = "center", sideOffset = 4, disablePortal = false, ...props }, ref) => {
+  const content = (
     <PopoverPrimitive.Content
       ref={ref}
       align={align}
@@ -22,8 +31,10 @@ const PopoverContent = React.forwardRef<
       )}
       {...props}
     />
-  </PopoverPrimitive.Portal>
-));
+  );
+  if (disablePortal) return content;
+  return <PopoverPrimitive.Portal>{content}</PopoverPrimitive.Portal>;
+});
 PopoverContent.displayName = PopoverPrimitive.Content.displayName;
 
 export { Popover, PopoverTrigger, PopoverContent };
