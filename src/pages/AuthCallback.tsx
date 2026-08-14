@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router';
+import { useTranslation } from 'react-i18next';
 import { supabase } from '@/integrations/supabase/client';
 
 export default function AuthCallback() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [searchParams] = useSearchParams();
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
   const [errorMessage, setErrorMessage] = useState('');
@@ -53,7 +55,7 @@ export default function AuthCallback() {
                 navigate('/', { replace: true });
               }, 1500);
             } else {
-              throw new Error('Nessuna sessione trovata');
+              throw new Error(t('Nessuna sessione trovata'));
             }
           }
         } else if (type === 'recovery') {
@@ -72,7 +74,7 @@ export default function AuthCallback() {
       } catch (error) {
         console.error('Errore durante il callback di autenticazione:', error);
         setStatus('error');
-        setErrorMessage(error instanceof Error ? error.message : 'Si è verificato un errore');
+        setErrorMessage(error instanceof Error ? error.message : t('Si è verificato un errore'));
         // Reindirizza alla pagina di auth dopo un breve delay
         setTimeout(() => {
           navigate('/auth', { replace: true });
@@ -81,7 +83,7 @@ export default function AuthCallback() {
     };
 
     handleAuthCallback();
-  }, [searchParams, navigate]);
+  }, [searchParams, navigate, t]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">
@@ -89,7 +91,7 @@ export default function AuthCallback() {
         {status === 'loading' && (
           <div className="space-y-4">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-            <p className="text-muted-foreground">Verifica in corso...</p>
+            <p className="text-muted-foreground">{t('Verifica in corso...')}</p>
           </div>
         )}
         
@@ -97,10 +99,10 @@ export default function AuthCallback() {
           <div className="space-y-4">
             <div className="text-green-500 text-6xl mx-auto">✓</div>
             <h2 className="text-2xl font-semibold text-foreground">
-              {searchParams.get('type') === 'signup' ? 'Email verificata!' : 'Operazione completata!'}
+              {searchParams.get('type') === 'signup' ? t('Email verificata!') : t('Operazione completata!')}
             </h2>
             <p className="text-muted-foreground">
-              Verrai reindirizzato automaticamente...
+              {t('Verrai reindirizzato automaticamente...')}
             </p>
           </div>
         )}
@@ -108,10 +110,10 @@ export default function AuthCallback() {
         {status === 'error' && (
           <div className="space-y-4">
             <div className="text-red-500 text-6xl mx-auto">✕</div>
-            <h2 className="text-2xl font-semibold text-foreground">Si è verificato un errore</h2>
+            <h2 className="text-2xl font-semibold text-foreground">{t('Si è verificato un errore')}</h2>
             <p className="text-muted-foreground">{errorMessage}</p>
             <p className="text-sm text-muted-foreground">
-              Verrai reindirizzato alla pagina di login...
+              {t('Verrai reindirizzato alla pagina di login...')}
             </p>
           </div>
         )}

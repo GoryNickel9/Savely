@@ -1,10 +1,12 @@
 import { useState, useId } from 'react'
+import { useTranslation } from 'react-i18next'
 
 interface TooltipProps {
   content: string
 }
 
 export default function Tooltip({ content }: TooltipProps) {
+  const { t } = useTranslation()
   const [isVisible, setIsVisible] = useState(false)
   const tooltipId = useId()
 
@@ -12,7 +14,7 @@ export default function Tooltip({ content }: TooltipProps) {
     <span className="group relative">
       <button
         type="button"
-        aria-label="More information"
+        aria-label={t('More information')}
         aria-describedby={tooltipId}
         onMouseEnter={() => setIsVisible(true)}
         onMouseLeave={() => setIsVisible(false)}
@@ -41,7 +43,7 @@ export default function Tooltip({ content }: TooltipProps) {
           ${isVisible ? 'opacity-100 visible' : 'opacity-0 invisible'}
         `}
       >
-        {content}
+        {t(content)}
         <span className="absolute left-1/2 -translate-x-1/2 top-full border-4 border-transparent border-t-gray-900 dark:border-t-gray-700" />
       </span>
     </span>

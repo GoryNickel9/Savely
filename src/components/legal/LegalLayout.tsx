@@ -1,4 +1,5 @@
 import { Link } from 'react-router';
+import { useTranslation } from 'react-i18next';
 import { Shield, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { LEGAL_APP } from '@/lib/legalContents';
@@ -17,6 +18,7 @@ export default function LegalLayout({
   subtitle?: string;
   children: React.ReactNode;
 }) {
+  const { t } = useTranslation();
   return (
     <div className="min-h-screen bg-background dark">
       {/* Header */}
@@ -31,7 +33,7 @@ export default function LegalLayout({
           <Button variant="ghost" size="sm" asChild>
             <Link to="/">
               <ArrowLeft className="w-4 h-4 mr-2" />
-              Torna all'app
+              {t("Torna all'app")}
             </Link>
           </Button>
         </div>
@@ -50,13 +52,13 @@ export default function LegalLayout({
 
         {/* Footer */}
         <footer className="mt-16 pt-8 border-t border-border/50 text-sm text-muted-foreground space-y-3">
-          <p>Ultimo aggiornamento: {LEGAL_APP.lastUpdated}</p>
+          <p>{t('Ultimo aggiornamento: {{date}}', { date: LEGAL_APP.lastUpdated })}</p>
           <div className="flex flex-wrap gap-x-4 gap-y-1">
-            <Link to="/privacy" className="hover:text-foreground hover:underline">Privacy Policy</Link>
-            <Link to="/cookies" className="hover:text-foreground hover:underline">Cookie Policy</Link>
-            <Link to="/terms" className="hover:text-foreground hover:underline">Termini di servizio</Link>
+            <Link to="/privacy" className="hover:text-foreground hover:underline">{t('Privacy Policy')}</Link>
+            <Link to="/cookies" className="hover:text-foreground hover:underline">{t('Cookie Policy')}</Link>
+            <Link to="/terms" className="hover:text-foreground hover:underline">{t('Termini di servizio')}</Link>
           </div>
-          <p>© {new Date().getFullYear()} {LEGAL_APP.name}. Tutti i diritti riservati.</p>
+          <p>{t('© {{year}} {{name}}. Tutti i diritti riservati.', { year: new Date().getFullYear(), name: LEGAL_APP.name })}</p>
         </footer>
       </main>
     </div>

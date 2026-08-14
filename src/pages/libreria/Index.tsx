@@ -3,6 +3,7 @@ import MainLayout from '@/components/layout/MainLayout';
 import { useLibraryItems } from '@/hooks/useLibraryItems';
 import { LIBRARY_CATEGORY_LABELS, LibraryCategory } from '@/lib/types';
 import { BookOpen, BookMarked, BookCopy } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 const CATEGORIES: { key: LibraryCategory; icon: React.ElementType; href: string }[] = [
   { key: 'libri', icon: BookOpen, href: '/libreria/libri' },
@@ -11,6 +12,7 @@ const CATEGORIES: { key: LibraryCategory; icon: React.ElementType; href: string 
 ];
 
 export default function LibreriaIndex() {
+  const { t } = useTranslation();
   const { items: allItems, isLoading, totalCost, totalReselling, totalGain, totalPieces } = useLibraryItems();
 
   const categoryStats = CATEGORIES.map(({ key, icon, href }) => {
@@ -26,31 +28,31 @@ export default function LibreriaIndex() {
         <div>
           <h1 className="text-3xl font-display font-bold flex items-center gap-2">
             <BookOpen className="w-8 h-8" />
-            Libreria
+            {t('Libreria')}
           </h1>
-          <p className="text-muted-foreground">La tua collezione di libri, fumetti e manga</p>
+          <p className="text-muted-foreground">{t('La tua collezione di libri, fumetti e manga')}</p>
         </div>
 
         {/* Summary */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="glass rounded-xl p-6 text-center">
-            <p className="text-sm text-muted-foreground">Totale Pezzi</p>
+            <p className="text-sm text-muted-foreground">{t('Totale Pezzi')}</p>
             <p className="text-2xl font-display font-bold">{isLoading ? '…' : totalPieces}</p>
           </div>
           <div className="glass rounded-xl p-6 text-center">
-            <p className="text-sm text-muted-foreground">Investimento</p>
+            <p className="text-sm text-muted-foreground">{t('Investimento')}</p>
             <p className="text-2xl font-display font-bold">
               €{isLoading ? '…' : totalCost.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </p>
           </div>
           <div className="glass rounded-xl p-6 text-center">
-            <p className="text-sm text-muted-foreground">Valore Reselling</p>
+            <p className="text-sm text-muted-foreground">{t('Valore Reselling')}</p>
             <p className="text-2xl font-display font-bold">
               €{isLoading ? '…' : totalReselling.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </p>
           </div>
           <div className="glass rounded-xl p-6 text-center">
-            <p className="text-sm text-muted-foreground">Profitto / Perdita</p>
+            <p className="text-sm text-muted-foreground">{t('Profitto / Perdita')}</p>
             <p className={`text-2xl font-display font-bold ${totalGain >= 0 ? 'text-success' : 'text-destructive'}`}>
               {isLoading ? '…' : `${totalGain >= 0 ? '+' : ''}€${totalGain.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
             </p>
@@ -65,12 +67,12 @@ export default function LibreriaIndex() {
                 <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
                   <Icon className="w-6 h-6 text-primary" />
                 </div>
-                <h3 className="text-lg font-semibold group-hover:text-primary transition-colors">{label}</h3>
+                <h3 className="text-lg font-semibold group-hover:text-primary transition-colors">{t(label)}</h3>
               </div>
               <div className="space-y-1 text-sm text-muted-foreground">
-                <p>{count} titoli &bull; {pieces} {pieces === 1 ? 'pezzo' : 'pezzi'}</p>
-                <p>Investito: €{cost.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-                <p>Reselling: €{reselling.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                <p>{t('{{count}} titoli', { count })} &bull; {pieces === 1 ? t('{{count}} pezzo', { count: pieces }) : t('{{count}} pezzi', { count: pieces })}</p>
+                <p>{t('Investito: €{{value}}', { value: cost.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) })}</p>
+                <p>{t('Reselling: €{{value}}', { value: reselling.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) })}</p>
               </div>
             </Link>
           ))}

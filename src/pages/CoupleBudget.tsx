@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Navigate } from 'react-router';
 import MainLayout from '@/components/layout/MainLayout';
 import { useCouplePairStatus } from '@/hooks/useCouplePairStatus';
@@ -16,6 +17,7 @@ import { getMedianMonthlySpendingShared } from '@/lib/coupleExpenses';
 import { parseAmount } from '@/lib/utils';
 
 export default function CoupleBudget() {
+  const { t } = useTranslation();
   const { connection, isLoading: statusLoading } = useCouplePairStatus();
   const { sharedExpenses, isLoading: expensesLoading } = useSharedExpenses(connection?.id ?? null);
   const { budgets, availableCategories, isLoading: budgetsLoading, createBudget, updateBudget, deleteBudget } =
@@ -60,12 +62,12 @@ export default function CoupleBudget() {
     e.preventDefault();
     try {
       await createBudget.mutateAsync({ couple_category_name: categoryName, amount: parseAmount(amount) });
-      toast({ title: 'Budget familiare creato!' });
+      toast({ title: t('Budget familiare creato!') });
       setOpen(false);
       setCategoryName('');
       setAmount('');
     } catch {
-      toast({ title: 'Errore', variant: 'destructive' });
+      toast({ title: t('Errore'), variant: 'destructive' });
     }
   };
 
@@ -73,19 +75,19 @@ export default function CoupleBudget() {
     e.preventDefault();
     try {
       await updateBudget.mutateAsync({ id: editBudgetId, amount: parseAmount(editAmount) });
-      toast({ title: 'Budget aggiornato!' });
+      toast({ title: t('Budget aggiornato!') });
       setEditOpen(false);
     } catch {
-      toast({ title: 'Errore', variant: 'destructive' });
+      toast({ title: t('Errore'), variant: 'destructive' });
     }
   };
 
   const handleDelete = async (id: string) => {
     try {
       await deleteBudget.mutateAsync(id);
-      toast({ title: 'Budget eliminato!' });
+      toast({ title: t('Budget eliminato!') });
     } catch {
-      toast({ title: 'Errore', variant: 'destructive' });
+      toast({ title: t('Errore'), variant: 'destructive' });
     }
   };
 
@@ -103,12 +105,12 @@ export default function CoupleBudget() {
           <div>
             <h1 className="text-3xl font-display font-bold flex items-center gap-2">
               <HeartHandshake className="w-8 h-8 text-rose-400" />
-              Budget Familiare
+              {t('Budget Familiare')}
             </h1>
             <p className="text-muted-foreground">
               {isArchived
-                ? 'Connessione archiviata — sola lettura'
-                : 'Budget basato sulla mediana mensile delle spese condivise'}
+                ? t('Connessione archiviata — sola lettura')
+                : t('Budget basato sulla mediana mensile delle spese condivise')}
             </p>
           </div>
 
@@ -117,23 +119,23 @@ export default function CoupleBudget() {
               <DialogTrigger asChild>
                 <Button disabled={freeCategories.length === 0}>
                   <Plus className="w-4 h-4 mr-2" />
-                  Nuovo Budget
+                  {t('Nuovo Budget')}
                 </Button>
               </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
-                  <DialogTitle>Nuovo Budget Familiare</DialogTitle>
+                  <DialogTitle>{t('Nuovo Budget Familiare')}</DialogTitle>
                 </DialogHeader>
                 <form onSubmit={handleCreate} className="space-y-4">
                   <div>
-                    <label className="text-sm text-muted-foreground mb-1 block">Categoria condivisa</label>
+                    <label className="text-sm text-muted-foreground mb-1 block">{t('Categoria condivisa')}</label>
                     {freeCategories.length === 0 ? (
                       <p className="text-sm text-muted-foreground">
-                        Nessuna categoria disponibile. Condividi prima delle spese.
+                        {t('Nessuna categoria disponibile. Condividi prima delle spese.')}
                       </p>
                     ) : (
                       <Select value={categoryName} onValueChange={setCategoryName}>
-                        <SelectTrigger><SelectValue placeholder="Seleziona categoria" /></SelectTrigger>
+                        <SelectTrigger><SelectValue placeholder={t('Seleziona categoria')} /></SelectTrigger>
                         <SelectContent>
                           {freeCategories.map(cat => (
                             <SelectItem key={cat} value={cat}>{cat}</SelectItem>
@@ -145,13 +147,13 @@ export default function CoupleBudget() {
                   <Input
                     type="number"
                     step="0.01"
-                    placeholder="Importo mensile (€)"
+                    placeholder={t('Importo mensile (€)')}
                     value={amount}
                     onChange={e => setAmount(e.target.value)}
                     required
                   />
                   <Button type="submit" className="w-full" disabled={!categoryName || createBudget.isPending}>
-                    {createBudget.isPending ? 'Creazione...' : 'Crea Budget'}
+                    {createBudget.isPending ? t('Creazione...') : t('Crea Budget')}
                   </Button>
                 </form>
               </DialogContent>
@@ -161,15 +163,15 @@ export default function CoupleBudget() {
 
         {/* Loading */}
         {isLoading && (
-          <div className="text-center text-muted-foreground py-12">Caricamento...</div>
+          <div className="text-center text-muted-foreground py-12">{t('Caricamento...')}</div>
         )}
 
         {/* No shared expenses yet */}
         {!isLoading && sharedExpenses.length === 0 && (
           <div className="glass rounded-xl p-12 text-center text-muted-foreground">
             <HeartHandshake className="w-12 h-12 mx-auto mb-4 text-rose-400/50" />
-            <p>Nessuna spesa condivisa trovata.</p>
-            <p className="text-sm mt-1">Condividi prima delle spese dalla pagina Transazioni.</p>
+            <p>{t('Nessuna spesa condivisa trovata.')}</p>
+            <p className="text-sm mt-1">{t('Condividi prima delle spese dalla pagina Transazioni.')}</p>
           </div>
         )}
 
@@ -177,19 +179,19 @@ export default function CoupleBudget() {
         {!isLoading && budgets.length > 0 && (
           <div className="grid gap-4 md:grid-cols-3">
             <div className="glass rounded-xl p-6">
-              <p className="text-sm text-muted-foreground mb-1">Budget mensile previsto</p>
+              <p className="text-sm text-muted-foreground mb-1">{t('Budget mensile previsto')}</p>
               <p className="text-2xl font-bold">
                 {CURRENCY_SYMBOLS.EUR}{totals.totalExpected.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </p>
             </div>
             <div className="glass rounded-xl p-6">
-              <p className="text-sm text-muted-foreground mb-1">Spesa mediana mensile reale</p>
+              <p className="text-sm text-muted-foreground mb-1">{t('Spesa mediana mensile reale')}</p>
               <p className="text-2xl font-bold">
                 {CURRENCY_SYMBOLS.EUR}{totals.totalActual.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </p>
             </div>
             <div className="glass rounded-xl p-6">
-              <p className="text-sm text-muted-foreground mb-1">Differenza</p>
+              <p className="text-sm text-muted-foreground mb-1">{t('Differenza')}</p>
               <p className={`text-2xl font-bold ${totals.difference > 0 ? 'text-destructive' : totals.difference < 0 ? 'text-green-500' : ''}`}>
                 {totals.difference > 0 ? '+' : ''}
                 {CURRENCY_SYMBOLS.EUR}{totals.difference.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
@@ -204,7 +206,7 @@ export default function CoupleBudget() {
             {budgets.length === 0 ? (
               sharedExpenses.length > 0 && (
                 <div className="glass rounded-xl p-12 text-center text-muted-foreground">
-                  Nessun budget impostato. Crea il primo budget per una delle categorie condivise.
+                  {t('Nessun budget impostato. Crea il primo budget per una delle categorie condivise.')}
                 </div>
               )
             ) : sortedBudgets.map(b => {
@@ -250,18 +252,18 @@ export default function CoupleBudget() {
         {/* Edit dialog */}
         <Dialog open={editOpen} onOpenChange={setEditOpen}>
           <DialogContent>
-            <DialogHeader><DialogTitle>Modifica Budget</DialogTitle></DialogHeader>
+            <DialogHeader><DialogTitle>{t('Modifica Budget')}</DialogTitle></DialogHeader>
             <form onSubmit={handleEditSubmit} className="space-y-4">
               <Input
                 type="number"
                 step="0.01"
-                placeholder="Nuovo importo (€)"
+                placeholder={t('Nuovo importo (€)')}
                 value={editAmount}
                 onChange={e => setEditAmount(e.target.value)}
                 required
               />
               <Button type="submit" className="w-full" disabled={updateBudget.isPending}>
-                {updateBudget.isPending ? 'Aggiornamento...' : 'Aggiorna'}
+                {updateBudget.isPending ? t('Aggiornamento...') : t('Aggiorna')}
               </Button>
             </form>
           </DialogContent>

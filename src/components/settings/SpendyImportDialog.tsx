@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -69,6 +70,7 @@ interface SpendyImportDialogProps {
 
 export default function SpendyImportDialog({ open, onOpenChange, userId }: SpendyImportDialogProps) {
   const { toast } = useToast();
+  const { t } = useTranslation();
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [step, setStep] = useState<ImportStep>('select-type');
@@ -259,8 +261,8 @@ export default function SpendyImportDialog({ open, onOpenChange, userId }: Spend
 
       if (rows.length === 0) {
         toast({
-          title: 'File vuoto',
-          description: 'Il file non contiene dati da importare.',
+          title: t('File vuoto'),
+          description: t('Il file non contiene dati da importare.'),
           variant: 'destructive',
         });
         return;
@@ -268,11 +270,11 @@ export default function SpendyImportDialog({ open, onOpenChange, userId }: Spend
 
       // Auto-detect file type
       const detectedType = detectFileType(rows, file.name);
-      
+
       if (!detectedType) {
         toast({
-          title: 'Formato non riconosciuto',
-          description: 'Impossibile determinare il tipo di file. Verifica il formato.',
+          title: t('Formato non riconosciuto'),
+          description: t('Impossibile determinare il tipo di file. Verifica il formato.'),
           variant: 'destructive',
         });
         return;
@@ -323,8 +325,8 @@ export default function SpendyImportDialog({ open, onOpenChange, userId }: Spend
     } catch (error) {
       console.error('File parse error:', error);
       toast({
-        title: 'Errore lettura file',
-        description: 'Impossibile leggere il file. Verifica il formato.',
+        title: t('Errore lettura file'),
+        description: t('Impossibile leggere il file. Verifica il formato.'),
         variant: 'destructive',
       });
     } finally {
@@ -367,7 +369,7 @@ export default function SpendyImportDialog({ open, onOpenChange, userId }: Spend
     if (!importType) return;
 
     setStep('importing');
-    setImportProgress({ current: 0, total: rows.length, status: 'Preparazione...' });
+    setImportProgress({ current: 0, total: rows.length, status: t('Preparazione...') });
 
     try {
       let importedCount = 0;
@@ -393,7 +395,7 @@ export default function SpendyImportDialog({ open, onOpenChange, userId }: Spend
         const categoryMap = new Map<string, string>();
 
         // Create new categories (only those not mapped)
-        setImportProgress({ current: 0, total: totalRows, status: 'Creazione categorie...' });
+        setImportProgress({ current: 0, total: totalRows, status: t('Creazione categorie...') });
         for (const cat of categoriesToCreate) {
           if (cat.mappedTo) {
             // Use the mapped category
@@ -435,10 +437,10 @@ export default function SpendyImportDialog({ open, onOpenChange, userId }: Spend
         for (let i = 0; i < rows.length; i++) {
           // Skip if we're keeping the existing duplicate
           if (duplicateRows.has(i)) {
-            setImportProgress({ 
-              current: i + 1, 
-              total: totalRows, 
-              status: `Saltato duplicato... (${i + 1}/${totalRows})` 
+            setImportProgress({
+              current: i + 1,
+              total: totalRows,
+              status: t('Saltato duplicato... ({{current}}/{{total}})', { current: i + 1, total: totalRows })
             });
             continue;
           }
@@ -458,10 +460,10 @@ export default function SpendyImportDialog({ open, onOpenChange, userId }: Spend
           });
 
           if (!error) importedCount++;
-          setImportProgress({ 
-            current: i + 1, 
-            total: totalRows, 
-            status: `Importazione transazioni... (${i + 1}/${totalRows})` 
+          setImportProgress({
+            current: i + 1,
+            total: totalRows,
+            status: t('Importazione transazioni... ({{current}}/{{total}})', { current: i + 1, total: totalRows })
           });
         }
       } else if (importType === 'investment') {
@@ -517,10 +519,10 @@ export default function SpendyImportDialog({ open, onOpenChange, userId }: Spend
           const key = `${ticker.toLowerCase()}|${dataAcquisto}|${prezzoCarico}|${quantity}`;
           if (existingKeys.has(key)) {
             skippedDuplicates++;
-            setImportProgress({ 
-              current: i + 1, 
-              total: totalRows, 
-              status: `Importazione investimenti... (${i + 1}/${totalRows}) - Saltato duplicato` 
+            setImportProgress({
+              current: i + 1,
+              total: totalRows,
+              status: t('Importazione investimenti... ({{current}}/{{total}}) - Saltato duplicato', { current: i + 1, total: totalRows })
             });
             continue;
           }
@@ -555,33 +557,33 @@ export default function SpendyImportDialog({ open, onOpenChange, userId }: Spend
             // Add to existing keys to prevent duplicates within the same import
             existingKeys.add(key);
           }
-          setImportProgress({ 
-            current: i + 1, 
-            total: totalRows, 
-            status: `Importazione investimenti... (${i + 1}/${totalRows})` 
+          setImportProgress({
+            current: i + 1,
+            total: totalRows,
+            status: t('Importazione investimenti... ({{current}}/{{total}})', { current: i + 1, total: totalRows })
           });
         }
-        
+
         if (skippedDuplicates > 0) {
           toast({
-            title: 'Duplicati rilevati',
-            description: `${skippedDuplicates} investimenti duplicati non sono stati importati.`,
+            title: t('Duplicati rilevati'),
+            description: t('{{count}} investimenti duplicati non sono stati importati.', { count: skippedDuplicates }),
           });
         }
       }
 
       const skipped = duplicatesToHandle.filter(d => d.keep === 'existing').length;
       toast({
-        title: 'Import completato',
-        description: `Importati ${importedCount} record${skipped > 0 ? `, saltati ${skipped} duplicati` : ''}`,
+        title: t('Import completato'),
+        description: t('Importati {{count}} record{{skipped}}', { count: importedCount, skipped: skipped > 0 ? t(', saltati {{count}} duplicati', { count: skipped }) : '' }),
       });
 
       handleClose();
     } catch (error) {
       console.error('Import error:', error);
       toast({
-        title: 'Errore import',
-        description: 'Si è verificato un errore durante l\'import.',
+        title: t('Errore import'),
+        description: t('Si è verificato un errore durante l\'import.'),
         variant: 'destructive',
       });
       setStep('select-type');
@@ -619,16 +621,16 @@ export default function SpendyImportDialog({ open, onOpenChange, userId }: Spend
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>
-            {step === 'select-type' && 'Importa Dati'}
-            {step === 'preview-categories' && 'Anteprima categorie'}
-            {step === 'resolve-duplicates' && 'Gestisci duplicati'}
-            {step === 'importing' && 'Importazione in corso...'}
+            {step === 'select-type' && t('Importa Dati')}
+            {step === 'preview-categories' && t('Anteprima categorie')}
+            {step === 'resolve-duplicates' && t('Gestisci duplicati')}
+            {step === 'importing' && t('Importazione in corso...')}
           </DialogTitle>
           <DialogDescription>
-            {step === 'select-type' && 'Carica un file CSV. Il sistema rileverà automaticamente il tipo di dati (entrate, uscite o investimenti).'}
-            {step === 'preview-categories' && `Verranno importate ${parsedRows.length} transazioni. Configura le categorie.`}
-            {step === 'resolve-duplicates' && `Trovati ${duplicates.length} possibili duplicati. Scegli quali tenere.`}
-            {step === 'importing' && 'Attendere il completamento dell\'importazione.'}
+            {step === 'select-type' && t('Carica un file CSV. Il sistema rileverà automaticamente il tipo di dati (entrate, uscite o investimenti).')}
+            {step === 'preview-categories' && t('Verranno importate {{count}} transazioni. Configura le categorie.', { count: parsedRows.length })}
+            {step === 'resolve-duplicates' && t('Trovati {{count}} possibili duplicati. Scegli quali tenere.', { count: duplicates.length })}
+            {step === 'importing' && t('Attendere il completamento dell\'importazione.')}
           </DialogDescription>
         </DialogHeader>
 
@@ -644,7 +646,7 @@ export default function SpendyImportDialog({ open, onOpenChange, userId }: Spend
           <div className="grid gap-4 py-4">
             <div className="text-center space-y-4">
               <p className="text-sm text-muted-foreground">
-                Carica un file CSV. Il sistema rileverà automaticamente il tipo di dati.
+                {t('Carica un file CSV. Il sistema rileverà automaticamente il tipo di dati.')}
               </p>
               <Button
                 variant="default"
@@ -653,10 +655,10 @@ export default function SpendyImportDialog({ open, onOpenChange, userId }: Spend
                 disabled={isLoading}
               >
                 <Upload className="w-6 h-6 mr-3" />
-                {isLoading ? 'Analisi file...' : 'Seleziona file'}
+                {isLoading ? t('Analisi file...') : t('Seleziona file')}
               </Button>
               <p className="text-xs text-muted-foreground">
-                Formato supportato: CSV
+                {t('Formato supportato: CSV')}
               </p>
             </div>
           </div>
@@ -667,7 +669,7 @@ export default function SpendyImportDialog({ open, onOpenChange, userId }: Spend
             {/* Existing categories list */}
             {existingCategories.length > 0 && (
               <div>
-                <Label className="text-sm text-muted-foreground">Categorie esistenti ({existingCategories.length})</Label>
+                <Label className="text-sm text-muted-foreground">{t('Categorie esistenti ({{count}})', { count: existingCategories.length })}</Label>
                 <div className="flex flex-wrap gap-2 mt-2">
                   {existingCategories.map(cat => (
                     <span key={cat.id} className="px-2 py-1 bg-muted rounded-md text-sm flex items-center gap-1">
@@ -681,9 +683,9 @@ export default function SpendyImportDialog({ open, onOpenChange, userId }: Spend
 
             {newCategories.length > 0 ? (
               <div>
-                <Label className="text-sm font-medium">Nuove categorie ({newCategories.length})</Label>
+                <Label className="text-sm font-medium">{t('Nuove categorie ({{count}})', { count: newCategories.length })}</Label>
                 <p className="text-xs text-muted-foreground mb-2">
-                  Puoi mappare a una categoria esistente o crearne una nuova.
+                  {t('Puoi mappare a una categoria esistente o crearne una nuova.')}
                 </p>
                 <ScrollArea className="h-[300px] mt-2">
                   <div className="space-y-4 pr-4">
@@ -695,7 +697,7 @@ export default function SpendyImportDialog({ open, onOpenChange, userId }: Spend
 
                         {/* Mapping dropdown */}
                         <div className="space-y-2">
-                          <Label className="text-xs text-muted-foreground">Associa a categoria</Label>
+                          <Label className="text-xs text-muted-foreground">{t('Associa a categoria')}</Label>
                           <Select 
                             value={cat.mappedTo || 'create-new'} 
                             onValueChange={(v) => updateCategoryMapping(index, v === 'create-new' ? undefined : v)}
@@ -704,7 +706,7 @@ export default function SpendyImportDialog({ open, onOpenChange, userId }: Spend
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="create-new">➕ Crea nuova categoria</SelectItem>
+                              <SelectItem value="create-new">➕ {t('Crea nuova categoria')}</SelectItem>
                               {existingCategories.map(existing => (
                                 <SelectItem key={existing.id} value={existing.id}>
                                   {existing.icon} {existing.name}
@@ -718,7 +720,7 @@ export default function SpendyImportDialog({ open, onOpenChange, userId }: Spend
                         {!cat.mappedTo && (
                           <>
                             <div className="space-y-2">
-                              <Label className="text-xs text-muted-foreground">Icona</Label>
+                              <Label className="text-xs text-muted-foreground">{t('Icona')}</Label>
                               <div className="flex flex-wrap gap-2">
                                 {(importType === 'income' ? DEFAULT_ICONS_INCOME : DEFAULT_ICONS_EXPENSE).map(icon => (
                                   <button
@@ -738,13 +740,13 @@ export default function SpendyImportDialog({ open, onOpenChange, userId }: Spend
                               <Input
                                 value={cat.icon}
                                 onChange={(e) => updateCategoryIcon(index, e.target.value)}
-                                placeholder="Icona personalizzata"
+                                placeholder={t('Icona personalizzata')}
                                 className="w-20"
                               />
                             </div>
 
                             <div className="space-y-2">
-                              <Label className="text-xs text-muted-foreground">Colore</Label>
+                              <Label className="text-xs text-muted-foreground">{t('Colore')}</Label>
                               <div className="flex flex-wrap gap-2">
                                 {DEFAULT_COLORS.map(color => (
                                   <button
@@ -776,24 +778,24 @@ export default function SpendyImportDialog({ open, onOpenChange, userId }: Spend
               </div>
             ) : (
               <p className="text-center text-muted-foreground py-4">
-                Tutte le categorie esistono già. Procedi con l'importazione.
+                {t('Tutte le categorie esistono già. Procedi con l\'importazione.')}
               </p>
             )}
 
             {duplicates.length > 0 && (
               <div className="flex items-center gap-2 p-3 bg-warning/10 border border-warning/30 rounded-lg">
                 <AlertTriangle className="w-5 h-5 text-warning" />
-                <span className="text-sm">Trovati {duplicates.length} possibili duplicati</span>
+                <span className="text-sm">{t('Trovati {{count}} possibili duplicati', { count: duplicates.length })}</span>
               </div>
             )}
 
             <DialogFooter className="gap-2">
               <Button variant="outline" onClick={() => setStep('select-type')}>
                 <ArrowLeft className="w-4 h-4 mr-2" />
-                Indietro
+                {t('Indietro')}
               </Button>
               <Button onClick={handleCategoriesConfirmed}>
-                {duplicates.length > 0 ? 'Gestisci duplicati' : `Importa ${parsedRows.length} transazioni`}
+                {duplicates.length > 0 ? t('Gestisci duplicati') : t('Importa {{count}} transazioni', { count: parsedRows.length })}
               </Button>
             </DialogFooter>
           </div>
@@ -807,7 +809,7 @@ export default function SpendyImportDialog({ open, onOpenChange, userId }: Spend
                   <div key={`${dup.existing.id}-${index}`} className="p-4 border rounded-lg space-y-3">
                     <div className="grid grid-cols-2 gap-4 text-sm">
                       <div>
-                        <Label className="text-xs text-muted-foreground">Nel file CSV</Label>
+                        <Label className="text-xs text-muted-foreground">{t('Nel file CSV')}</Label>
                         <div className="mt-1">
                           <p className="font-medium">€{parseItalianNumber(dup.csvRow.importo).toFixed(2)}</p>
                           <p className="text-muted-foreground">{normalizeDate(dup.csvRow.data)}</p>
@@ -816,11 +818,11 @@ export default function SpendyImportDialog({ open, onOpenChange, userId }: Spend
                         </div>
                       </div>
                       <div>
-                        <Label className="text-xs text-muted-foreground">Già presente</Label>
+                        <Label className="text-xs text-muted-foreground">{t('Già presente')}</Label>
                         <div className="mt-1">
                           <p className="font-medium">€{dup.existing.amount.toFixed(2)}</p>
                           <p className="text-muted-foreground">{dup.existing.date}</p>
-                          <p className="text-xs">{dup.existing.category_name || 'Senza categoria'}</p>
+                          <p className="text-xs">{dup.existing.category_name || t('Senza categoria')}</p>
                           {dup.existing.description && <p className="text-xs italic">{dup.existing.description}</p>}
                         </div>
                       </div>
@@ -832,21 +834,21 @@ export default function SpendyImportDialog({ open, onOpenChange, userId }: Spend
                         variant={dup.keep === 'existing' ? 'default' : 'outline'}
                         onClick={() => updateDuplicateChoice(index, 'existing')}
                       >
-                        Tieni esistente
+                        {t('Tieni esistente')}
                       </Button>
                       <Button
                         size="sm"
                         variant={dup.keep === 'new' ? 'default' : 'outline'}
                         onClick={() => updateDuplicateChoice(index, 'new')}
                       >
-                        Sostituisci con nuovo
+                        {t('Sostituisci con nuovo')}
                       </Button>
                       <Button
                         size="sm"
                         variant={dup.keep === 'both' ? 'default' : 'outline'}
                         onClick={() => updateDuplicateChoice(index, 'both')}
                       >
-                        Tieni entrambi
+                        {t('Tieni entrambi')}
                       </Button>
                     </div>
                   </div>
@@ -857,10 +859,10 @@ export default function SpendyImportDialog({ open, onOpenChange, userId }: Spend
             <DialogFooter className="gap-2">
               <Button variant="outline" onClick={() => setStep('preview-categories')}>
                 <ArrowLeft className="w-4 h-4 mr-2" />
-                Indietro
+                {t('Indietro')}
               </Button>
               <Button onClick={handleConfirmImport}>
-                Conferma e importa
+                {t('Conferma e importa')}
               </Button>
             </DialogFooter>
           </div>

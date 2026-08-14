@@ -1,4 +1,5 @@
 import { Link, useLocation, useNavigate } from 'react-router';
+import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 import { usePermissions } from '@/hooks/usePermissions';
@@ -38,6 +39,7 @@ const navigation = [
 ];
 
 export default function Sidebar() {
+  const { t } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
   const { signOut, user } = useAuth();
@@ -47,8 +49,8 @@ export default function Sidebar() {
   const NavContent = () => (
     <div className="flex flex-col h-full">
       <div className="p-6 flex-shrink-0">
-        <h1 className="text-2xl font-display font-bold">Spendy</h1>
-        <p className="text-sm text-muted-foreground mt-1">La tua finanza personale semplificata</p>
+        <h1 className="text-2xl font-display font-bold">{t('Spendy')}</h1>
+        <p className="text-sm text-muted-foreground mt-1">{t('La tua finanza personale semplificata')}</p>
       </div>
 
       <nav className="flex-1 px-4 space-y-1 overflow-y-auto">
@@ -67,7 +69,7 @@ export default function Sidebar() {
                 )}
               >
                 <item.icon className="w-5 h-5" />
-                {item.name}
+                {t(item.name)}
               </Link>
               {item.name === 'Budget' && permissions?.couple_expenses && (
                 <Link
@@ -81,7 +83,7 @@ export default function Sidebar() {
                   )}
                 >
                   <HeartHandshake className="w-5 h-5" />
-                  Budget Familiare
+                  {t('Budget Familiare')}
                 </Link>
               )}
             </div>
@@ -101,7 +103,7 @@ export default function Sidebar() {
             )}
           >
             <Dices className="w-5 h-5" />
-            Poker
+            {t('Poker')}
           </Link>
         )}
 
@@ -118,7 +120,7 @@ export default function Sidebar() {
             )}
           >
             <Library className="w-5 h-5" />
-            TCG
+            {t('TCG')}
           </Link>
         )}
 
@@ -135,7 +137,7 @@ export default function Sidebar() {
             )}
           >
             <BookOpen className="w-5 h-5" />
-            Libreria
+            {t('Libreria')}
           </Link>
         )}
 
@@ -152,7 +154,7 @@ export default function Sidebar() {
             )}
           >
             <Flame className="w-5 h-5" />
-            FIRE
+            {t('FIRE')}
           </Link>
         )}
 
@@ -169,7 +171,7 @@ export default function Sidebar() {
             )}
           >
             <Cigarette className="w-5 h-5" />
-            Fumo
+            {t('Fumo')}
           </Link>
         )}
 
@@ -189,7 +191,7 @@ export default function Sidebar() {
             )}
           >
             <Shield className="w-5 h-5" />
-            Amministrazione
+            {t('Amministrazione')}
           </Link>
         )}
         <button
@@ -212,12 +214,12 @@ export default function Sidebar() {
           onClick={signOut}
         >
           <LogOut className="w-5 h-5 mr-3" />
-          Esci
+          {t('Esci')}
         </Button>
         <div className="flex gap-3 px-4 pt-3 mt-2 border-t border-sidebar-border text-xs text-muted-foreground">
-          <Link to="/privacy" className="hover:text-foreground hover:underline">Privacy</Link>
-          <Link to="/cookies" className="hover:text-foreground hover:underline">Cookie</Link>
-          <Link to="/terms" className="hover:text-foreground hover:underline">Termini</Link>
+          <Link to="/privacy" className="hover:text-foreground hover:underline">{t('Privacy')}</Link>
+          <Link to="/cookies" className="hover:text-foreground hover:underline">{t('Cookie')}</Link>
+          <Link to="/terms" className="hover:text-foreground hover:underline">{t('Termini')}</Link>
         </div>
       </div>
     </div>

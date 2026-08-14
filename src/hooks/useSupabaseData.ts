@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
@@ -33,6 +34,7 @@ export function useSupabaseData<T extends Record<string, unknown>>(
   const { tableName, orderBy, ascending = false, filter = EMPTY_FILTER } = options;
   const { user } = useAuth();
   const { toast } = useToast();
+  const { t } = useTranslation();
   const [data, setData] = useState<T[]>([]);
   const [loading, setLoading] = useState(true);
   const isLoadingRef = useRef(false);
@@ -51,8 +53,8 @@ export function useSupabaseData<T extends Record<string, unknown>>(
     if (!VALID_TABLES.includes(tableName as (typeof VALID_TABLES)[number])) {
       console.error(`[useSupabaseData] Tabella non valida: ${tableName}`);
       toast({
-        title: 'Errore',
-        description: 'Tabella non valida',
+        title: t('Errore'),
+        description: t('Tabella non valida'),
         variant: 'destructive',
       });
       setLoading(false);
@@ -89,8 +91,8 @@ export function useSupabaseData<T extends Record<string, unknown>>(
     } catch (error) {
       console.error(`[useSupabaseData] Errore caricamento ${tableName}:`, error);
       toast({
-        title: 'Errore',
-        description: 'Impossibile caricare i dati',
+        title: t('Errore'),
+        description: t('Impossibile caricare i dati'),
         variant: 'destructive',
       });
     } finally {

@@ -14,6 +14,7 @@ import { format, parseISO, isWithinInterval, eachDayOfInterval, startOfYear, end
 import { it } from 'date-fns/locale';
 import { useFilteredTransactions } from '@/hooks/useFilteredTransactions';
 import { useMonthlyAggregation } from '@/hooks/useMonthlyAggregation';
+import { useTranslation } from 'react-i18next';
 
 interface CumulativeDataPoint {
   date: string;
@@ -24,6 +25,7 @@ interface CumulativeDataPoint {
 type FilterMode = 'all' | 'year' | 'month' | 'since' | 'between';
 
 export default function ChartsIncomeExpense() {
+  const { t } = useTranslation();
   const { transactions } = useTransactions();
   const [filterMode, setFilterMode] = useState<FilterMode>('year');
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear().toString());
@@ -159,8 +161,8 @@ export default function ChartsIncomeExpense() {
             </Button>
           </Link>
           <div>
-            <h1 className="text-3xl font-display font-bold">Analisi Entrate e Uscite</h1>
-            <p className="text-muted-foreground">Andamento cumulativo del bilancio</p>
+            <h1 className="text-3xl font-display font-bold">{t('Analisi Entrate e Uscite')}</h1>
+            <p className="text-muted-foreground">{t('Andamento cumulativo del bilancio')}</p>
           </div>
         </div>
 
@@ -168,22 +170,22 @@ export default function ChartsIncomeExpense() {
         <div className="glass rounded-xl p-4">
           <div className="flex flex-wrap gap-4 items-end">
             <div>
-              <label className="text-sm text-muted-foreground block mb-1">Filtro</label>
+              <label className="text-sm text-muted-foreground block mb-1">{t('Filtro')}</label>
               <Select value={filterMode} onValueChange={(v) => setFilterMode(v as FilterMode)}>
                 <SelectTrigger className="w-[140px]"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Tutto</SelectItem>
-                  <SelectItem value="year">Anno</SelectItem>
-                  <SelectItem value="month">Mese</SelectItem>
-                  <SelectItem value="since">Da data</SelectItem>
-                  <SelectItem value="between">Tra date</SelectItem>
+                  <SelectItem value="all">{t('Tutto')}</SelectItem>
+                  <SelectItem value="year">{t('Anno')}</SelectItem>
+                  <SelectItem value="month">{t('Mese')}</SelectItem>
+                  <SelectItem value="since">{t('Da data')}</SelectItem>
+                  <SelectItem value="between">{t('Tra date')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             {(filterMode === 'year' || filterMode === 'month') && (
               <div>
-                <label className="text-sm text-muted-foreground block mb-1">Anno</label>
+                <label className="text-sm text-muted-foreground block mb-1">{t('Anno')}</label>
                 <Select value={selectedYear} onValueChange={setSelectedYear}>
                   <SelectTrigger className="w-[100px]"><SelectValue /></SelectTrigger>
                   <SelectContent>{years.map(y => <SelectItem key={y} value={y.toString()}>{y}</SelectItem>)}</SelectContent>
@@ -193,7 +195,7 @@ export default function ChartsIncomeExpense() {
 
             {filterMode === 'month' && (
               <div>
-                <label className="text-sm text-muted-foreground block mb-1">Mese</label>
+                <label className="text-sm text-muted-foreground block mb-1">{t('Mese')}</label>
                 <Select value={selectedMonth} onValueChange={setSelectedMonth}>
                   <SelectTrigger className="w-[120px]"><SelectValue /></SelectTrigger>
                   <SelectContent>
@@ -209,7 +211,7 @@ export default function ChartsIncomeExpense() {
 
             {filterMode === 'since' && (
               <div>
-                <label className="text-sm text-muted-foreground block mb-1">Da</label>
+                <label className="text-sm text-muted-foreground block mb-1">{t('Da')}</label>
                 <Input type="date" value={sinceDate} onChange={e => setSinceDate(e.target.value)} className="w-[160px]" />
               </div>
             )}
@@ -217,11 +219,11 @@ export default function ChartsIncomeExpense() {
             {filterMode === 'between' && (
               <>
                 <div>
-                  <label className="text-sm text-muted-foreground block mb-1">Da</label>
+                  <label className="text-sm text-muted-foreground block mb-1">{t('Da')}</label>
                   <Input type="date" value={fromDate} onChange={e => setFromDate(e.target.value)} className="w-[160px]" />
                 </div>
                 <div>
-                  <label className="text-sm text-muted-foreground block mb-1">A</label>
+                  <label className="text-sm text-muted-foreground block mb-1">{t('A')}</label>
                   <Input type="date" value={toDate} onChange={e => setToDate(e.target.value)} className="w-[160px]" />
                 </div>
               </>
@@ -232,21 +234,21 @@ export default function ChartsIncomeExpense() {
         {/* Summary cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="glass rounded-xl p-6 text-center">
-            <p className="text-sm text-muted-foreground">Entrate</p>
+            <p className="text-sm text-muted-foreground">{t('Entrate')}</p>
             <p className="text-2xl font-display font-bold text-success">{CURRENCY_SYMBOLS.EUR}{totalIncome.toLocaleString('it-IT', { minimumFractionDigits: 2 })}</p>
           </div>
           <div className="glass rounded-xl p-6 text-center">
-            <p className="text-sm text-muted-foreground">Uscite</p>
+            <p className="text-sm text-muted-foreground">{t('Uscite')}</p>
             <p className="text-2xl font-display font-bold text-destructive">{CURRENCY_SYMBOLS.EUR}{totalExpense.toLocaleString('it-IT', { minimumFractionDigits: 2 })}</p>
           </div>
           <div className="glass rounded-xl p-6 text-center">
-            <p className="text-sm text-muted-foreground">Cash Flow</p>
+            <p className="text-sm text-muted-foreground">{t('Cash Flow')}</p>
             <p className={`text-2xl font-display font-bold ${totalIncome - totalExpense >= 0 ? 'text-success' : 'text-destructive'}`}>
               {totalIncome - totalExpense >= 0 ? '+' : ''}{CURRENCY_SYMBOLS.EUR}{(totalIncome - totalExpense).toLocaleString('it-IT', { minimumFractionDigits: 2 })}
             </p>
           </div>
           <div className="glass rounded-xl p-6 text-center">
-            <p className="text-sm text-muted-foreground">Saving rate</p>
+            <p className="text-sm text-muted-foreground">{t('Saving rate')}</p>
             <p className="text-2xl font-display font-bold text-success">
               {totalIncome > 0 ? `${Math.max(0, ((totalIncome - totalExpense) / totalIncome) * 100).toFixed(1)}%` : '0%'}
             </p>
@@ -255,7 +257,7 @@ export default function ChartsIncomeExpense() {
 
         {/* Cumulative Chart */}
         <div className="glass rounded-xl p-6">
-          <h3 className="font-semibold mb-4">Andamento Cumulativo del Bilancio</h3>
+          <h3 className="font-semibold mb-4">{t('Andamento Cumulativo del Bilancio')}</h3>
           {cumulativeData.length > 0 ? (
             <ResponsiveContainer width="100%" height={350}>
               <AreaChart data={cumulativeData}>
@@ -288,14 +290,14 @@ export default function ChartsIncomeExpense() {
                 <Area 
                   type="monotone" 
                   dataKey="cumulative" 
-                  name="Bilancio Cumulativo" 
+                  name={t('Bilancio Cumulativo')}
                   stroke="hsl(var(--primary))"
                   fill="hsl(var(--primary) / 0.3)"
                 />
               </AreaChart>
             </ResponsiveContainer>
           ) : (
-            <p className="text-muted-foreground text-center py-12">Nessuna transazione nel periodo selezionato</p>
+            <p className="text-muted-foreground text-center py-12">{t('Nessuna transazione nel periodo selezionato')}</p>
           )}
         </div>
 

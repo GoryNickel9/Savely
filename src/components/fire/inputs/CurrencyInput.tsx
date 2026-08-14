@@ -1,4 +1,5 @@
 import { useId, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
 interface CurrencyInputProps {
   label: string
@@ -23,6 +24,7 @@ export default function CurrencyInput({
   allowMonthlyToggle = false,
   showInvalidState = false,
 }: CurrencyInputProps) {
+  const { t } = useTranslation()
   const id = useId()
   const [isMonthly, setIsMonthly] = useState(false)
 
@@ -88,16 +90,16 @@ export default function CurrencyInput({
           htmlFor={id} 
           className="flex items-center gap-1.5 text-sm font-medium text-gray-700 dark:text-gray-300"
         >
-          {label}
+          {t(label)}
         </label>
-        
+
         {allowMonthlyToggle && (
           <button
             type="button"
             onClick={() => setIsMonthly(!isMonthly)}
             className="text-xs px-2 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
           >
-            {isMonthly ? 'Annuale ↔' : 'Mensile ↔'}
+            {isMonthly ? t('Annuale ↔') : t('Mensile ↔')}
           </button>
         )}
       </div>
@@ -126,7 +128,7 @@ export default function CurrencyInput({
         />
         {allowMonthlyToggle && (
           <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400 pointer-events-none">
-            {isMonthly ? '/mese' : '/anno'}
+            {isMonthly ? t('/mese') : t('/anno')}
           </span>
         )}
       </div>

@@ -10,8 +10,10 @@ import { Card, CardHeader, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Link } from 'react-router'
 import { ArrowLeft, RotateCcw } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 
 export default function BaristaFIRE() {
+  const { t } = useTranslation()
   const dbDefaults = useFireDefaultsFromDB()
   const { params, setParam, resetToDBDefaults } = useFireCalculatorParams(dbDefaults || undefined)
 
@@ -41,22 +43,22 @@ export default function BaristaFIRE() {
             <div className="flex items-center gap-3">
               <Link to="/fire" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground hover:scale-110 transition-all duration-200">
                 <ArrowLeft className="w-4 h-4" />
-                Torna ai calcolatori
+                {t('Torna ai calcolatori')}
               </Link>
             </div>
             <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-3">
-              <span className="text-3xl" role="img" aria-label="Coffee emoji">☕</span>
-              Barista FIRE Calculator
+              <span className="text-3xl" role="img" aria-label={t('Coffee emoji')}>☕</span>
+              {t('Barista FIRE Calculator')}
             </h1>
             <p className="text-gray-600 dark:text-gray-400 mt-1">
-              Combina il lavoro part-time con i redditi da portafoglio per andare in pensione prima.
+              {t('Combina il lavoro part-time con i redditi da portafoglio per andare in pensione prima.')}
             </p>
           </div>
       </div>
 
       {/* Progress Bar */}
-      <ProgressToFIRE 
-        currentSavings={params.currentSavings} 
+      <ProgressToFIRE
+        currentSavings={params.currentSavings}
         fireNumber={results.baristaNumber}
         yearsToFIRE={results.yearsToBaristaFIRE}
         label="Progressione al Barista FIRE"
@@ -68,10 +70,9 @@ export default function BaristaFIRE() {
         <div className="flex gap-3">
           <span className="text-2xl">☕</span>
           <div>
-            <h3 className="font-semibold text-amber-900 dark:text-amber-100">Cosa è il Barista FIRE?</h3>
+            <h3 className="font-semibold text-amber-900 dark:text-amber-100">{t('Cosa è il Barista FIRE?')}</h3>
             <p className="text-sm text-amber-700 dark:text-amber-300 mt-1">
-              Barista FIRE significa avere 
-              investimenti sufficienti a coprire la maggior parte delle spese, mentre si svolge un lavoro part-time o poco stressante per coprire il divario.
+              {t('Barista FIRE significa avere investimenti sufficienti a coprire la maggior parte delle spese, mentre si svolge un lavoro part-time o poco stressante per coprire il divario.')}
             </p>
           </div>
         </div>
@@ -82,7 +83,7 @@ export default function BaristaFIRE() {
         <Card className="lg:col-span-1">
           <CardHeader>
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Le tue informazioni</h2>
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{t('Le tue informazioni')}</h2>
               {dbDefaults && (
                 <Button
                   variant="outline"
@@ -91,7 +92,7 @@ export default function BaristaFIRE() {
                   className="text-xs"
                 >
                   <RotateCcw className="w-3 h-3 mr-1" />
-                  Reset ai valori dal database
+                  {t('Reset ai valori dal database')}
                 </Button>
               )}
             </div>
@@ -121,7 +122,7 @@ export default function BaristaFIRE() {
             
             <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
               <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
-                ☕ Lavoro Part-Time
+                {t('☕ Lavoro Part-Time')}
               </h3>
               <CurrencyInput
                 label="Part-Time RAN"
@@ -166,13 +167,13 @@ export default function BaristaFIRE() {
           <div className="bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 border border-amber-200 dark:border-amber-800 rounded-xl p-4">
             <div className="flex items-center justify-between flex-wrap gap-4">
               <div>
-                <p className="text-sm text-amber-700 dark:text-amber-300">Barista Fire vs Standard FIRE</p>
+                <p className="text-sm text-amber-700 dark:text-amber-300">{t('Barista Fire vs Standard FIRE')}</p>
                 <p className="text-2xl font-bold text-amber-900 dark:text-amber-100">
-                  {formatCurrency(portfolioReduction)} in meno
+                  {t('{{amount}} in meno', { amount: formatCurrency(portfolioReduction) })}
                 </p>
               </div>
               <div className="text-right">
-                <p className="text-sm text-amber-700 dark:text-amber-300">Riduzione</p>
+                <p className="text-sm text-amber-700 dark:text-amber-300">{t('Riduzione')}</p>
                 <p className="text-2xl font-bold text-amber-900 dark:text-amber-100">
                   {reductionPercent.toFixed(0)}%
                 </p>
@@ -183,40 +184,40 @@ export default function BaristaFIRE() {
           {/* Key Metrics */}
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <ResultCard
-              label="Barista FIRE Number"
+              label={t('Barista FIRE Number')}
               value={results.baristaNumber}
               format="currency"
               highlight
-              subtext="Target portfolio value"
+              subtext={t('Target portfolio value')}
             />
             <ResultCard
-              label="FIRE Number standard"
+              label={t('FIRE Number standard')}
               value={results.fullFireNumber}
               format="currency"
-              subtext="Senza lavoro part-time"
+              subtext={t('Senza lavoro part-time')}
             />
             <ResultCard
-              label="Anni al Barista FIRE"
+              label={t('Anni al Barista FIRE')}
               value={results.yearsToBaristaFIRE}
               format="anni"
               icon="⏱️"
-              subtext={`All'età di ${Math.round(params.currentAge + results.yearsToBaristaFIRE)}`}
+              subtext={t("All'età di {{age}}", { age: Math.round(params.currentAge + results.yearsToBaristaFIRE) })}
             />
           </div>
 
           {/* Income Breakdown */}
           <Card>
             <CardHeader>
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Ripartizione del reddito in Barista FIRE</h2>
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{t('Ripartizione del reddito in Barista FIRE')}</h2>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 <div className="flex items-center gap-4">
                   <div className="flex-1">
                     <div className="flex justify-between text-sm mb-1">
-                      <span className="text-gray-600 dark:text-gray-400">Prelievi dal portafoglio</span>
+                      <span className="text-gray-600 dark:text-gray-400">{t('Prelievi dal portafoglio')}</span>
                       <span className="font-medium text-gray-900 dark:text-gray-100">
-                        {formatCurrency(params.annualExpenses - params.partTimeIncome)}/anno
+                        {t('{{amount}}/anno', { amount: formatCurrency(params.annualExpenses - params.partTimeIncome) })}
                       </span>
                     </div>
                     <div className="h-3 bg-amber-100 dark:bg-amber-900/30 rounded-full overflow-hidden">
@@ -230,9 +231,9 @@ export default function BaristaFIRE() {
                 <div className="flex items-center gap-4">
                   <div className="flex-1">
                     <div className="flex justify-between text-sm mb-1">
-                      <span className="text-gray-600 dark:text-gray-400">Reddito Part-Time</span>
+                      <span className="text-gray-600 dark:text-gray-400">{t('Reddito Part-Time')}</span>
                       <span className="font-medium text-gray-900 dark:text-gray-100">
-                        {formatCurrency(params.partTimeIncome)}/anno
+                        {t('{{amount}}/anno', { amount: formatCurrency(params.partTimeIncome) })}
                       </span>
                     </div>
                     <div className="h-3 bg-green-100 dark:bg-green-900/30 rounded-full overflow-hidden">
@@ -245,7 +246,7 @@ export default function BaristaFIRE() {
                 </div>
                 <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
                   <div className="flex justify-between">
-                    <span className="font-medium text-gray-900 dark:text-gray-100">Reddito Annuale</span>
+                    <span className="font-medium text-gray-900 dark:text-gray-100">{t('Reddito Annuale')}</span>
                     <span className="font-bold text-gray-900 dark:text-gray-100">{formatCurrency(params.annualExpenses)}</span>
                   </div>
                 </div>
@@ -256,7 +257,7 @@ export default function BaristaFIRE() {
           {/* Chart */}
           <Card>
             <CardHeader>
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Portfolio Projection</h2>
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{t('Portfolio Projection')}</h2>
             </CardHeader>
             <CardContent>
               <ProjectionChart
@@ -271,36 +272,36 @@ export default function BaristaFIRE() {
           {/* Benefits of Barista FIRE */}
           <Card>
             <CardHeader>
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Benefits of Barista FIRE</h2>
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{t('Benefits of Barista FIRE')}</h2>
             </CardHeader>
             <CardContent>
               <div className="grid sm:grid-cols-2 gap-4">
                 <div className="flex gap-3">
                   <span className="text-xl">🏥</span>
                   <div>
-                    <h4 className="font-medium text-gray-900 dark:text-gray-100">Health Insurance</h4>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">Many part-time jobs offer benefits, bridging to Medicare</p>
+                    <h4 className="font-medium text-gray-900 dark:text-gray-100">{t('Health Insurance')}</h4>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">{t('Many part-time jobs offer benefits, bridging to Medicare')}</p>
                   </div>
                 </div>
                 <div className="flex gap-3">
                   <span className="text-xl">🤝</span>
                   <div>
-                    <h4 className="font-medium text-gray-900 dark:text-gray-100">Social Connection</h4>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">Stay engaged with a community and routine</p>
+                    <h4 className="font-medium text-gray-900 dark:text-gray-100">{t('Social Connection')}</h4>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">{t('Stay engaged with a community and routine')}</p>
                   </div>
                 </div>
                 <div className="flex gap-3">
                   <span className="text-xl">⚡</span>
                   <div>
-                    <h4 className="font-medium text-gray-900 dark:text-gray-100">Earlier Freedom</h4>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">Leave your corporate job years earlier</p>
+                    <h4 className="font-medium text-gray-900 dark:text-gray-100">{t('Earlier Freedom')}</h4>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">{t('Leave your corporate job years earlier')}</p>
                   </div>
                 </div>
                 <div className="flex gap-3">
                   <span className="text-xl">🎯</span>
                   <div>
-                    <h4 className="font-medium text-gray-900 dark:text-gray-100">Lower Target</h4>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">Need {reductionPercent.toFixed(0)}% less in your portfolio</p>
+                    <h4 className="font-medium text-gray-900 dark:text-gray-100">{t('Lower Target')}</h4>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">{t('Need {{percent}}% less in your portfolio', { percent: reductionPercent.toFixed(0) })}</p>
                   </div>
                 </div>
               </div>

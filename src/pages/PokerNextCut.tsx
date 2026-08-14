@@ -13,8 +13,10 @@ import { CURRENCY_SYMBOLS } from '@/lib/constants';
 import MainLayout from '@/components/layout/MainLayout';
 import { getGlobalMedianMonthlySpending, parseAmount } from '@/lib/utils';
 import { MEDIAN_CALCULATION_DAYS } from '@/lib/constants';
+import { useTranslation } from 'react-i18next';
 
 export default function PokerNextCut() {
+  const { t } = useTranslation();
   const { budgets } = useBudgets();
   const { transactions } = useTransactions();
   const { expenses: manualExpenses, addExpense: addExpenseMutation, updateExpense: updateExpenseMutation, deleteExpense: deleteExpenseMutation } = usePokerManualExpenses();
@@ -77,13 +79,13 @@ export default function PokerNextCut() {
     
     try {
       await updateProfitLoss(parseAmount(editingProfitLossValue));
-      toast({ title: 'P/L Attuale aggiornato!' });
+      toast({ title: t('P/L Attuale aggiornato!') });
       setEditingProfitLoss(false);
       setEditingProfitLossValue('');
     } catch (error) {
       toast({
-        title: 'Errore',
-        description: 'Impossibile aggiornare il P/L Attuale',
+        title: t('Errore'),
+        description: t('Impossibile aggiornare il P/L Attuale'),
         variant: 'destructive'
       });
     }
@@ -95,13 +97,13 @@ export default function PokerNextCut() {
     
     try {
       await updateDeal(parseAmount(editingDealValue));
-      toast({ title: 'Deal aggiornato!' });
+      toast({ title: t('Deal aggiornato!') });
       setEditingDeal(false);
       setEditingDealValue('');
     } catch (error) {
       toast({
-        title: 'Errore',
-        description: 'Impossibile aggiornare il deal',
+        title: t('Errore'),
+        description: t('Impossibile aggiornare il deal'),
         variant: 'destructive'
       });
     }
@@ -114,14 +116,14 @@ export default function PokerNextCut() {
     
     try {
       await addExpenseMutation.mutateAsync({ name: newExpenseName, amount: parseAmount(newExpenseAmount) });
-      toast({ title: 'Spesa aggiunta!' });
+      toast({ title: t('Spesa aggiunta!') });
       setCreateOpen(false);
       setNewExpenseName('');
       setNewExpenseAmount('');
     } catch (error) {
       toast({
-        title: 'Errore',
-        description: 'Impossibile aggiungere la spesa',
+        title: t('Errore'),
+        description: t('Impossibile aggiungere la spesa'),
         variant: 'destructive'
       });
     }
@@ -134,14 +136,14 @@ export default function PokerNextCut() {
     
     try {
       await updateExpenseMutation.mutateAsync({ id: editingExpense.id, amount: parseAmount(editingExpenseAmount) });
-      toast({ title: 'Spesa aggiornata!' });
+      toast({ title: t('Spesa aggiornata!') });
       setEditOpen(false);
       setEditingExpense(null);
       setEditingExpenseAmount('');
     } catch (error) {
       toast({
-        title: 'Errore',
-        description: 'Impossibile aggiornare la spesa',
+        title: t('Errore'),
+        description: t('Impossibile aggiornare la spesa'),
         variant: 'destructive'
       });
     }
@@ -151,11 +153,11 @@ export default function PokerNextCut() {
   const handleDeleteExpense = async (id: string) => {
     try {
       await deleteExpenseMutation.mutateAsync(id);
-      toast({ title: 'Spesa eliminata!' });
+      toast({ title: t('Spesa eliminata!') });
     } catch (error) {
       toast({
-        title: 'Errore',
-        description: 'Impossibile eliminare la spesa',
+        title: t('Errore'),
+        description: t('Impossibile eliminare la spesa'),
         variant: 'destructive'
       });
     }
@@ -189,30 +191,30 @@ export default function PokerNextCut() {
             <ArrowLeft className="w-5 h-5 text-slate-300" />
           </button>
           <div>
-            <h1 className="text-3xl font-bold text-white">Next Cut</h1>
-            <p className="text-slate-400">Gestisci il tuo Next Cut</p>
+            <h1 className="text-3xl font-bold text-white">{t('Next Cut')}</h1>
+            <p className="text-slate-400">{t('Gestisci il tuo Next Cut')}</p>
           </div>
         </div>
 
         {/* Monthly Spending Section */}
         <Card className="bg-slate-800/50 border-slate-700">
           <CardHeader className="border-b border-slate-700 flex items-center justify-between">
-            <CardTitle className="text-white">Spesa Mensile</CardTitle>
+            <CardTitle className="text-white">{t('Spesa Mensile')}</CardTitle>
             <Dialog open={createOpen} onOpenChange={setCreateOpen}>
               <DialogTrigger asChild>
                 <Button size="sm">
                   <Plus className="w-4 h-4 mr-2" />
-                  Aggiungi nuova spesa
+                  {t('Aggiungi nuova spesa')}
                 </Button>
               </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
-                  <DialogTitle>Nuova spesa</DialogTitle>
+                  <DialogTitle>{t('Nuova spesa')}</DialogTitle>
                 </DialogHeader>
                 <form onSubmit={addManualExpense} className="space-y-4">
                   <Input
                     type="text"
-                    placeholder="Nome"
+                    placeholder={t('Nome')}
                     value={newExpenseName}
                     onChange={e => setNewExpenseName(e.target.value)}
                     required
@@ -220,13 +222,13 @@ export default function PokerNextCut() {
                   <Input
                     type="number"
                     step="0.01"
-                    placeholder="Importo"
+                    placeholder={t('Importo')}
                     value={newExpenseAmount}
                     onChange={e => setNewExpenseAmount(e.target.value)}
                     required
                   />
                   <Button type="submit" className="w-full">
-                    Aggiungi
+                    {t('Aggiungi')}
                   </Button>
                 </form>
               </DialogContent>
@@ -236,17 +238,17 @@ export default function PokerNextCut() {
             <div className="space-y-4">
               {/* Total from Budget */}
               <div className="p-4 bg-blue-500/10 rounded-lg border border-blue-500/20">
-                <p className="text-sm text-slate-400 mb-2">Spesa mensile</p>
+                <p className="text-sm text-slate-400 mb-2">{t('Spesa mensile')}</p>
                 <p className="text-2xl font-bold text-white">
                   {CURRENCY_SYMBOLS.EUR}{budgetMonthlySpending.toFixed(2)}
                 </p>
-                <p className="text-xs text-slate-500 mt-2">Calcolato automaticamente dagli ultimi 730 giorni di transazioni</p>
+                <p className="text-xs text-slate-500 mt-2">{t('Calcolato automaticamente dagli ultimi 730 giorni di transazioni')}</p>
               </div>
 
               {/* Manual expenses list */}
               {manualExpenses.length > 0 && (
                 <div className="space-y-3 mt-4">
-                  <p className="text-sm text-slate-400">Spese aggiuntive</p>
+                  <p className="text-sm text-slate-400">{t('Spese aggiuntive')}</p>
                   {manualExpenses.map(exp => (
                     <div key={exp.id} className="p-4 bg-slate-900/30 rounded-lg border border-slate-700">
                       <div className="flex items-center justify-between">
@@ -287,28 +289,28 @@ export default function PokerNextCut() {
         <Dialog open={editOpen} onOpenChange={setEditOpen}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Modifica spesa</DialogTitle>
-            </DialogHeader>
-            <form onSubmit={updateManualExpense} className="space-y-4">
-              <Input
-                type="number"
-                step="0.01"
-                placeholder="Nuovo importo"
-                value={editingExpenseAmount}
-                onChange={e => setEditingExpenseAmount(e.target.value)}
-                required
-              />
-              <Button type="submit" className="w-full">
-                Aggiorna
-              </Button>
-            </form>
+            <DialogTitle>{t('Modifica spesa')}</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={updateManualExpense} className="space-y-4">
+            <Input
+              type="number"
+              step="0.01"
+              placeholder={t('Nuovo importo')}
+              value={editingExpenseAmount}
+              onChange={e => setEditingExpenseAmount(e.target.value)}
+              required
+            />
+            <Button type="submit" className="w-full">
+              {t('Aggiorna')}
+            </Button>
+          </form>
           </DialogContent>
         </Dialog>
 
         {/* Next Cut Section */}
         <Card className="bg-slate-800/50 border-slate-700">
           <CardHeader className="border-b border-slate-700">
-            <CardTitle className="text-white">Next Cut</CardTitle>
+            <CardTitle className="text-white">{t('Next Cut')}</CardTitle>
           </CardHeader>
           <CardContent className="p-6">
             <div className="p-4 bg-slate-900/30 rounded-lg border border-slate-700">
@@ -317,10 +319,10 @@ export default function PokerNextCut() {
                 <table className="w-full">
                   <thead>
                     <tr className="border-b border-slate-700">
-                      <th className="text-left py-3 px-4 text-sm font-medium text-slate-400">Next Cut Net</th>
-                      <th className="text-left py-3 px-4 text-sm font-medium text-slate-400">Deal</th>
-                      <th className="text-left py-3 px-4 text-sm font-medium text-slate-400">P/L Attuale</th>
-                      <th className="text-left py-3 px-4 text-sm font-medium text-slate-400">Quanto manca</th>
+                      <th className="text-left py-3 px-4 text-sm font-medium text-slate-400">{t('Next Cut Net')}</th>
+                      <th className="text-left py-3 px-4 text-sm font-medium text-slate-400">{t('Deal')}</th>
+                      <th className="text-left py-3 px-4 text-sm font-medium text-slate-400">{t('P/L Attuale')}</th>
+                      <th className="text-left py-3 px-4 text-sm font-medium text-slate-400">{t('Quanto manca')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -446,7 +448,7 @@ export default function PokerNextCut() {
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
-                  <span>Clicca sui valori "Deal" e "P/L Attuale" per modificarli</span>
+                  <span>{t('Clicca sui valori "Deal" e "P/L Attuale" per modificarli')}</span>
                 </div>
               </div>
             </div>

@@ -1,3 +1,5 @@
+import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import MainLayout from '@/components/layout/MainLayout';
 import { useBudgets } from '@/hooks/useBudgets';
 import { useCategories } from '@/hooks/useCategories';
@@ -9,13 +11,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Progress } from '@/components/ui/progress';
 import { CURRENCY_SYMBOLS } from '@/lib/constants';
 import { Plus, Edit2, Trash2 } from 'lucide-react';
-import { useMemo, useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { getMedianMonthlySpending, getGlobalMedianMonthlySpending, parseAmount } from '@/lib/utils';
 import { MEDIAN_CALCULATION_DAYS } from '@/lib/constants';
 import { CategorySelect } from '@/components/CategorySelect';
 
 export default function Budget() {
+  const { t } = useTranslation();
   const { budgets, createBudget, updateBudget, deleteBudget } = useBudgets();
   const { expenseCategories } = useCategories();
   const { transactions } = useTransactions();
@@ -70,12 +72,12 @@ export default function Budget() {
     e.preventDefault();
     try {
       await createBudget.mutateAsync({ category_id: categoryId, amount: parseAmount(amount) });
-      toast({ title: 'Budget creato!' });
+      toast({ title: t('Budget creato!') });
       setOpen(false);
       setCategoryId('');
       setAmount('');
     } catch {
-      toast({ title: 'Errore', variant: 'destructive' });
+      toast({ title: t('Errore'), variant: 'destructive' });
     }
   };
 
@@ -83,21 +85,21 @@ export default function Budget() {
     e.preventDefault();
     try {
       await updateBudget.mutateAsync({ id: editBudgetId, amount: parseAmount(editAmount) });
-      toast({ title: 'Budget aggiornato!' });
+      toast({ title: t('Budget aggiornato!') });
       setEditOpen(false);
       setEditBudgetId('');
       setEditAmount('');
     } catch {
-      toast({ title: 'Errore', variant: 'destructive' });
+      toast({ title: t('Errore'), variant: 'destructive' });
     }
   };
 
   const handleDelete = async (id: string) => {
     try {
       await deleteBudget.mutateAsync(id);
-      toast({ title: 'Budget eliminato!' });
+      toast({ title: t('Budget eliminato!') });
     } catch {
-      toast({ title: 'Errore', variant: 'destructive' });
+      toast({ title: t('Errore'), variant: 'destructive' });
     }
   };
 
@@ -117,25 +119,25 @@ export default function Budget() {
       <div className="space-y-6">
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
-            <h1 className="text-3xl font-display font-bold">Budget</h1>
-            <p className="text-muted-foreground">Mediana mensile (ultimi 730 giorni)</p>
+            <h1 className="text-3xl font-display font-bold">{t('Budget')}</h1>
+            <p className="text-muted-foreground">{t('Mediana mensile (ultimi 730 giorni)')}</p>
           </div>
           <div className="flex gap-2">
             {/* Create Budget Dialog */}
             <Dialog open={open} onOpenChange={setOpen}>
-              <DialogTrigger asChild><Button><Plus className="w-4 h-4 mr-2" />Nuovo Budget</Button></DialogTrigger>
+              <DialogTrigger asChild><Button><Plus className="w-4 h-4 mr-2" />{t('Nuovo Budget')}</Button></DialogTrigger>
               <DialogContent>
-                <DialogHeader><DialogTitle>Nuovo Budget</DialogTitle></DialogHeader>
+                <DialogHeader><DialogTitle>{t('Nuovo Budget')}</DialogTitle></DialogHeader>
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <CategorySelect
                     categories={availableCategories}
                     value={categoryId}
                     onValueChange={setCategoryId}
-                    placeholder="Categoria"
+                    placeholder={t('Categoria')}
                     filterType="expense"
                   />
-                  <Input type="number" placeholder="Importo" value={amount} onChange={e => setAmount(e.target.value)} required />
-                  <Button type="submit" className="w-full">Crea</Button>
+                  <Input type="number" placeholder={t('Importo')} value={amount} onChange={e => setAmount(e.target.value)} required />
+                  <Button type="submit" className="w-full">{t('Crea')}</Button>
                 </form>
               </DialogContent>
             </Dialog>
@@ -146,15 +148,15 @@ export default function Budget() {
         {budgets.length > 0 && (
           <div className="grid gap-4 md:grid-cols-3">
             <div className="glass rounded-xl p-6">
-              <p className="text-sm text-muted-foreground mb-1">Spesa mensile prevista</p>
+              <p className="text-sm text-muted-foreground mb-1">{t('Spesa mensile prevista')}</p>
               <p className="text-2xl font-bold">{CURRENCY_SYMBOLS.EUR}{totals.totalExpected.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
             </div>
             <div className="glass rounded-xl p-6">
-              <p className="text-sm text-muted-foreground mb-1">Spesa mediana mensile reale</p>
+              <p className="text-sm text-muted-foreground mb-1">{t('Spesa mediana mensile reale')}</p>
               <p className="text-2xl font-bold">{CURRENCY_SYMBOLS.EUR}{totals.totalActual.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
             </div>
             <div className="glass rounded-xl p-6">
-              <p className="text-sm text-muted-foreground mb-1">Differenza</p>
+              <p className="text-sm text-muted-foreground mb-1">{t('Differenza')}</p>
               <p className={`text-2xl font-bold ${totals.difference > 0 ? 'text-destructive' : totals.difference < 0 ? 'text-green-600' : ''}`}>
                 {totals.difference > 0 ? '+' : ''}{CURRENCY_SYMBOLS.EUR}{totals.difference.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </p>
@@ -164,7 +166,7 @@ export default function Budget() {
 
         <div className="grid gap-4">
           {budgets.length === 0 ? (
-            <div className="glass rounded-xl p-12 text-center text-muted-foreground">Nessun budget impostato</div>
+            <div className="glass rounded-xl p-12 text-center text-muted-foreground">{t('Nessun budget impostato')}</div>
           ) : sortedBudgets.map(b => {
             const medianSpent = getMedianSpending(b.category_id);
             const percent = Math.min((medianSpent / Number(b.amount)) * 100, 100);
@@ -207,11 +209,11 @@ export default function Budget() {
         {/* Edit Budget Dialog */}
         <Dialog open={editOpen} onOpenChange={setEditOpen}>
           <DialogContent>
-            <DialogHeader><DialogTitle>Modifica Budget</DialogTitle></DialogHeader>
+            <DialogHeader><DialogTitle>{t('Modifica Budget')}</DialogTitle></DialogHeader>
             <form onSubmit={handleEditSubmit} className="space-y-4">
-              <Input type="number" placeholder="Nuovo importo" value={editAmount} onChange={e => setEditAmount(e.target.value)} required />
+              <Input type="number" placeholder={t('Nuovo importo')} value={editAmount} onChange={e => setEditAmount(e.target.value)} required />
               <Button type="submit" className="w-full" disabled={updateBudget.isPending}>
-                {updateBudget.isPending ? 'Aggiornamento...' : 'Aggiorna'}
+                {updateBudget.isPending ? t('Aggiornamento...') : t('Aggiorna')}
               </Button>
             </form>
           </DialogContent>

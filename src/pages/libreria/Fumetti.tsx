@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Plus, Trash2, Search, Loader2, Pencil, ArrowLeft } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { parseAmount } from '@/lib/utils';
+import { useTranslation } from 'react-i18next';
 
 interface GoogleBook {
   id: string;
@@ -54,6 +55,7 @@ function getBookYear(book: GoogleBook): number | undefined {
 }
 
 export default function LibreriaFumetti() {
+  const { t } = useTranslation();
   const { items, isLoading, createItem, updateItem, deleteItem, totalCost, totalReselling, totalGain } = useLibraryItems('fumetti');
   const { toast } = useToast();
 
@@ -115,7 +117,7 @@ export default function LibreriaFumetti() {
       const docs = await searchFumetti(apiQuery);
       setApiResults(docs);
     } catch {
-      toast({ title: 'Errore nella ricerca', variant: 'destructive' });
+      toast({ title: t('Errore nella ricerca'), variant: 'destructive' });
     } finally {
       setSearching(false);
     }
@@ -138,10 +140,10 @@ export default function LibreriaFumetti() {
         quantity: parseInt(quantity) || 1,
         notes: notes || undefined,
       });
-      toast({ title: 'Fumetto aggiunto!' });
+      toast({ title: t('Fumetto aggiunto!') });
       resetAddDialog();
     } catch {
-      toast({ title: 'Errore', variant: 'destructive' });
+      toast({ title: t('Errore'), variant: 'destructive' });
     }
   };
 
@@ -176,19 +178,19 @@ export default function LibreriaFumetti() {
         quantity: parseInt(editQuantity) || 1,
         notes: editNotes || undefined,
       });
-      toast({ title: 'Fumetto aggiornato!' });
+      toast({ title: t('Fumetto aggiornato!') });
       setEditOpen(false);
     } catch {
-      toast({ title: 'Errore', variant: 'destructive' });
+      toast({ title: t('Errore'), variant: 'destructive' });
     }
   };
 
   const handleDelete = async (id: string) => {
     try {
       await deleteItem.mutateAsync(id);
-      toast({ title: 'Fumetto rimosso' });
+      toast({ title: t('Fumetto rimosso') });
     } catch {
-      toast({ title: 'Errore', variant: 'destructive' });
+      toast({ title: t('Errore'), variant: 'destructive' });
     }
   };
 
@@ -201,29 +203,29 @@ export default function LibreriaFumetti() {
               <ArrowLeft className="w-5 h-5" />
             </Link>
             <div>
-              <h1 className="text-3xl font-display font-bold">Fumetti</h1>
-              <p className="text-muted-foreground">La tua collezione di fumetti</p>
+              <h1 className="text-3xl font-display font-bold">{t('Fumetti')}</h1>
+              <p className="text-muted-foreground">{t('La tua collezione di fumetti')}</p>
             </div>
           </div>
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
               <Button>
                 <Plus className="w-4 h-4 mr-2" />
-                Aggiungi Fumetto
+                {t('Aggiungi Fumetto')}
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
-                <DialogTitle>Aggiungi Fumetto</DialogTitle>
+                <DialogTitle>{t('Aggiungi Fumetto')}</DialogTitle>
               </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                  <Label>Cerca titolo (Google Books)</Label>
+                  <Label>{t('Cerca titolo (Google Books)')}</Label>
                   <div className="flex gap-2 mt-1">
                     <Input
                       value={apiQuery}
                       onChange={(e) => setApiQuery(e.target.value)}
-                      placeholder="Es. Dylan Dog, Tex Willer"
+                      placeholder={t('Es. Dylan Dog, Tex Willer')}
                       onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleApiSearch())}
                     />
                     <Button type="button" variant="secondary" onClick={handleApiSearch} disabled={searching}>
@@ -258,35 +260,35 @@ export default function LibreriaFumetti() {
 
                 {selectedDoc && (
                   <div className="glass rounded-lg p-3 text-sm">
-                    <span className="font-medium">Selezionato:</span> {selectedDoc.volumeInfo.title}
+                    <span className="font-medium">{t('Selezionato:')}</span> {selectedDoc.volumeInfo.title}
                     {selectedDoc.volumeInfo.authors?.[0] && <span className="text-muted-foreground"> — {selectedDoc.volumeInfo.authors[0]}</span>}
                   </div>
                 )}
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="purchase_price">Acquistato a (€)</Label>
+                    <Label htmlFor="purchase_price">{t('Acquistato a (€)')}</Label>
                     <Input id="purchase_price" type="number" step="0.01" min="0" value={purchasePrice} onChange={(e) => setPurchasePrice(e.target.value)} placeholder="0.00" />
                   </div>
                   <div>
-                    <Label htmlFor="reselling_value">Reselling Value (€)</Label>
+                    <Label htmlFor="reselling_value">{t('Reselling Value (€)')}</Label>
                     <Input id="reselling_value" type="number" step="0.01" min="0" value={resellingValue} onChange={(e) => setResellingValue(e.target.value)} placeholder="0.00" />
                   </div>
                   <div>
-                    <Label htmlFor="quantity">Quantità</Label>
+                    <Label htmlFor="quantity">{t('Quantità')}</Label>
                     <Input id="quantity" type="number" min="1" value={quantity} onChange={(e) => setQuantity(e.target.value)} />
                   </div>
                   <div>
-                    <Label htmlFor="notes">Note</Label>
-                    <Input id="notes" value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Facoltativo" />
+                    <Label htmlFor="notes">{t('Note')}</Label>
+                    <Input id="notes" value={notes} onChange={(e) => setNotes(e.target.value)} placeholder={t('Facoltativo')} />
                   </div>
                 </div>
 
                 <div className="flex gap-2 justify-end">
-                  <Button type="button" variant="outline" onClick={resetAddDialog}>Annulla</Button>
+                  <Button type="button" variant="outline" onClick={resetAddDialog}>{t('Annulla')}</Button>
                   <Button type="submit" disabled={!selectedDoc || createItem.isPending}>
                     {createItem.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                    Aggiungi
+                    {t('Aggiungi')}
                   </Button>
                 </div>
               </form>
@@ -296,15 +298,15 @@ export default function LibreriaFumetti() {
 
         <div className="grid grid-cols-3 gap-4">
           <div className="glass rounded-xl p-4 text-center">
-            <p className="text-sm text-muted-foreground">Investimento</p>
+            <p className="text-sm text-muted-foreground">{t('Investimento')}</p>
             <p className="text-xl font-display font-bold">€{totalCost.toLocaleString('it-IT', { minimumFractionDigits: 2 })}</p>
           </div>
           <div className="glass rounded-xl p-4 text-center">
-            <p className="text-sm text-muted-foreground">Valore Reselling</p>
+            <p className="text-sm text-muted-foreground">{t('Valore Reselling')}</p>
             <p className="text-xl font-display font-bold">€{totalReselling.toLocaleString('it-IT', { minimumFractionDigits: 2 })}</p>
           </div>
           <div className="glass rounded-xl p-4 text-center">
-            <p className="text-sm text-muted-foreground">Profitto / Perdita</p>
+            <p className="text-sm text-muted-foreground">{t('Profitto / Perdita')}</p>
             <p className={`text-xl font-display font-bold ${totalGain >= 0 ? 'text-success' : 'text-destructive'}`}>
               {totalGain >= 0 ? '+' : ''}€{totalGain.toLocaleString('it-IT', { minimumFractionDigits: 2 })}
             </p>
@@ -314,26 +316,26 @@ export default function LibreriaFumetti() {
         <div className="glass rounded-xl p-4 grid sm:grid-cols-4 gap-3">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input className="pl-9" placeholder="Cerca titolo…" value={filterText} onChange={(e) => setFilterText(e.target.value)} />
+            <Input className="pl-9" placeholder={t('Cerca titolo…')} value={filterText} onChange={(e) => setFilterText(e.target.value)} />
           </div>
           <Select value={filterAuthor} onValueChange={setFilterAuthor}>
-            <SelectTrigger><SelectValue placeholder="Autore" /></SelectTrigger>
+            <SelectTrigger><SelectValue placeholder={t('Autore')} /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Tutti gli autori</SelectItem>
+              <SelectItem value="all">{t('Tutti gli autori')}</SelectItem>
               {uniqueAuthors.map((a) => <SelectItem key={a} value={a}>{a}</SelectItem>)}
             </SelectContent>
           </Select>
           <Select value={filterPublisher} onValueChange={setFilterPublisher}>
-            <SelectTrigger><SelectValue placeholder="Editore" /></SelectTrigger>
+            <SelectTrigger><SelectValue placeholder={t('Editore')} /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Tutti gli editori</SelectItem>
+              <SelectItem value="all">{t('Tutti gli editori')}</SelectItem>
               {uniquePublishers.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}
             </SelectContent>
           </Select>
           <Select value={filterYear} onValueChange={setFilterYear}>
-            <SelectTrigger><SelectValue placeholder="Anno" /></SelectTrigger>
+            <SelectTrigger><SelectValue placeholder={t('Anno')} /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Tutti gli anni</SelectItem>
+              <SelectItem value="all">{t('Tutti gli anni')}</SelectItem>
               {uniqueYears.map((y) => <SelectItem key={y} value={String(y)}>{y}</SelectItem>)}
             </SelectContent>
           </Select>
@@ -343,7 +345,7 @@ export default function LibreriaFumetti() {
           <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin text-muted-foreground" /></div>
         ) : filteredItems.length === 0 ? (
           <div className="text-center py-12 text-muted-foreground">
-            {items.length === 0 ? 'Nessun fumetto aggiunto. Inizia aggiungendo il primo!' : 'Nessun risultato per i filtri selezionati.'}
+            {items.length === 0 ? t('Nessun fumetto aggiunto. Inizia aggiungendo il primo!') : t('Nessun risultato per i filtri selezionati.')}
           </div>
         ) : (
           <div className="grid gap-3">
@@ -360,8 +362,8 @@ export default function LibreriaFumetti() {
                   <p className="text-xs text-muted-foreground">{item.publisher ?? '—'}{item.year ? ` · ${item.year}` : ''}</p>
                 </div>
                 <div className="text-right flex-shrink-0 space-y-1">
-                  <p className="text-sm"><span className="text-muted-foreground">Acquistato: </span>{item.purchase_price != null ? `€${item.purchase_price.toLocaleString('it-IT', { minimumFractionDigits: 2 })}` : '—'}</p>
-                  <p className="text-sm"><span className="text-muted-foreground">Reselling: </span>{item.reselling_value != null ? `€${item.reselling_value.toLocaleString('it-IT', { minimumFractionDigits: 2 })}` : '—'}</p>
+                  <p className="text-sm"><span className="text-muted-foreground">{t('Acquistato: ')}</span>{item.purchase_price != null ? `€${item.purchase_price.toLocaleString('it-IT', { minimumFractionDigits: 2 })}` : '—'}</p>
+                  <p className="text-sm"><span className="text-muted-foreground">{t('Reselling: ')}</span>{item.reselling_value != null ? `€${item.reselling_value.toLocaleString('it-IT', { minimumFractionDigits: 2 })}` : '—'}</p>
                   {item.quantity > 1 && <p className="text-xs text-muted-foreground">x{item.quantity}</p>}
                 </div>
                 <div className="flex gap-1 flex-shrink-0">
@@ -376,32 +378,32 @@ export default function LibreriaFumetti() {
         <Dialog open={editOpen} onOpenChange={setEditOpen}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Modifica — {editingItem?.title}</DialogTitle>
+              <DialogTitle>{t('Modifica — {{title}}', { title: editingItem?.title ?? '' })}</DialogTitle>
             </DialogHeader>
             <form onSubmit={handleEditSubmit} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="edit_purchase_price">Acquistato a (€)</Label>
+                  <Label htmlFor="edit_purchase_price">{t('Acquistato a (€)')}</Label>
                   <Input id="edit_purchase_price" type="number" step="0.01" min="0" value={editPurchasePrice} onChange={(e) => setEditPurchasePrice(e.target.value)} placeholder="0.00" />
                 </div>
                 <div>
-                  <Label htmlFor="edit_reselling_value">Reselling Value (€)</Label>
+                  <Label htmlFor="edit_reselling_value">{t('Reselling Value (€)')}</Label>
                   <Input id="edit_reselling_value" type="number" step="0.01" min="0" value={editResellingValue} onChange={(e) => setEditResellingValue(e.target.value)} placeholder="0.00" />
                 </div>
                 <div>
-                  <Label htmlFor="edit_quantity">Quantità</Label>
+                  <Label htmlFor="edit_quantity">{t('Quantità')}</Label>
                   <Input id="edit_quantity" type="number" min="1" value={editQuantity} onChange={(e) => setEditQuantity(e.target.value)} />
                 </div>
                 <div>
-                  <Label htmlFor="edit_notes">Note</Label>
+                  <Label htmlFor="edit_notes">{t('Note')}</Label>
                   <Input id="edit_notes" value={editNotes} onChange={(e) => setEditNotes(e.target.value)} />
                 </div>
               </div>
               <div className="flex gap-2 justify-end">
-                <Button type="button" variant="outline" onClick={() => setEditOpen(false)}>Annulla</Button>
+                <Button type="button" variant="outline" onClick={() => setEditOpen(false)}>{t('Annulla')}</Button>
                 <Button type="submit" disabled={updateItem.isPending}>
                   {updateItem.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                  Salva
+                  {t('Salva')}
                 </Button>
               </div>
             </form>

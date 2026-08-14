@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router';
+import { useTranslation } from 'react-i18next';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,6 +12,7 @@ import { z } from 'zod';
 import { confirmPasswordSchema, checkPasswordRequirements, passwordRequirementsList } from '@/lib/passwordValidation';
 
 export default function ResetPassword() {
+  const { t } = useTranslation();
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -70,14 +72,14 @@ export default function ResetPassword() {
 
     if (error) {
       toast({
-        title: 'Errore',
+        title: t('Errore'),
         description: error.message,
         variant: 'destructive',
       });
     } else {
       toast({
-        title: 'Password aggiornata!',
-        description: 'La tua password è stata cambiata con successo.',
+        title: t('Password aggiornata!'),
+        description: t('La tua password è stata cambiata con successo.'),
       });
       navigate('/');
     }
@@ -88,14 +90,14 @@ export default function ResetPassword() {
       <div className="min-h-screen flex items-center justify-center bg-background p-8">
         <Card className="w-full max-w-md glass border-border/50">
           <CardHeader className="text-center">
-            <CardTitle className="text-2xl font-display">Link non valido</CardTitle>
+            <CardTitle className="text-2xl font-display">{t('Link non valido')}</CardTitle>
             <CardDescription>
-              Questo link di recupero password non è valido o è scaduto.
+              {t('Questo link di recupero password non è valido o è scaduto.')}
             </CardDescription>
           </CardHeader>
           <CardContent>
             <Button onClick={() => navigate('/auth')} className="w-full">
-              Torna al login
+              {t('Torna al login')}
             </Button>
           </CardContent>
         </Card>
@@ -110,13 +112,13 @@ export default function ResetPassword() {
           <div className="mx-auto p-3 rounded-xl bg-primary/10 text-primary w-fit mb-4">
             <Lock className="w-6 h-6" />
           </div>
-          <CardTitle className="text-2xl font-display">Nuova Password</CardTitle>
-          <CardDescription>Inserisci la tua nuova password</CardDescription>
+          <CardTitle className="text-2xl font-display">{t('Nuova Password')}</CardTitle>
+          <CardDescription>{t('Inserisci la tua nuova password')}</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="password">Nuova Password</Label>
+              <Label htmlFor="password">{t('Nuova Password')}</Label>
               <Input
                 id="password"
                 type="password"
@@ -130,7 +132,7 @@ export default function ResetPassword() {
               {/* Password Requirements Indicator */}
               {password && (
                 <div className="mt-3 space-y-2 p-3 bg-muted/50 rounded-lg">
-                  <p className="text-sm font-medium mb-2">Requisiti password:</p>
+                  <p className="text-sm font-medium mb-2">{t('Requisiti password:')}</p>
                   {passwordRequirementsList.map((req) => {
                     const isMet = checkPasswordRequirements(password)[req.key];
                     return (
@@ -150,7 +152,7 @@ export default function ResetPassword() {
               )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Conferma Password</Label>
+              <Label htmlFor="confirmPassword">{t('Conferma Password')}</Label>
               <Input
                 id="confirmPassword"
                 type="password"
@@ -163,7 +165,7 @@ export default function ResetPassword() {
             </div>
             <Button type="submit" className="w-full" disabled={loading}>
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Aggiorna Password
+              {t('Aggiorna Password')}
             </Button>
           </form>
         </CardContent>

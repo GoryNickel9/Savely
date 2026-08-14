@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Button } from '@/components/ui/button';
@@ -34,6 +35,7 @@ export function CategorySelect({
   allOptionLabel = 'Tutte le categorie',
   allOptionValue = 'all',
 }: CategorySelectProps) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
 
   const filteredCategories = filterType === 'all'
@@ -54,27 +56,27 @@ export function CategorySelect({
           className="w-full justify-between"
         >
           {isAllSelected ? (
-            <span>{allOptionLabel}</span>
+            <span>{t(allOptionLabel)}</span>
           ) : selectedCategory ? (
             <span className="flex items-center gap-2">
               <span>{selectedCategory.icon}</span>
               <span>{selectedCategory.name}</span>
             </span>
           ) : (
-            <span className="text-muted-foreground">{placeholder}</span>
+            <span className="text-muted-foreground">{t(placeholder)}</span>
           )}
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-full p-0" align="start" disablePortal>
         <Command>
-          <CommandInput placeholder="Cerca categoria..." />
+          <CommandInput placeholder={t('Cerca categoria...')} />
           <CommandList>
-            <CommandEmpty>Nessuna categoria trovata.</CommandEmpty>
+            <CommandEmpty>{t('Nessuna categoria trovata.')}</CommandEmpty>
             <CommandGroup>
               {showAllOption && (
                 <CommandItem
-                  value={allOptionLabel}
+                  value={t(allOptionLabel)}
                   onSelect={() => {
                     onValueChange(allOptionValue);
                     setOpen(false);
@@ -86,7 +88,7 @@ export function CategorySelect({
                       isAllSelected ? "opacity-100" : "opacity-0"
                     )}
                   />
-                  <span>{allOptionLabel}</span>
+                  <span>{t(allOptionLabel)}</span>
                 </CommandItem>
               )}
               {filteredCategories.map((category) => (

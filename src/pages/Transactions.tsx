@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import MainLayout from '@/components/layout/MainLayout';
 import { useTransactions } from '@/hooks/useTransactions';
 import { useCategories } from '@/hooks/useCategories';
@@ -25,6 +26,7 @@ import { startOfMonth, endOfMonth, subMonths, startOfYear, endOfYear, subYears, 
 type FilterPeriod = 'this_month' | 'last_month' | 'last_semester' | 'last_year' | 'this_year' | 'custom';
 
 export default function Transactions() {
+  const { t } = useTranslation();
   const { transactions, createTransaction, updateTransaction, deleteTransaction } = useTransactions();
   const { incomeCategories, expenseCategories, categories: allCategories } = useCategories();
   const { defaultCurrency } = useProfile();
@@ -102,11 +104,11 @@ export default function Transactions() {
     if (!transactionToDelete) return;
     try {
       await deleteTransaction.mutateAsync(transactionToDelete.id);
-      toast({ title: 'Transazione eliminata!' });
+      toast({ title: t('Transazione eliminata!') });
       setDeleteConfirmOpen(false);
       setTransactionToDelete(null);
     } catch {
-      toast({ title: 'Errore durante l\'eliminazione', variant: 'destructive' });
+      toast({ title: t("Errore durante l'eliminazione"), variant: 'destructive' });
     }
   };
 
@@ -126,7 +128,7 @@ export default function Transactions() {
     e.preventDefault();
     const parsedAmount = parseAmount(amount);
     if (!Number.isFinite(parsedAmount) || parsedAmount <= 0) {
-      toast({ title: 'Importo non valido', description: 'Inserisci un importo maggiore di zero.', variant: 'destructive' });
+      toast({ title: t('Importo non valido'), description: t('Inserisci un importo maggiore di zero.'), variant: 'destructive' });
       return;
     }
     setIsFetchingRate(true);
@@ -143,7 +145,7 @@ export default function Transactions() {
           description: description || undefined,
           date,
         });
-        toast({ title: 'Transazione modificata!' });
+        toast({ title: t('Transazione modificata!') });
       } else {
         const newTx = await createTransaction.mutateAsync({
           type,
@@ -159,7 +161,7 @@ export default function Transactions() {
           try {
             const customPartner = splitMode === 'custom' ? parseAmount(partnerAmount) : null;
             if (splitMode === 'custom' && (!Number.isFinite(customPartner) || customPartner <= 0 || customPartner >= parsedAmount)) {
-              throw new Error('La quota del partner deve essere maggiore di zero e minore del totale.');
+              throw new Error(t('La quota del partner deve essere maggiore di zero e minore del totale.'));
             }
             await createSharedExpense.mutateAsync({
               connection_id: connection.id,
@@ -170,18 +172,18 @@ export default function Transactions() {
             });
           } catch (err) {
             toast({
-              title: 'Spesa salvata, ma condivisione fallita',
+              title: t('Spesa salvata, ma condivisione fallita'),
               description: (err as Error).message,
               variant: 'destructive',
             });
           }
         }
-        toast({ title: 'Transazione aggiunta!' });
+        toast({ title: t('Transazione aggiunta!') });
       }
       setOpen(false);
       resetForm();
     } catch {
-      toast({ title: 'Errore', variant: 'destructive' });
+      toast({ title: t('Errore'), variant: 'destructive' });
     } finally {
       setIsFetchingRate(false);
     }
@@ -314,29 +316,29 @@ export default function Transactions() {
       <div className="space-y-6">
         <div className="flex items-center justify-between flex-wrap gap-4">
           <div>
-            <h1 className="text-3xl font-display font-bold">Transazioni</h1>
-            <p className="text-muted-foreground">Gestisci entrate e uscite</p>
+            <h1 className="text-3xl font-display font-bold">{t('Transazioni')}</h1>
+            <p className="text-muted-foreground">{t('Gestisci entrate e uscite')}</p>
           </div>
           <Dialog open={open} onOpenChange={handleCloseDialog}>
             <DialogTrigger asChild>
-              <Button onClick={openCreateDialog}><Plus className="w-4 h-4 mr-2" />Nuova</Button>
+              <Button onClick={openCreateDialog}><Plus className="w-4 h-4 mr-2" />{t('Nuova')}</Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>{editingTransaction ? 'Modifica Transazione' : 'Nuova Transazione'}</DialogTitle>
+                <DialogTitle>{editingTransaction ? t('Modifica Transazione') : t('Nuova Transazione')}</DialogTitle>
               </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid grid-cols-2 gap-2">
-                  <Button type="button" variant={type === 'expense' ? 'default' : 'outline'} onClick={() => setType('expense')}>Uscita</Button>
-                  <Button type="button" variant={type === 'income' ? 'default' : 'outline'} onClick={() => setType('income')}>Entrata</Button>
+                  <Button type="button" variant={type === 'expense' ? 'default' : 'outline'} onClick={() => setType('expense')}>{t('Uscita')}</Button>
+                  <Button type="button" variant={type === 'income' ? 'default' : 'outline'} onClick={() => setType('income')}>{t('Entrata')}</Button>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <div>
-                    <Label>Importo</Label>
+                    <Label>{t('Importo')}</Label>
                     <Input type="number" step="0.01" value={amount} onChange={e => setAmount(e.target.value)} required />
                   </div>
                   <div>
-                    <Label>Valuta</Label>
+                    <Label>{t('Valuta')}</Label>
                     <Select value={currency} onValueChange={v => setCurrency(v as CurrencyCode)}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
@@ -346,21 +348,21 @@ export default function Transactions() {
                       </SelectContent>
                     </Select>
                     {currency !== 'EUR' && (
-                      <p className="text-xs text-muted-foreground mt-1">Il cambio EUR viene salvato al momento del salvataggio</p>
+                      <p className="text-xs text-muted-foreground mt-1">{t('Il cambio EUR viene salvato al momento del salvataggio')}</p>
                     )}
                   </div>
                 </div>
-                <div><Label>Categoria</Label>
+                <div><Label>{t('Categoria')}</Label>
                   <CategorySelect
                     categories={allCategories}
                     value={categoryId}
                     onValueChange={setCategoryId}
-                    placeholder="Seleziona"
+                    placeholder={t('Seleziona')}
                     filterType={type}
                   />
                 </div>
-                <div><Label>Descrizione</Label><Input value={description} onChange={e => setDescription(e.target.value)} /></div>
-                <div><Label>Data</Label><Input type="date" value={date} onChange={e => setDate(e.target.value)} /></div>
+                <div><Label>{t('Descrizione')}</Label><Input value={description} onChange={e => setDescription(e.target.value)} /></div>
+                <div><Label>{t('Data')}</Label><Input type="date" value={date} onChange={e => setDate(e.target.value)} /></div>
 
                 {/* Couple sharing toggle — only when creating an expense with active connection */}
                 {!editingTransaction && permissions?.couple_expenses && connection && type === 'expense' && (
@@ -368,28 +370,28 @@ export default function Transactions() {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <HeartHandshake className="w-4 h-4 text-rose-400" />
-                        <Label className="cursor-pointer">Condividi con il partner</Label>
+                        <Label className="cursor-pointer">{t('Condividi con il partner')}</Label>
                       </div>
                       <Switch checked={isShared} onCheckedChange={setIsShared} />
                     </div>
                     {isShared && (
                       <>
                         <div>
-                          <Label className="text-xs text-muted-foreground">Divisione</Label>
+                          <Label className="text-xs text-muted-foreground">{t('Divisione')}</Label>
                           <Select value={splitMode} onValueChange={(v) => setSplitMode(v as 'equal' | 'custom')}>
                             <SelectTrigger>
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="equal">50 / 50 (predefinito)</SelectItem>
-                              <SelectItem value="custom">Importi personalizzati</SelectItem>
+                              <SelectItem value="equal">{t('50 / 50 (predefinito)')}</SelectItem>
+                              <SelectItem value="custom">{t('Importi personalizzati')}</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
                         {splitMode === 'custom' && (
                           <div className="grid grid-cols-2 gap-2">
                             <div>
-                              <Label className="text-xs text-muted-foreground">Quota tua (€)</Label>
+                              <Label className="text-xs text-muted-foreground">{t('Quota tua (€)')}</Label>
                               <Input
                                 type="number"
                                 step="0.01"
@@ -404,7 +406,7 @@ export default function Transactions() {
                               />
                             </div>
                             <div>
-                              <Label className="text-xs text-muted-foreground">Quota partner (€)</Label>
+                              <Label className="text-xs text-muted-foreground">{t('Quota partner (€)')}</Label>
                               <Input
                                 type="number"
                                 step="0.01"
@@ -422,8 +424,8 @@ export default function Transactions() {
 
                 <Button type="submit" className="w-full" disabled={isFetchingRate}>
                   {(() => {
-                    if (isFetchingRate) return 'Recupero cambio...';
-                    return editingTransaction ? 'Aggiorna' : 'Salva';
+                    if (isFetchingRate) return t('Recupero cambio...');
+                    return editingTransaction ? t('Aggiorna') : t('Salva');
                   })()}
                 </Button>
               </form>
@@ -435,34 +437,34 @@ export default function Transactions() {
         <div className="glass rounded-xl p-4 space-y-4">
           <div className="flex items-center gap-2 text-muted-foreground">
             <Search className="w-4 h-4" />
-            <span className="font-medium">Filtri</span>
+            <span className="font-medium">{t('Filtri')}</span>
           </div>
           
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* Period filter */}
             <div>
-              <Label className="text-xs text-muted-foreground">Periodo</Label>
+              <Label className="text-xs text-muted-foreground">{t('Periodo')}</Label>
               <Select value={filterPeriod} onValueChange={(v) => setFilterPeriod(v as FilterPeriod)}>
                 <SelectTrigger>
                   <Calendar className="w-4 h-4 mr-2" />
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="this_month">Questo mese</SelectItem>
-                  <SelectItem value="last_month">Scorso mese</SelectItem>
-                  <SelectItem value="last_semester">Ultimo semestre</SelectItem>
-                  <SelectItem value="last_year">Ultimi 12 mesi</SelectItem>
-                  <SelectItem value="this_year">Anno</SelectItem>
-                  <SelectItem value="custom">Personalizzato</SelectItem>
+                  <SelectItem value="this_month">{t('Questo mese')}</SelectItem>
+                  <SelectItem value="last_month">{t('Scorso mese')}</SelectItem>
+                  <SelectItem value="last_semester">{t('Ultimo semestre')}</SelectItem>
+                  <SelectItem value="last_year">{t('Ultimi 12 mesi')}</SelectItem>
+                  <SelectItem value="this_year">{t('Anno')}</SelectItem>
+                  <SelectItem value="custom">{t('Personalizzato')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             {/* Category search */}
             <div>
-              <Label className="text-xs text-muted-foreground">Cerca categoria o note</Label>
+              <Label className="text-xs text-muted-foreground">{t('Cerca categoria o note')}</Label>
               <Input
-                placeholder="Cerca..."
+                placeholder={t('Cerca...')}
                 value={categorySearch}
                 onChange={e => setCategorySearch(e.target.value)}
                 className="h-10"
@@ -471,14 +473,14 @@ export default function Transactions() {
 
             {/* Category filter */}
             <div>
-              <Label className="text-xs text-muted-foreground">Categoria</Label>
+              <Label className="text-xs text-muted-foreground">{t('Categoria')}</Label>
               <CategorySelect
                 categories={allCategories}
                 value={filterCategoryId}
                 onValueChange={setFilterCategoryId}
-                placeholder="Tutte"
+                placeholder={t('Tutte')}
                 showAllOption={true}
-                allOptionLabel="Tutte le categorie"
+                allOptionLabel={t('Tutte le categorie')}
                 allOptionValue="all"
               />
             </div>
@@ -487,11 +489,11 @@ export default function Transactions() {
             {filterPeriod === 'custom' && (
               <>
                 <div>
-                  <Label className="text-xs text-muted-foreground">Da</Label>
+                  <Label className="text-xs text-muted-foreground">{t('Da')}</Label>
                   <Input type="date" value={filterStartDate} onChange={e => setFilterStartDate(e.target.value)} />
                 </div>
                 <div>
-                  <Label className="text-xs text-muted-foreground">A</Label>
+                  <Label className="text-xs text-muted-foreground">{t('A')}</Label>
                   <Input type="date" value={filterEndDate} onChange={e => setFilterEndDate(e.target.value)} />
                 </div>
               </>
@@ -500,7 +502,7 @@ export default function Transactions() {
             {/* Year selection */}
             {filterPeriod === 'this_year' && (
               <div>
-                <Label className="text-xs text-muted-foreground">Anno</Label>
+                <Label className="text-xs text-muted-foreground">{t('Anno')}</Label>
                 <Select value={selectedYear.toString()} onValueChange={(v) => setSelectedYear(parseInt(v))}>
                   <SelectTrigger>
                     <SelectValue />
@@ -525,7 +527,7 @@ export default function Transactions() {
               />
               <Label htmlFor="filter-shared" className="cursor-pointer text-sm flex items-center gap-1">
                 <HeartHandshake className="w-4 h-4 text-rose-400" />
-                Solo condivise
+                {t('Solo condivise')}
               </Label>
             </div>
           )}
@@ -534,32 +536,32 @@ export default function Transactions() {
         {/* Transactions list — unified: own + partner shared */}
         <div className="glass rounded-xl divide-y divide-border">
           {displayItems.length === 0 ? (
-            <p className="text-muted-foreground text-center py-12">Nessuna transazione trovata</p>
+            <p className="text-muted-foreground text-center py-12">{t('Nessuna transazione trovata')}</p>
           ) : displayItems.map(item => {
             /* ---- Own transaction ---- */
             if (item.kind === 'own') {
-              const t = item.tx;
-              const txCurrency = (t.currency || 'EUR') as CurrencyCode;
-              const rateEur = t.exchange_rate_eur ?? 1;
-              const amountInEur = t.amount * rateEur;
-              const sign = t.type === 'income' ? '+' : '-';
-              const colorClass = t.type === 'income' ? 'text-success font-semibold' : 'text-destructive font-semibold';
+              const tx = item.tx;
+              const txCurrency = (tx.currency || 'EUR') as CurrencyCode;
+              const rateEur = tx.exchange_rate_eur ?? 1;
+              const amountInEur = tx.amount * rateEur;
+              const sign = tx.type === 'income' ? '+' : '-';
+              const colorClass = tx.type === 'income' ? 'text-success font-semibold' : 'text-destructive font-semibold';
               return (
-                <div key={t.id} className="flex items-center justify-between p-4">
+                <div key={tx.id} className="flex items-center justify-between p-4">
                   <div className="flex items-center gap-3">
-                    <span className="text-2xl">{t.category?.icon || '💰'}</span>
+                    <span className="text-2xl">{tx.category?.icon || '💰'}</span>
                     <div>
                       <div className="flex items-center gap-2">
-                        <p className="font-medium">{t.category?.name || 'Transazione'}</p>
+                        <p className="font-medium">{tx.category?.name || t('Transazione')}</p>
                         {item.sharedId && (
                           <Badge variant="secondary" className="bg-rose-500/10 text-rose-400 border-rose-500/20 text-xs gap-1">
                             <HeartHandshake className="w-3 h-3" />
-                            Condivisa
+                            {t('Condivisa')}
                           </Badge>
                         )}
                       </div>
-                      {t.description && <p className="text-sm text-muted-foreground">{t.description}</p>}
-                      <p className="text-xs text-muted-foreground">{new Date(t.date).toLocaleDateString('it-IT')}</p>
+                      {tx.description && <p className="text-sm text-muted-foreground">{tx.description}</p>}
+                      <p className="text-xs text-muted-foreground">{new Date(tx.date).toLocaleDateString('it-IT')}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
@@ -570,12 +572,15 @@ export default function Transactions() {
                             {sign}{CURRENCY_SYMBOLS[txCurrency] || txCurrency}{Number(item.creatorShare).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </span>
                           <p className="text-xs text-muted-foreground">
-                            quota {CURRENCY_SYMBOLS[txCurrency] || txCurrency}{Number(item.creatorShare).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} / totale {CURRENCY_SYMBOLS[txCurrency] || txCurrency}{Number(t.amount).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            {t('quota {{share}} / totale {{total}}', {
+                              share: `${CURRENCY_SYMBOLS[txCurrency] || txCurrency}${Number(item.creatorShare).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+                              total: `${CURRENCY_SYMBOLS[txCurrency] || txCurrency}${Number(tx.amount).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+                            })}
                           </p>
                         </div>
                       ) : txCurrency === defaultCurrency ? (
                         <span className={colorClass}>
-                          {sign}{CURRENCY_SYMBOLS[defaultCurrency]}{Number(t.amount).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          {sign}{CURRENCY_SYMBOLS[defaultCurrency]}{Number(tx.amount).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </span>
                       ) : (
                         <div>
@@ -583,7 +588,7 @@ export default function Transactions() {
                             {sign}{CURRENCY_SYMBOLS[defaultCurrency] || defaultCurrency}{amountInEur.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </span>
                           <p className="text-xs text-muted-foreground">
-                            {sign}{CURRENCY_SYMBOLS[txCurrency] || txCurrency}{Number(t.amount).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {txCurrency}
+                            {sign}{CURRENCY_SYMBOLS[txCurrency] || txCurrency}{Number(tx.amount).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {txCurrency}
                           </p>
                         </div>
                       )}
@@ -592,30 +597,30 @@ export default function Transactions() {
                     {item.sharedId && connection && (
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
-                          <Button variant="ghost" size="icon" title="Rimuovi condivisione">
+                          <Button variant="ghost" size="icon" title={t('Rimuovi condivisione')}>
                             <HeartHandshake className="w-4 h-4 text-rose-400" />
                           </Button>
                         </AlertDialogTrigger>
                         <AlertDialogContent>
                           <AlertDialogHeader>
-                            <AlertDialogTitle>Rimuovere la condivisione?</AlertDialogTitle>
+                            <AlertDialogTitle>{t('Rimuovere la condivisione?')}</AlertDialogTitle>
                             <AlertDialogDescription>
-                              La condivisione verrà rimossa. La tua transazione rimarrà nel tuo ledger ma il partner non la vedrà più.
+                              {t('La condivisione verrà rimossa. La tua transazione rimarrà nel tuo ledger ma il partner non la vedrà più.')}
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
-                            <AlertDialogCancel>Annulla</AlertDialogCancel>
+                            <AlertDialogCancel>{t('Annulla')}</AlertDialogCancel>
                             <AlertDialogAction onClick={() => removeMySharedExpense.mutate(item.sharedId!)}>
-                              Rimuovi condivisione
+                              {t('Rimuovi condivisione')}
                             </AlertDialogAction>
                           </AlertDialogFooter>
                         </AlertDialogContent>
                       </AlertDialog>
                     )}
-                    <Button variant="ghost" size="icon" onClick={() => openEditDialog(t)}>
+                    <Button variant="ghost" size="icon" onClick={() => openEditDialog(tx)}>
                       <Pencil className="w-4 h-4" />
                     </Button>
-                    <Button variant="ghost" size="icon" onClick={() => openDeleteConfirm(t)}>
+                    <Button variant="ghost" size="icon" onClick={() => openDeleteConfirm(tx)}>
                       <Trash2 className="w-4 h-4" />
                     </Button>
                   </div>
@@ -634,10 +639,10 @@ export default function Transactions() {
                   <span className="text-2xl">💑</span>
                   <div>
                     <div className="flex items-center gap-2">
-                      <p className="font-medium">{se.couple_category_name || 'Spesa condivisa'}</p>
+                      <p className="font-medium">{se.couple_category_name || t('Spesa condivisa')}</p>
                       <Badge variant="secondary" className="bg-rose-500/10 text-rose-400 border-rose-500/20 text-xs gap-1">
                         <HeartHandshake className="w-3 h-3" />
-                        {isArchived ? 'Archiviata' : 'Dal partner'}
+                        {isArchived ? t('Archiviata') : t('Dal partner')}
                       </Badge>
                     </div>
                     {se.description && <p className="text-sm text-muted-foreground">{se.description}</p>}
@@ -665,21 +670,21 @@ export default function Transactions() {
                   {!isArchived && (
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
-                        <Button variant="ghost" size="icon" title="Rimuovi dalla tua lista">
+                        <Button variant="ghost" size="icon" title={t('Rimuovi dalla tua lista')}>
                           <Trash2 className="w-4 h-4" />
                         </Button>
                       </AlertDialogTrigger>
                       <AlertDialogContent>
                         <AlertDialogHeader>
-                          <AlertDialogTitle>Rimuovere dalla tua lista?</AlertDialogTitle>
+                          <AlertDialogTitle>{t('Rimuovere dalla tua lista?')}</AlertDialogTitle>
                           <AlertDialogDescription>
-                            La spesa condivisa verrà rimossa dalla tua lista. La transazione originale rimarrà nel ledger del tuo partner.
+                            {t('La spesa condivisa verrà rimossa dalla tua lista. La transazione originale rimarrà nel ledger del tuo partner.')}
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
-                          <AlertDialogCancel>Annulla</AlertDialogCancel>
+                          <AlertDialogCancel>{t('Annulla')}</AlertDialogCancel>
                           <AlertDialogAction onClick={() => removePartnerSharedExpense.mutate(se.id)}>
-                            Rimuovi
+                            {t('Rimuovi')}
                           </AlertDialogAction>
                         </AlertDialogFooter>
                       </AlertDialogContent>
@@ -695,14 +700,14 @@ export default function Transactions() {
         <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>Conferma eliminazione</AlertDialogTitle>
+              <AlertDialogTitle>{t('Conferma eliminazione')}</AlertDialogTitle>
               <AlertDialogDescription>
-                Sei sicuro di voler eliminare questa transazione? Questa azione non può essere annullata.
+                {t('Sei sicuro di voler eliminare questa transazione? Questa azione non può essere annullata.')}
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel>Annulla</AlertDialogCancel>
-              <AlertDialogAction onClick={handleDelete}>Elimina</AlertDialogAction>
+              <AlertDialogCancel>{t('Annulla')}</AlertDialogCancel>
+              <AlertDialogAction onClick={handleDelete}>{t('Elimina')}</AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>

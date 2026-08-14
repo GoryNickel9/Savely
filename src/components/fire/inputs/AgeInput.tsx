@@ -1,4 +1,5 @@
 import { useId, useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 
 interface AgeInputProps {
   label: string
@@ -19,6 +20,7 @@ export default function AgeInput({
   max = 100,
   className = '',
 }: AgeInputProps) {
+  const { t } = useTranslation()
   const id = useId()
   const [inputValue, setInputValue] = useState(value.toString())
 
@@ -56,7 +58,7 @@ export default function AgeInput({
         htmlFor={id} 
         className="flex items-center gap-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5"
       >
-        {label}
+        {t(label)}
       </label>
       <div className="relative">
         <input
@@ -79,7 +81,7 @@ export default function AgeInput({
           "
         />
         <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400 pointer-events-none text-sm">
-          anni
+          {t('anni')}
         </span>
       </div>
     </div>

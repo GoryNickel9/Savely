@@ -6,6 +6,8 @@
  * without env vars, matching the convention of other src/lib/*.ts files.
  */
 
+import i18n from '@/i18n';
+
 export type AuthAAL = 'aal1' | 'aal2';
 
 export interface TotpEnrollment {
@@ -31,9 +33,9 @@ export interface VerifiedFactor {
  * Accepts spaces/dashes (stripped before counting).
  */
 export function validateTotpCode(input: string): string | null {
-  if (typeof input !== 'string') return 'Codice non valido';
+  if (typeof input !== 'string') return i18n.t('Codice non valido');
   const cleaned = input.replace(/[\s-]/g, '');
-  if (!/^\d{6}$/.test(cleaned)) return 'Il codice deve essere di 6 cifre';
+  if (!/^\d{6}$/.test(cleaned)) return i18n.t('Il codice deve essere di 6 cifre');
   return null;
 }
 

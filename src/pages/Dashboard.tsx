@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { useTransactions } from '@/hooks/useTransactions';
 import { usePortfolio } from '@/hooks/usePortfolio';
 import { useBudgets } from '@/hooks/useBudgets';
@@ -9,6 +10,7 @@ import { Wallet, TrendingUp, TrendingDown, PieChart } from 'lucide-react';
 import { Link } from 'react-router';
 
 export default function Dashboard() {
+  const { t } = useTranslation();
   const { transactions } = useTransactions();
   const { totalValue, totalGainPercent, totalGain, openAssets } = usePortfolio();
   const { budgets } = useBudgets();
@@ -75,44 +77,44 @@ export default function Dashboard() {
     <MainLayout>
       <div className="space-y-8">
         <div>
-          <h1 className="text-3xl font-display font-bold">Dashboard</h1>
-          <p className="text-muted-foreground mt-1">Panoramica delle tue finanze</p>
+          <h1 className="text-3xl font-display font-bold">{t('Dashboard')}</h1>
+          <p className="text-muted-foreground mt-1">{t('Panoramica delle tue finanze')}</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-6">
           <Link to="/net-worth" className="block">
             <StatCard
-              title="Patrimonio Netto"
+              title={t('Patrimonio Netto')}
               value={`${CURRENCY_SYMBOLS.EUR}${netWorth.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
               icon={<Wallet className="w-6 h-6" />}
             />
           </Link>
           <StatCard
-            title="Entrate del Mese"
+            title={t('Entrate del Mese')}
             value={`${CURRENCY_SYMBOLS.EUR}${monthlyIncome.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
             icon={<TrendingUp className="w-6 h-6" />}
             className="border-l-4 border-l-success"
           />
           <StatCard
-            title="Uscite del Mese"
+            title={t('Uscite del Mese')}
             value={`${CURRENCY_SYMBOLS.EUR}${monthlyExpenses.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
             icon={<TrendingDown className="w-6 h-6 text-destructive" />}
             className="border-l-4 border-l-destructive"
           />
           <StatCard
-            title="Cashflow Mensile"
+            title={t('Cashflow Mensile')}
             value={`${CURRENCY_SYMBOLS.EUR}${(monthlyIncome - monthlyExpenses).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
             icon={<PieChart className="w-6 h-6" />}
             className={`border-l-4 ${monthlyIncome - monthlyExpenses >= 0 ? 'border-l-success' : 'border-l-destructive'}`}
           />
           <StatCard
-            title="Cashflow Annuale"
+            title={t('Cashflow Annuale')}
             value={`${CURRENCY_SYMBOLS.EUR}${(yearlyIncome - yearlyExpenses).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
             icon={<PieChart className="w-6 h-6" />}
             className={`border-l-4 ${yearlyIncome - yearlyExpenses >= 0 ? 'border-l-success' : 'border-l-destructive'}`}
           />
           <StatCard
-            title="Portfolio"
+            title={t('Portfolio')}
             value={`${CURRENCY_SYMBOLS.EUR}${portfolioValue.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
             icon={<PieChart className="w-6 h-6" />}
             trend={{ value: portfolioPLPercent, isPositive: portfolioPLPercent >= 0 }}
@@ -120,25 +122,25 @@ export default function Dashboard() {
         </div>
 
         <div className="glass rounded-xl p-6">
-          <h2 className="text-xl font-display font-semibold mb-4">Ultime Transazioni</h2>
+          <h2 className="text-xl font-display font-semibold mb-4">{t('Ultime Transazioni')}</h2>
           {transactions.slice(0, 5).length === 0 ? (
-            <p className="text-muted-foreground text-center py-8">Nessuna transazione ancora. Inizia ad aggiungerne!</p>
+            <p className="text-muted-foreground text-center py-8">{t('Nessuna transazione ancora. Inizia ad aggiungerne!')}</p>
           ) : (
             <div className="space-y-3">
-              {transactions.slice(0, 5).map((t) => (
-                <div key={t.id} className="flex items-center justify-between p-3 rounded-lg bg-secondary/50">
+              {transactions.slice(0, 5).map((tx) => (
+                <div key={tx.id} className="flex items-center justify-between p-3 rounded-lg bg-secondary/50">
                   <div className="flex items-center gap-3">
-                    <span className="text-2xl">{t.category?.icon || '💰'}</span>
+                    <span className="text-2xl">{tx.category?.icon || '💰'}</span>
                     <div>
-                      <p className="font-medium">{t.category?.name || 'Transazione'}</p>
-                      {t.description && (
-                        <p className="text-sm text-muted-foreground">{t.description}</p>
+                      <p className="font-medium">{tx.category?.name || t('Transazione')}</p>
+                      {tx.description && (
+                        <p className="text-sm text-muted-foreground">{tx.description}</p>
                       )}
-                      <p className="text-xs text-muted-foreground">{new Date(t.date).toLocaleDateString('it-IT')}</p>
+                      <p className="text-xs text-muted-foreground">{new Date(tx.date).toLocaleDateString('it-IT')}</p>
                     </div>
                   </div>
-                  <span className={t.type === 'income' ? 'text-success font-semibold' : 'text-destructive font-semibold'}>
-                    {t.type === 'income' ? '+' : '-'}{CURRENCY_SYMBOLS.EUR}{Number(t.amount).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  <span className={tx.type === 'income' ? 'text-success font-semibold' : 'text-destructive font-semibold'}>
+                    {tx.type === 'income' ? '+' : '-'}{CURRENCY_SYMBOLS.EUR}{Number(tx.amount).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </span>
                 </div>
               ))}

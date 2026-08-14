@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import i18n from '@/i18n';
+
 // Regex pattern per validare i requisiti della password
 const passwordPatterns = {
   minLength: /.{12,}/, // Almeno 12 caratteri
@@ -11,18 +13,18 @@ const passwordPatterns = {
 
 // Schema Zod per la validazione della password
 export const passwordSchema = z.string()
-  .min(12, 'La password deve essere di almeno 12 caratteri')
-  .regex(passwordPatterns.hasUpperCase, 'La password deve contenere almeno una lettera maiuscola')
-  .regex(passwordPatterns.hasLowerCase, 'La password deve contenere almeno una lettera minuscola')
-  .regex(passwordPatterns.hasNumber, 'La password deve contenere almeno un numero')
-  .regex(passwordPatterns.hasSymbol, 'La password deve contenere almeno un simbolo (!@#$%^&*()_+-=[]{}|;:,.<>?)');
+  .min(12, i18n.t('La password deve essere di almeno 12 caratteri'))
+  .regex(passwordPatterns.hasUpperCase, i18n.t('La password deve contenere almeno una lettera maiuscola'))
+  .regex(passwordPatterns.hasLowerCase, i18n.t('La password deve contenere almeno una lettera minuscola'))
+  .regex(passwordPatterns.hasNumber, i18n.t('La password deve contenere almeno un numero'))
+  .regex(passwordPatterns.hasSymbol, i18n.t('La password deve contenere almeno un simbolo (!@#$%^&*()_+-=[]{}|;:,.<>?)'));
 
 // Schema per conferma password
 export const confirmPasswordSchema = z.object({
   password: passwordSchema,
   confirmPassword: z.string(),
 }).refine(data => data.password === data.confirmPassword, {
-  message: 'Le password non corrispondono',
+  message: i18n.t('Le password non corrispondono'),
   path: ['confirmPassword'],
 });
 

@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router';
 import MainLayout from '@/components/layout/MainLayout';
 import { useInsights } from '@/hooks/useInsights';
@@ -48,6 +49,7 @@ const SEVERITY_BADGE: Record<InsightSeverity, { variant: 'destructive' | 'defaul
 };
 
 export default function Insights() {
+  const { t } = useTranslation();
   const { insights, isLoading } = useInsights();
   const [filter, setFilter] = useState<FilterKey>('all');
 
@@ -69,14 +71,14 @@ export default function Insights() {
           <div className="flex items-center gap-3">
             <Sparkles className="w-8 h-8 text-primary" />
             <div>
-              <h1 className="text-3xl font-display font-bold">Insights</h1>
+              <h1 className="text-3xl font-display font-bold">{t('Insights')}</h1>
               <p className="text-muted-foreground">
-                Segnali automatici sulle tue finanze: anomalie, milestone e trend.
+                {t('Segnali automatici sulle tue finanze: anomalie, milestone e trend.')}
               </p>
             </div>
           </div>
           <Link to="/" className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1">
-            <ArrowLeft className="w-4 h-4" /> Dashboard
+            <ArrowLeft className="w-4 h-4" /> {t('Dashboard')}
           </Link>
         </div>
 
@@ -89,9 +91,9 @@ export default function Insights() {
         ) : insights.length === 0 ? (
           <Card className="glass">
             <CardContent className="py-12 text-center text-muted-foreground">
-              <p className="text-lg">Nessun segnale rilevante al momento — tutto sotto controllo ✅</p>
+              <p className="text-lg">{t('Nessun segnale rilevante al momento — tutto sotto controllo ✅')}</p>
               <p className="text-sm mt-2">
-                Continua a registrare transazioni: gli insights appariranno appena ci sarà qualcosa di notevole.
+                {t('Continua a registrare transazioni: gli insights appariranno appena ci sarà qualcosa di notevole.')}
               </p>
             </CardContent>
           </Card>
@@ -103,7 +105,7 @@ export default function Insights() {
                   const count = f.key === 'all' ? insights.length : counts[f.key as InsightSeverity];
                   return (
                     <TabsTrigger key={f.key} value={f.key} className="gap-2">
-                      {f.label}
+                      {t(f.label)}
                       <span className="text-xs text-muted-foreground">({count})</span>
                     </TabsTrigger>
                   );
@@ -119,7 +121,7 @@ export default function Insights() {
 
             {filtered.length === 0 && (
               <p className="text-center text-muted-foreground py-8">
-                Nessun insight in questa categoria.
+                {t('Nessun insight in questa categoria.')}
               </p>
             )}
           </>
@@ -130,6 +132,7 @@ export default function Insights() {
 }
 
 function InsightCard({ insight }: { insight: Insight }) {
+  const { t } = useTranslation();
   const Icon = KIND_ICON[insight.kind];
   const badge = SEVERITY_BADGE[insight.severity];
   return (
@@ -152,7 +155,7 @@ function InsightCard({ insight }: { insight: Insight }) {
           </div>
         </div>
         <Badge variant={badge.variant} className="shrink-0">
-          {badge.label}
+          {t(badge.label)}
         </Badge>
       </CardHeader>
     </Card>

@@ -1,4 +1,5 @@
 import { formatCurrency } from '@/lib/fire/calculations'
+import { useTranslation } from 'react-i18next'
 
 interface ResultCardProps {
   label: string
@@ -17,14 +18,16 @@ export default function ResultCard({
   subtext,
   icon,
 }: ResultCardProps) {
+  const { t } = useTranslation()
+
   const formatValue = () => {
     if (typeof value === 'string') return value
-    
+
     switch (format) {
       case 'currency':
         return formatCurrency(value)
       case 'anni':
-        return `${value.toFixed(1)} anni`
+        return t('{{value}} anni', { value: value.toFixed(1) })
       case 'percent':
         return `${(value * 100).toFixed(1)}%`
       default:
@@ -42,7 +45,7 @@ export default function ResultCard({
     `}>
       <div className="flex items-start justify-between">
         <div>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">{label}</p>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">{t(label)}</p>
           <p className={`text-2xl font-bold ${
             highlight 
               ? 'text-fire-600 dark:text-fire-400' 
@@ -51,7 +54,7 @@ export default function ResultCard({
             {formatValue()}
           </p>
           {subtext && (
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{subtext}</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{t(subtext)}</p>
           )}
         </div>
         {icon && <span className="text-2xl">{icon}</span>}

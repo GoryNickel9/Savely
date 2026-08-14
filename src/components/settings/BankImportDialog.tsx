@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -52,6 +53,7 @@ const DEFAULT_COLORS = [
 
 export default function BankImportDialog({ open, onOpenChange, userId }: BankImportDialogProps) {
   const { toast } = useToast();
+  const { t } = useTranslation();
   const { categories, refetch: refetchCategories, isLoading } = useCategories();
   const { assets, createAsset } = usePortfolio();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -233,7 +235,7 @@ export default function BankImportDialog({ open, onOpenChange, userId }: BankImp
       );
 
       if (headerRowIndex === -1) {
-        toast({ title: 'Formato non valido', description: 'Impossibile rilevare le intestazioni del file.', variant: 'destructive' });
+        toast({ title: t('Formato non valido'), description: t('Impossibile rilevare le intestazioni del file.'), variant: 'destructive' });
         return;
       }
 
@@ -315,7 +317,7 @@ export default function BankImportDialog({ open, onOpenChange, userId }: BankImp
       }
 
       if (parsed.length === 0 && autoImported.length === 0) {
-        toast({ title: 'Nessuna transazione', description: 'Non ho trovato transazioni valide nel file.', variant: 'destructive' });
+        toast({ title: t('Nessuna transazione'), description: t('Non ho trovato transazioni valide nel file.'), variant: 'destructive' });
         return;
       }
 
@@ -353,11 +355,11 @@ export default function BankImportDialog({ open, onOpenChange, userId }: BankImp
         await executeImport(investmentTxs, mappingsMap, autoImported, []);
       }
 
-      const autoMsg = autoImported.length > 0 ? `, ${autoImported.length} automatiche` : '';
-      toast({ title: 'File caricato', description: `${parsed.length + autoImported.length} transazioni trovate${autoMsg}.` });
+      const autoMsg = autoImported.length > 0 ? t(', {{count}} automatiche', { count: autoImported.length }) : '';
+      toast({ title: t('File caricato'), description: t('{{count}} transazioni trovate{{auto}}.', { count: parsed.length + autoImported.length, auto: autoMsg }) });
     } catch (error) {
       console.error('Bank import error:', error);
-      toast({ title: 'Errore', description: 'Impossibile leggere il file.', variant: 'destructive' });
+      toast({ title: t('Errore'), description: t('Impossibile leggere il file.'), variant: 'destructive' });
     }
 
     if (fileInputRef.current) fileInputRef.current.value = '';
@@ -375,7 +377,7 @@ export default function BankImportDialog({ open, onOpenChange, userId }: BankImp
       mapping = { isin: current.isin, symbol: asset.symbol || '', name: asset.name, assetType: asset.type };
     } else {
       if (!newSymbol || !newAssetName) {
-        toast({ title: 'Dati mancanti', description: 'Inserisci simbolo e nome dell\'asset.', variant: 'destructive' });
+        toast({ title: t('Dati mancanti'), description: t('Inserisci simbolo e nome dell\'asset.'), variant: 'destructive' });
         return;
       }
       mapping = { isin: current.isin, symbol: newSymbol.toUpperCase(), name: newAssetName, assetType: 'etf' };
@@ -388,8 +390,8 @@ export default function BankImportDialog({ open, onOpenChange, userId }: BankImp
     if (isinError) {
       console.error('ISIN mapping upsert error:', isinError);
       toast({
-        title: 'Errore',
-        description: 'Impossibile salvare la mappatura ISIN. Riprova.',
+        title: t('Errore'),
+        description: t('Impossibile salvare la mappatura ISIN. Riprova.'),
         variant: 'destructive',
       });
       return;
@@ -416,7 +418,7 @@ export default function BankImportDialog({ open, onOpenChange, userId }: BankImp
 
   const handleCreateCategory = async () => {
     if (!newCategoryName.trim()) {
-      toast({ title: 'Nome categoria richiesto', description: 'Inserisci un nome per la nuova categoria.', variant: 'destructive' });
+      toast({ title: t('Nome categoria richiesto'), description: t('Inserisci un nome per la nuova categoria.'), variant: 'destructive' });
       return;
     }
     const { data, error } = await supabase
@@ -432,21 +434,21 @@ export default function BankImportDialog({ open, onOpenChange, userId }: BankImp
       .single();
 
     if (error) {
-      toast({ title: 'Errore creazione categoria', description: 'Impossibile creare la categoria.', variant: 'destructive' });
+      toast({ title: t('Errore creazione categoria'), description: t('Impossibile creare la categoria.'), variant: 'destructive' });
       return;
     }
     refetchCategories();
     setSelectedCategory(data.id);
     setShowNewCategoryForm(false);
     setNewCategoryName('');
-    toast({ title: 'Categoria creata', description: `Categoria "${newCategoryName}" creata con successo.` });
+    toast({ title: t('Categoria creata'), description: t('Categoria "{{name}}" creata con successo.', { name: newCategoryName }) });
   };
 
   // ── review actions ────────────────────────────────────────────────────────
 
   const handleAccept = () => {
     if (!selectedCategory) {
-      toast({ title: 'Seleziona una categoria', description: 'Devi selezionare una categoria per accettare la transazione.', variant: 'destructive' });
+      toast({ title: t('Seleziona una categoria'), description: t('Devi selezionare una categoria per accettare la transazione.'), variant: 'destructive' });
       return;
     }
     const keyword = editedDescrizione.toLowerCase().trim();
@@ -568,8 +570,8 @@ export default function BankImportDialog({ open, onOpenChange, userId }: BankImp
     } catch (error) {
       console.error('Import error:', error);
       toast({
-        title: 'Errore di importazione',
-        description: 'Si è verificato un errore durante l\'importazione. Riprova.',
+        title: t('Errore di importazione'),
+        description: t('Si è verificato un errore durante l\'importazione. Riprova.'),
         variant: 'destructive',
       });
       setStep('review');
@@ -604,13 +606,13 @@ export default function BankImportDialog({ open, onOpenChange, userId }: BankImp
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>Importa dalla tua banca</DialogTitle>
+          <DialogTitle>{t('Importa dalla tua banca')}</DialogTitle>
           <DialogDescription>
-            {step === 'upload' && 'Carica il tuo estratto conto in formato CSV.'}
-            {step === 'review-isins' && `Associa ISIN a ticker (${currentIsinIndex + 1}/${unknownIsins.length})`}
-            {step === 'review' && `Revisiona le transazioni (${currentIndex + 1}/${manualTransactions.length})${autoImportedCount > 0 ? ` - ${autoImportedCount} automatiche` : ''}`}
-            {step === 'importing' && 'Importazione in corso...'}
-            {step === 'complete' && 'Importazione completata!'}
+            {step === 'upload' && t('Carica il tuo estratto conto in formato CSV.')}
+            {step === 'review-isins' && t('Associa ISIN a ticker ({{current}}/{{total}})', { current: currentIsinIndex + 1, total: unknownIsins.length })}
+            {step === 'review' && t('Revisiona le transazioni ({{current}}/{{total}}){{auto}}', { current: currentIndex + 1, total: manualTransactions.length, auto: autoImportedCount > 0 ? t(' - {{count}} automatiche', { count: autoImportedCount }) : '' })}
+            {step === 'importing' && t('Importazione in corso...')}
+            {step === 'complete' && t('Importazione completata!')}
           </DialogDescription>
         </DialogHeader>
 
@@ -619,7 +621,7 @@ export default function BankImportDialog({ open, onOpenChange, userId }: BankImp
           <div className="space-y-4">
             {isLoadingCategories ? (
               <div className="text-center py-8">
-                <p className="text-sm text-muted-foreground">Caricamento categorie...</p>
+                <p className="text-sm text-muted-foreground">{t('Caricamento categorie...')}</p>
               </div>
             ) : (
               <>
@@ -630,8 +632,8 @@ export default function BankImportDialog({ open, onOpenChange, userId }: BankImp
                   className="w-full h-32 flex flex-col items-center justify-center gap-2 border-dashed"
                 >
                   <FileSpreadsheet className="w-8 h-8 text-muted-foreground" />
-                  <span>Clicca per caricare il file</span>
-                  <span className="text-xs text-muted-foreground">CSV (BBVA, Trade Republic, ecc.)</span>
+                  <span>{t('Clicca per caricare il file')}</span>
+                  <span className="text-xs text-muted-foreground">{t('CSV (BBVA, Trade Republic, ecc.)')}</span>
                 </Button>
               </>
             )}
@@ -646,46 +648,46 @@ export default function BankImportDialog({ open, onOpenChange, userId }: BankImp
             <div className="bg-muted/50 rounded-lg p-4 space-y-2">
               <div className="flex items-center gap-2">
                 <TrendingUp className="w-5 h-5 text-primary" />
-                <span className="font-medium">Nuovo ISIN trovato</span>
+                <span className="font-medium">{t('Nuovo ISIN trovato')}</span>
               </div>
               <div className="text-sm">
-                <p><strong>ISIN:</strong> {currentIsin.isin}</p>
-                <p><strong>Nome:</strong> {currentIsin.name}</p>
+                <p><strong>{t('ISIN:')}</strong> {currentIsin.isin}</p>
+                <p><strong>{t('Nome:')}</strong> {currentIsin.name}</p>
               </div>
             </div>
 
             <div className="space-y-4">
               <div className="flex gap-2">
                 <Button variant={!useExisting ? 'default' : 'outline'} size="sm" onClick={() => setUseExisting(false)}>
-                  Crea nuovo
+                  {t('Crea nuovo')}
                 </Button>
                 <Button variant={useExisting ? 'default' : 'outline'} size="sm" onClick={() => setUseExisting(true)} disabled={assets.length === 0}>
-                  Usa esistente
+                  {t('Usa esistente')}
                 </Button>
               </div>
 
               {!useExisting ? (
                 <>
                   <div className="space-y-2">
-                    <Label>Simbolo (Ticker)</Label>
-                    <Input value={newSymbol} onChange={e => setNewSymbol(e.target.value.toUpperCase())} placeholder="es. VWCE" />
+                    <Label>{t('Simbolo (Ticker)')}</Label>
+                    <Input value={newSymbol} onChange={e => setNewSymbol(e.target.value.toUpperCase())} placeholder={t('es. VWCE')} />
                     {newSymbol && assets.some(a => a.symbol?.toUpperCase() === newSymbol.toUpperCase()) && (
-                      <p className="text-xs text-yellow-500">⚠️ Esiste già un asset con questo simbolo</p>
+                      <p className="text-xs text-yellow-500">{t('⚠️ Esiste già un asset con questo simbolo')}</p>
                     )}
                   </div>
                   <div className="space-y-2">
-                    <Label>Nome Asset</Label>
-                    <Input value={newAssetName} onChange={e => setNewAssetName(e.target.value)} placeholder="es. Vanguard FTSE All-World" defaultValue={currentIsin.name} />
+                    <Label>{t('Nome Asset')}</Label>
+                    <Input value={newAssetName} onChange={e => setNewAssetName(e.target.value)} placeholder={t('es. Vanguard FTSE All-World')} defaultValue={currentIsin.name} />
                     {newAssetName && assets.some(a => a.name.toLowerCase() === newAssetName.toLowerCase()) && (
-                      <p className="text-xs text-yellow-500">⚠️ Esiste già un asset con questo nome</p>
+                      <p className="text-xs text-yellow-500">{t('⚠️ Esiste già un asset con questo nome')}</p>
                     )}
                   </div>
                 </>
               ) : (
                 <div className="space-y-2">
-                  <Label>Asset esistente</Label>
+                  <Label>{t('Asset esistente')}</Label>
                   <Select value={selectedExistingAsset} onValueChange={setSelectedExistingAsset}>
-                    <SelectTrigger><SelectValue placeholder="Seleziona asset" /></SelectTrigger>
+                    <SelectTrigger><SelectValue placeholder={t('Seleziona asset')} /></SelectTrigger>
                     <SelectContent>
                       {assets
                         .filter((asset, index, self) =>
@@ -706,7 +708,7 @@ export default function BankImportDialog({ open, onOpenChange, userId }: BankImp
 
             <Button onClick={handleSaveISINMapping} className="w-full">
               <Check className="w-4 h-4 mr-2" />
-              Salva e Continua
+              {t('Salva e Continua')}
             </Button>
           </div>
         )}
@@ -718,50 +720,50 @@ export default function BankImportDialog({ open, onOpenChange, userId }: BankImp
 
             <div className="bg-muted/50 rounded-lg p-4 space-y-2">
               <div className="flex justify-between items-center">
-                <span className="text-sm text-muted-foreground">Data</span>
+                <span className="text-sm text-muted-foreground">{t('Data')}</span>
                 <span className="font-medium">{currentTransaction.date}</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-sm text-muted-foreground">Importo</span>
+                <span className="text-sm text-muted-foreground">{t('Importo')}</span>
                 <span className={`font-bold ${currentTransaction.type === 'income' ? 'text-green-500' : 'text-red-500'}`}>
                   {currentTransaction.type === 'income' ? '+' : '-'}€{currentTransaction.amount.toFixed(2)}
                 </span>
               </div>
               <div className="pt-2 border-t border-border">
-                <span className="text-sm text-muted-foreground">Descrizione originale:</span>
+                <span className="text-sm text-muted-foreground">{t('Descrizione originale:')}</span>
                 <p className="text-xs mt-1 break-all">{currentTransaction.descrizione}</p>
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label>Descrizione (diventerà il mapping per transazioni future)</Label>
+              <Label>{t('Descrizione (diventerà il mapping per transazioni future)')}</Label>
               <Input
                 value={editedDescrizione}
                 onChange={e => setEditedDescrizione(e.target.value)}
-                placeholder="Parola chiave per questa transazione"
+                placeholder={t('Parola chiave per questa transazione')}
               />
               <p className="text-xs text-muted-foreground">
-                Le future transazioni che contengono questa parola saranno importate automaticamente.
+                {t('Le future transazioni che contengono questa parola saranno importate automaticamente.')}
               </p>
             </div>
 
             <div className="space-y-2">
-              <Label>Note (opzionale)</Label>
-              <Input value={editedNote} onChange={e => setEditedNote(e.target.value)} placeholder="Note aggiuntive" />
+              <Label>{t('Note (opzionale)')}</Label>
+              <Input value={editedNote} onChange={e => setEditedNote(e.target.value)} placeholder={t('Note aggiuntive')} />
             </div>
 
             <div className="space-y-2">
-              <Label>Categoria</Label>
+              <Label>{t('Categoria')}</Label>
               {isLoadingCategories ? (
-                <p className="text-sm text-muted-foreground">Caricamento categorie...</p>
+                <p className="text-sm text-muted-foreground">{t('Caricamento categorie...')}</p>
               ) : showNewCategoryForm ? (
                 <div className="space-y-3 p-3 border rounded-lg bg-muted/50">
                   <div className="space-y-2">
-                    <Label className="text-xs">Nome categoria</Label>
-                    <Input value={newCategoryName} onChange={e => setNewCategoryName(e.target.value)} placeholder="Es. Alimentari" autoFocus />
+                    <Label className="text-xs">{t('Nome categoria')}</Label>
+                    <Input value={newCategoryName} onChange={e => setNewCategoryName(e.target.value)} placeholder={t('Es. Alimentari')} autoFocus />
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-xs">Icona</Label>
+                    <Label className="text-xs">{t('Icona')}</Label>
                     <div className="flex flex-wrap gap-2">
                       {(currentTransaction.type === 'income' ? DEFAULT_ICONS_INCOME : DEFAULT_ICONS_EXPENSE).map(icon => (
                         <button
@@ -776,7 +778,7 @@ export default function BankImportDialog({ open, onOpenChange, userId }: BankImp
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-xs">Colore</Label>
+                    <Label className="text-xs">{t('Colore')}</Label>
                     <div className="flex flex-wrap gap-2">
                       {DEFAULT_COLORS.map(color => (
                         <button
@@ -790,17 +792,17 @@ export default function BankImportDialog({ open, onOpenChange, userId }: BankImp
                     </div>
                   </div>
                   <div className="flex gap-2">
-                    <Button variant="outline" size="sm" onClick={() => setShowNewCategoryForm(false)} className="flex-1">Annulla</Button>
+                    <Button variant="outline" size="sm" onClick={() => setShowNewCategoryForm(false)} className="flex-1">{t('Annulla')}</Button>
                     <Button size="sm" onClick={handleCreateCategory} className="flex-1">
                       <Plus className="w-4 h-4 mr-1" />
-                      Crea
+                      {t('Crea')}
                     </Button>
                   </div>
                 </div>
               ) : availableCategories.length > 0 ? (
                 <>
                   <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                    <SelectTrigger><SelectValue placeholder="Seleziona categoria" /></SelectTrigger>
+                    <SelectTrigger><SelectValue placeholder={t('Seleziona categoria')} /></SelectTrigger>
                     <SelectContent>
                       {availableCategories.map(cat => (
                         <SelectItem key={cat.id} value={cat.id}>{cat.icon} {cat.name}</SelectItem>
@@ -809,17 +811,17 @@ export default function BankImportDialog({ open, onOpenChange, userId }: BankImp
                   </Select>
                   <Button variant="ghost" size="sm" onClick={() => setShowNewCategoryForm(true)} className="text-xs w-full mt-1">
                     <Plus className="w-3 h-3 mr-1" />
-                    Crea nuova categoria
+                    {t('Crea nuova categoria')}
                   </Button>
                 </>
               ) : (
                 <div className="space-y-2">
-                  <p className="text-sm text-destructive">Nessuna categoria per questo tipo di transazione.</p>
+                  <p className="text-sm text-destructive">{t('Nessuna categoria per questo tipo di transazione.')}</p>
                   <div className="flex gap-2">
-                    <Button variant="outline" size="sm" onClick={() => refetchCategories()} className="flex-1">Ricarica</Button>
+                    <Button variant="outline" size="sm" onClick={() => refetchCategories()} className="flex-1">{t('Ricarica')}</Button>
                     <Button size="sm" onClick={() => setShowNewCategoryForm(true)} className="flex-1">
                       <Plus className="w-4 h-4 mr-1" />
-                      Crea nuova
+                      {t('Crea nuova')}
                     </Button>
                   </div>
                 </div>
@@ -829,11 +831,11 @@ export default function BankImportDialog({ open, onOpenChange, userId }: BankImp
             <div className="flex gap-2">
               <Button onClick={handleDecline} variant="outline" className="flex-1">
                 <X className="w-4 h-4 mr-2" />
-                Salta
+                {t('Salta')}
               </Button>
               <Button onClick={handleAccept} className="flex-1" disabled={!selectedCategory}>
                 <Check className="w-4 h-4 mr-2" />
-                Accetta
+                {t('Accetta')}
               </Button>
             </div>
           </div>
@@ -844,7 +846,7 @@ export default function BankImportDialog({ open, onOpenChange, userId }: BankImp
           <div className="space-y-4 py-4">
             <Progress value={importProgress} className="h-2" />
             <p className="text-center text-muted-foreground">
-              Importazione in corso... {Math.round(importProgress)}%
+              {t('Importazione in corso... {{progress}}%', { progress: Math.round(importProgress) })}
             </p>
           </div>
         )}
@@ -856,15 +858,15 @@ export default function BankImportDialog({ open, onOpenChange, userId }: BankImp
               <Check className="w-8 h-8 text-green-500" />
             </div>
             <div>
-              <p className="font-medium">Importazione completata!</p>
+              <p className="font-medium">{t('Importazione completata!')}</p>
               <p className="text-sm text-muted-foreground">
-                {importedCount.transactions} transazioni
-                {importedCount.investments > 0 && `, ${importedCount.investments} investimenti`}
-                {skippedCount > 0 && `, ${skippedCount} saltate`}
-                {autoImportedCount > 0 && `, ${autoImportedCount} automatiche`}
+                {t('{{count}} transazioni', { count: importedCount.transactions })}
+                {importedCount.investments > 0 && t(', {{count}} investimenti', { count: importedCount.investments })}
+                {skippedCount > 0 && t(', {{count}} saltate', { count: skippedCount })}
+                {autoImportedCount > 0 && t(', {{count}} automatiche', { count: autoImportedCount })}
               </p>
             </div>
-            <Button onClick={handleClose} className="w-full">Chiudi</Button>
+            <Button onClick={handleClose} className="w-full">{t('Chiudi')}</Button>
           </div>
         )}
       </DialogContent>

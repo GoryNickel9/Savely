@@ -1,10 +1,11 @@
 import MainLayout from '@/components/layout/MainLayout';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/hooks/useAuth';
 import { useCategories } from '@/hooks/useCategories';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { LogOut, User, Download, Upload, FileSpreadsheet, Trash2, Settings2, Edit2, FolderPlus, Folder, FolderPen, Check, X, ShieldCheck, FileText } from 'lucide-react';
+import { LogOut, User, Download, Upload, FileSpreadsheet, Trash2, Settings2, Edit2, FolderPlus, Folder, FolderPen, Check, X, ShieldCheck, FileText, Languages } from 'lucide-react';
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -39,13 +40,15 @@ import { EMOJI_OPTIONS, COLOR_OPTIONS, CURRENCY_SYMBOLS, USER_TABLES } from '@/l
 import { useProfile } from '@/hooks/useProfile';
 import { usePermissions } from '@/hooks/usePermissions';
 import { serializeCsvRows } from '@/lib/csv';
+import { SUPPORTED_LANGUAGES, changeLanguage, type LanguageCode } from '@/i18n';
 
 export default function Settings() {
   const { user, signOut, updateEmail, updatePassword } = useAuth();
   const { categories, createCategory, updateCategory, deleteCategory } = useCategories();
-  const { defaultCurrency, updateDefaultCurrency } = useProfile();
+  const { defaultCurrency, updateDefaultCurrency, updateLanguage } = useProfile();
   const { permissions } = usePermissions();
   const { toast } = useToast();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const [isExporting, setIsExporting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -113,8 +116,8 @@ export default function Settings() {
 
       if (rows.length === 0) {
         toast({
-          title: 'Nessun dato',
-          description: 'Non ci sono dati da esportare',
+          title: t('Nessun dato'),
+          description: t('Non ci sono dati da esportare'),
           variant: 'destructive',
         });
         return;
@@ -126,14 +129,14 @@ export default function Settings() {
       downloadBlob(blob, filename);
 
       toast({
-        title: 'Export completato',
-        description: `Dati esportati in ${filename}`,
+        title: t('Export completato'),
+        description: t('Dati esportati in {{filename}}', { filename }),
       });
     } catch (error) {
       console.error('Export error:', error);
       toast({
-        title: 'Errore export',
-        description: 'Si è verificato un errore durante l\'export',
+        title: t('Errore export'),
+        description: t('Si è verificato un errore durante l\'export'),
         variant: 'destructive',
       });
     } finally {
@@ -159,34 +162,34 @@ export default function Settings() {
     try {
       // Always require current password for security
       if (!currentPassword) {
-        throw new Error('Inserisci la password attuale per confermare le modifiche');
+        throw new Error(t('Inserisci la password attuale per confermare le modifiche'));
       }
-      
+
       // Update email if changed
       if (newEmail && newEmail !== user?.email) {
         const { error } = await updateEmail(newEmail);
         if (error) throw error;
-        toast({ title: 'Email aggiornata con successo' });
+        toast({ title: t('Email aggiornata con successo') });
       }
-      
+
       // Update password if provided
       if (newPassword) {
         // Validate password using the new schema
         try {
           passwordSchema.parse(newPassword);
         } catch (error: unknown) {
-          throw new Error((error as { errors?: Array<{ message: string }> }).errors?.[0]?.message || 'La password non soddisfa i requisiti di sicurezza');
+          throw new Error((error as { errors?: Array<{ message: string }> }).errors?.[0]?.message || t('La password non soddisfa i requisiti di sicurezza'));
         }
-        
+
         if (newPassword !== confirmPassword) {
-          throw new Error('Le password non coincidono');
+          throw new Error(t('Le password non coincidono'));
         }
         if (newPassword === currentPassword) {
-          throw new Error('La nuova password non può essere uguale a quella attuale');
+          throw new Error(t('La nuova password non può essere uguale a quella attuale'));
         }
         const { error } = await updatePassword(newPassword);
         if (error) throw error;
-        toast({ title: 'Password aggiornata con successo' });
+        toast({ title: t('Password aggiornata con successo') });
       }
       
       setAccountEditOpen(false);
@@ -196,8 +199,8 @@ export default function Settings() {
       setConfirmPassword('');
     } catch (error: unknown) {
       toast({
-        title: 'Errore',
-        description: (error as Error).message || 'Impossibile aggiornare le credenziali',
+        title: t('Errore'),
+        description: (error as Error).message || t('Impossibile aggiornare le credenziali'),
         variant: 'destructive'
       });
     } finally {
@@ -225,7 +228,7 @@ export default function Settings() {
         color: editCatColor,
         type: editCatType
       });
-      toast({ title: 'Categoria aggiornata!' });
+      toast({ title: t('Categoria aggiornata!') });
       setCategoryEditOpen(false);
       setEditingCategory(null);
       setEditCatName('');
@@ -233,7 +236,7 @@ export default function Settings() {
       setEditCatColor('#6b7280');
       setEditCatType('expense');
     } catch {
-      toast({ title: 'Errore', variant: 'destructive' });
+      toast({ title: t('Errore'), variant: 'destructive' });
     }
   };
 
@@ -247,14 +250,14 @@ export default function Settings() {
         color: newCatColor,
         type: newCatType
       });
-      toast({ title: 'Categoria creata!' });
+      toast({ title: t('Categoria creata!') });
       setNewCatOpen(false);
       setNewCatName('');
       setNewCatIcon('📦');
       setNewCatColor('#6b7280');
       setNewCatType('expense');
     } catch {
-      toast({ title: 'Errore', variant: 'destructive' });
+      toast({ title: t('Errore'), variant: 'destructive' });
     }
   };
 
@@ -262,11 +265,11 @@ export default function Settings() {
     if (!deletingCategory) return;
     try {
       await deleteCategory.mutateAsync(deletingCategory);
-      toast({ title: 'Categoria eliminata!' });
+      toast({ title: t('Categoria eliminata!') });
       setCategoryDeleteOpen(false);
       setDeletingCategory(null);
     } catch {
-      toast({ title: 'Errore', variant: 'destructive' });
+      toast({ title: t('Errore'), variant: 'destructive' });
     }
   };
 
@@ -275,14 +278,14 @@ export default function Settings() {
     setCategoryDeleteOpen(true);
   };
 
-  const userName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Utente';
+  const userName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || t('Utente');
 
   return (
     <MainLayout>
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-display font-bold">Impostazioni</h1>
-          <p className="text-muted-foreground">Gestisci il tuo account</p>
+          <h1 className="text-3xl font-display font-bold">{t('Impostazioni')}</h1>
+          <p className="text-muted-foreground">{t('Gestisci il tuo account')}</p>
         </div>
 
         <div className="glass rounded-xl p-6 space-y-6">
@@ -299,15 +302,15 @@ export default function Settings() {
           <div className="border-t border-border pt-6">
             <h3 className="font-medium mb-4 flex items-center gap-2">
               <User className="w-5 h-5" />
-              Informazioni Account
+              {t('Informazioni Account')}
             </h3>
             <div className="space-y-3">
               <div className="flex justify-between items-center py-2">
-                <span className="text-muted-foreground">Nome</span>
+                <span className="text-muted-foreground">{t('Nome')}</span>
                 <span className="font-medium">{userName}</span>
               </div>
               <div className="flex justify-between items-center py-2">
-                <span className="text-muted-foreground">Email</span>
+                <span className="text-muted-foreground">{t('Email')}</span>
                 <span className="font-medium">{user?.email}</span>
               </div>
             </div>
@@ -316,19 +319,19 @@ export default function Settings() {
                 <DialogTrigger asChild>
                   <Button variant="outline" className="w-full sm:w-auto">
                     <Edit2 className="w-4 h-4 mr-2" />
-                    Modifica credenziali
+                    {t('Modifica credenziali')}
                   </Button>
                 </DialogTrigger>
                 <DialogContent>
                   <DialogHeader>
-                    <DialogTitle>Modifica credenziali</DialogTitle>
+                    <DialogTitle>{t('Modifica credenziali')}</DialogTitle>
                   </DialogHeader>
                   <form onSubmit={handleAccountUpdate} className="space-y-4">
                     <div>
-                      <label className="text-sm text-muted-foreground mb-2 block">Password attuale</label>
+                      <label className="text-sm text-muted-foreground mb-2 block">{t('Password attuale')}</label>
                       <Input
                         type="password"
-                        placeholder="Inserisci la password attuale per confermare"
+                        placeholder={t('Inserisci la password attuale per confermare')}
                         value={currentPassword}
                         onChange={(e) => setCurrentPassword(e.target.value)}
                         autoComplete="current-password"
@@ -336,7 +339,7 @@ export default function Settings() {
                       />
                     </div>
                     <div>
-                      <label className="text-sm text-muted-foreground mb-2 block">Nuova email</label>
+                      <label className="text-sm text-muted-foreground mb-2 block">{t('Nuova email')}</label>
                       <Input
                         type="email"
                         placeholder="nuova@email.com"
@@ -345,19 +348,19 @@ export default function Settings() {
                       />
                     </div>
                     <div>
-                      <label className="text-sm text-muted-foreground mb-2 block">Nuova password</label>
+                      <label className="text-sm text-muted-foreground mb-2 block">{t('Nuova password')}</label>
                       <Input
                         type="password"
-                        placeholder="Lascia vuoto per non cambiare"
+                        placeholder={t('Lascia vuoto per non cambiare')}
                         value={newPassword}
                         onChange={(e) => setNewPassword(e.target.value)}
                         autoComplete="new-password"
                       />
-                      
+
                       {/* Password Requirements Indicator */}
                       {newPassword && (
                         <div className="mt-3 space-y-2 p-3 bg-muted/50 rounded-lg">
-                          <p className="text-sm font-medium mb-2">Requisiti password:</p>
+                          <p className="text-sm font-medium mb-2">{t('Requisiti password:')}</p>
                           {passwordRequirementsList.map((req) => {
                             const isMet = checkPasswordRequirements(newPassword)[req.key];
                             return (
@@ -368,7 +371,7 @@ export default function Settings() {
                                   <X className="w-4 h-4 text-red-500 flex-shrink-0" />
                                 )}
                                 <span className={isMet ? 'text-green-600' : 'text-muted-foreground'}>
-                                  {req.label}
+                                  {t(req.label)}
                                 </span>
                               </div>
                             );
@@ -378,10 +381,10 @@ export default function Settings() {
                     </div>
                     {newPassword && (
                       <div>
-                        <label className="text-sm text-muted-foreground mb-2 block">Conferma nuova password</label>
+                        <label className="text-sm text-muted-foreground mb-2 block">{t('Conferma nuova password')}</label>
                         <Input
                           type="password"
-                          placeholder="Conferma la nuova password"
+                          placeholder={t('Conferma la nuova password')}
                           value={confirmPassword}
                           onChange={(e) => setConfirmPassword(e.target.value)}
                           autoComplete="new-password"
@@ -390,7 +393,7 @@ export default function Settings() {
                       </div>
                     )}
                     <Button type="submit" className="w-full" disabled={isUpdating}>
-                      {isUpdating ? 'Aggiornamento...' : 'Aggiorna'}
+                      {isUpdating ? t('Aggiornamento...') : t('Aggiorna')}
                     </Button>
                   </form>
                 </DialogContent>
@@ -402,19 +405,19 @@ export default function Settings() {
           <div className="border-t border-border pt-6">
             <h3 className="font-medium mb-4 flex items-center gap-2">
               <Settings2 className="w-5 h-5" />
-              Valuta Principale
+              {t('Valuta Principale')}
             </h3>
             <p className="text-sm text-muted-foreground mb-3">
-              Le transazioni vengono visualizzate in questa valuta. Il controvalore viene calcolato al cambio del momento dell'inserimento.
+              {t('Le transazioni vengono visualizzate in questa valuta. Il controvalore viene calcolato al cambio del momento dell\'inserimento.')}
             </p>
             <Select
               value={defaultCurrency}
               onValueChange={async (v) => {
                 try {
                   await updateDefaultCurrency.mutateAsync(v as CurrencyCode);
-                  toast({ title: 'Valuta principale aggiornata!' });
+                  toast({ title: t('Valuta principale aggiornata!') });
                 } catch {
-                  toast({ title: 'Errore', variant: 'destructive' });
+                  toast({ title: t('Errore'), variant: 'destructive' });
                 }
               }}
             >
@@ -431,23 +434,57 @@ export default function Settings() {
             </Select>
           </div>
 
+          {/* Language Section */}
+          <div className="border-t border-border pt-6">
+            <h3 className="font-medium mb-4 flex items-center gap-2">
+              <Languages className="w-5 h-5" />
+              {t('Lingua')}
+            </h3>
+            <p className="text-sm text-muted-foreground mb-3">
+              {t('La lingua dell\'interfaccia. La preferenza è salvata sul tuo account e applicata automaticamente su tutti i dispositivi.')}
+            </p>
+            <Select
+              value={i18n.language}
+              onValueChange={async (v) => {
+                changeLanguage(v as LanguageCode);
+                try {
+                  await updateLanguage.mutateAsync(v as LanguageCode);
+                  toast({ title: t('Lingua aggiornata!') });
+                } catch {
+                  toast({ title: t('Errore'), variant: 'destructive' });
+                }
+              }}
+            >
+              <SelectTrigger className="w-full sm:w-64">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {SUPPORTED_LANGUAGES.map((lang) => (
+                  <SelectItem key={lang.code} value={lang.code}>
+                    {lang.flag} {lang.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
           {/* Import/Export Section */}
           <div className="border-t border-border pt-6">
             <h3 className="font-medium mb-4 flex items-center gap-2">
               <FileSpreadsheet className="w-5 h-5" />
-              Import / Export Dati
+              {t('Import / Export Dati')}
             </h3>
-            
+
             <Dialog open={importExportDialogOpen} onOpenChange={setImportExportDialogOpen}>
               <DialogTrigger asChild>
                 <Button variant="outline" className="w-full sm:w-auto">
                   <FileSpreadsheet className="w-4 h-4 mr-2" />
-                  Gestisci Import / Export
+                  {t('Gestisci Import / Export')}
                 </Button>
               </DialogTrigger>
               <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
                 <DialogHeader>
-                  <DialogTitle>Import / Export Dati</DialogTitle>
+                  <DialogTitle>{t('Import / Export Dati')}</DialogTitle>
                 </DialogHeader>
                 <div className="space-y-6">
 
@@ -455,15 +492,15 @@ export default function Settings() {
                   {/* Import from Banks */}
                   <div>
                     <p className="text-sm text-muted-foreground mb-2">
-                      Importa transazioni dalla tua banca.{' '}
-                      Non hai file CSV?{' '}
+                      {t('Importa transazioni dalla tua banca.')}{' '}
+                      {t('Non hai file CSV?')}{' '}
                       <a
                         href="https://bank.baldeddu.cc"
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-primary hover:underline"
                       >
-                        Clicca qui.
+                        {t('Clicca qui.')}
                       </a>
                     </p>
                     <div className="flex flex-wrap gap-2">
@@ -473,7 +510,7 @@ export default function Settings() {
                         className="w-full sm:w-auto"
                       >
                         <Upload className="w-5 h-5 mr-2" />
-                        Revolut
+                        {t('Revolut')}
                       </Button>
                       <Button
                         variant="outline"
@@ -481,7 +518,7 @@ export default function Settings() {
                         className="w-full sm:w-auto"
                       >
                         <Upload className="w-5 h-5 mr-2" />
-                        BBVA / Trade Republic
+                        {t('BBVA / Trade Republic')}
                       </Button>
                     </div>
                     {user && (
@@ -508,7 +545,7 @@ export default function Settings() {
                   {/* ISIN Mappings Management */}
                   <div>
                     <p className="text-sm text-muted-foreground mb-2">
-                      Gestisci i mapping ISIN per gli investimenti importati.
+                      {t('Gestisci i mapping ISIN per gli investimenti importati.')}
                     </p>
                     <Button
                       variant="outline"
@@ -516,13 +553,13 @@ export default function Settings() {
                       className="w-full sm:w-auto"
                     >
                       <Settings2 className="w-5 h-5 mr-2" />
-                      Gestisci Mapping ISIN
+                      {t('Gestisci Mapping ISIN')}
                     </Button>
                   </div>
 
                   <div>
                     <p className="text-sm text-muted-foreground mb-2">
-                      Esporta tutti i tuoi dati in un file.
+                      {t('Esporta tutti i tuoi dati in un file.')}
                     </p>
                     <div className="flex flex-wrap gap-2">
                       <Button
@@ -531,7 +568,7 @@ export default function Settings() {
                         disabled={isExporting}
                       >
                         <Download className="w-5 h-5 mr-2" />
-                        {isExporting ? 'Esportazione...' : 'Esporta CSV'}
+                        {isExporting ? t('Esportazione...') : t('Esporta CSV')}
                       </Button>
                     </div>
                   </div>
@@ -544,31 +581,31 @@ export default function Settings() {
           <div className="border-t border-border pt-6">
             <h3 className="font-medium mb-4 flex items-center gap-2">
               <Folder className="w-5 h-5" />
-              Gestione Categorie
+              {t('Gestione Categorie')}
             </h3>
-            
+
             <div className="flex flex-wrap gap-2">
               <Dialog open={categoriesDialogOpen} onOpenChange={setCategoriesDialogOpen}>
                 <DialogTrigger asChild>
                   <Button variant="outline" className="w-full sm:w-auto">
                     <FolderPen className="w-4 h-4 mr-2" />
-                    Gestisci Categorie
+                    {t('Gestisci Categorie')}
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
                   <DialogHeader>
-                    <DialogTitle>Gestisci Categorie</DialogTitle>
+                    <DialogTitle>{t('Gestisci Categorie')}</DialogTitle>
                   </DialogHeader>
                   <div className="space-y-4">
                     <div>
                       <p className="text-sm text-muted-foreground mb-2">
-                        Modifica o elimina le tue categorie, le loro emoji e i colori.
+                        {t('Modifica o elimina le tue categorie, le loro emoji e i colori.')}
                       </p>
                     </div>
-                    
+
                     <div className="space-y-3">
                       {categories.length === 0 ? (
-                        <div className="text-center text-muted-foreground py-4">Nessuna categoria</div>
+                        <div className="text-center text-muted-foreground py-4">{t('Nessuna categoria')}</div>
                       ) : (
                         categories.map(category => (
                           <div key={category.id} className="glass rounded-lg p-3 flex items-center justify-between">
@@ -576,7 +613,7 @@ export default function Settings() {
                               <span className="text-2xl">{category.icon}</span>
                               <div>
                                 <div className="font-medium">{category.name}</div>
-                                <div className="text-sm text-muted-foreground">{category.type === 'expense' ? 'Spesa' : 'Entrata'}</div>
+                                <div className="text-sm text-muted-foreground">{category.type === 'expense' ? t('Spesa') : t('Entrata')}</div>
                               </div>
                             </div>
                             <div className="flex items-center gap-2">
@@ -603,15 +640,15 @@ export default function Settings() {
                 <DialogTrigger asChild>
                   <Button variant="outline" className="w-full sm:w-auto">
                     <FolderPlus className="w-4 h-4 mr-2" />
-                    Nuova Categoria
+                    {t('Nuova Categoria')}
                   </Button>
                 </DialogTrigger>
                 <DialogContent>
-                  <DialogHeader><DialogTitle>Nuova Categoria</DialogTitle></DialogHeader>
+                  <DialogHeader><DialogTitle>{t('Nuova Categoria')}</DialogTitle></DialogHeader>
                   <form onSubmit={handleCreateCategory} className="space-y-4">
-                    <Input placeholder="Nome categoria" value={newCatName} onChange={e => setNewCatName(e.target.value)} required />
+                    <Input placeholder={t('Nome categoria')} value={newCatName} onChange={e => setNewCatName(e.target.value)} required />
                     <div>
-                      <label className="text-sm text-muted-foreground mb-2 block">Icona</label>
+                      <label className="text-sm text-muted-foreground mb-2 block">{t('Icona')}</label>
                       <div className="flex flex-wrap gap-2">
                         {EMOJI_OPTIONS.map(emoji => (
                           <button
@@ -626,7 +663,7 @@ export default function Settings() {
                       </div>
                     </div>
                     <div>
-                      <label className="text-sm text-muted-foreground mb-2 block">Colore</label>
+                      <label className="text-sm text-muted-foreground mb-2 block">{t('Colore')}</label>
                       <div className="flex flex-wrap gap-2">
                         {COLOR_OPTIONS.map(color => (
                           <button
@@ -640,14 +677,14 @@ export default function Settings() {
                       </div>
                     </div>
                     <Select value={newCatType} onValueChange={(v) => setNewCatType(v as TransactionType)}>
-                      <SelectTrigger><SelectValue placeholder="Tipo" /></SelectTrigger>
+                      <SelectTrigger><SelectValue placeholder={t('Tipo')} /></SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="expense">Spesa</SelectItem>
-                        <SelectItem value="income">Entrata</SelectItem>
+                        <SelectItem value="expense">{t('Spesa')}</SelectItem>
+                        <SelectItem value="income">{t('Entrata')}</SelectItem>
                       </SelectContent>
                     </Select>
                     <Button type="submit" className="w-full" disabled={createCategory.isPending}>
-                      {createCategory.isPending ? 'Creazione...' : 'Crea Categoria'}
+                      {createCategory.isPending ? t('Creazione...') : t('Crea Categoria')}
                     </Button>
                   </form>
                 </DialogContent>
@@ -659,12 +696,12 @@ export default function Settings() {
           <Dialog open={categoryEditOpen} onOpenChange={setCategoryEditOpen}>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Modifica Categoria</DialogTitle>
+                <DialogTitle>{t('Modifica Categoria')}</DialogTitle>
               </DialogHeader>
               <form onSubmit={handleCategoryUpdate} className="space-y-4">
-                <Input placeholder="Nome categoria" value={editCatName} onChange={e => setEditCatName(e.target.value)} required />
+                <Input placeholder={t('Nome categoria')} value={editCatName} onChange={e => setEditCatName(e.target.value)} required />
                 <div>
-                  <label className="text-sm text-muted-foreground mb-2 block">Icona</label>
+                  <label className="text-sm text-muted-foreground mb-2 block">{t('Icona')}</label>
                   <div className="flex flex-wrap gap-2 max-h-40 overflow-y-auto">
                     {EMOJI_OPTIONS.map(emoji => (
                       <button
@@ -679,7 +716,7 @@ export default function Settings() {
                   </div>
                 </div>
                 <div>
-                  <label className="text-sm text-muted-foreground mb-2 block">Colore</label>
+                  <label className="text-sm text-muted-foreground mb-2 block">{t('Colore')}</label>
                   <div className="flex flex-wrap gap-2">
                     {COLOR_OPTIONS.map(color => (
                       <button
@@ -693,7 +730,7 @@ export default function Settings() {
                   </div>
                 </div>
                 <Button type="submit" className="w-full" disabled={updateCategory.isPending}>
-                  {updateCategory.isPending ? 'Aggiornamento...' : 'Aggiorna Categoria'}
+                  {updateCategory.isPending ? t('Aggiornamento...') : t('Aggiorna Categoria')}
                 </Button>
               </form>
             </DialogContent>
@@ -703,19 +740,19 @@ export default function Settings() {
           <AlertDialog open={categoryDeleteOpen} onOpenChange={setCategoryDeleteOpen}>
             <AlertDialogContent>
               <AlertDialogHeader>
-                <AlertDialogTitle>Eliminare la categoria?</AlertDialogTitle>
+                <AlertDialogTitle>{t('Eliminare la categoria?')}</AlertDialogTitle>
                 <AlertDialogDescription>
-                  Questa azione eliminerà la categoria. Le transazioni associate non verranno eliminate ma non avranno più una categoria assegnata.
+                  {t('Questa azione eliminerà la categoria. Le transazioni associate non verranno eliminate ma non avranno più una categoria assegnata.')}
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel>Annulla</AlertDialogCancel>
+                <AlertDialogCancel>{t('Annulla')}</AlertDialogCancel>
                 <AlertDialogAction
                   onClick={handleCategoryDelete}
                   disabled={deleteCategory.isPending}
                   className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                 >
-                  {deleteCategory.isPending ? 'Eliminazione...' : 'Elimina'}
+                  {deleteCategory.isPending ? t('Eliminazione...') : t('Elimina')}
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
@@ -731,11 +768,10 @@ export default function Settings() {
           <div className="border-t border-border pt-6 space-y-4">
             <h3 className="font-medium flex items-center gap-2">
               <ShieldCheck className="w-5 h-5" />
-              Privacy e Dati
+              {t('Privacy e Dati')}
             </h3>
             <p className="text-sm text-muted-foreground">
-              In conformityà al Regolamento (UE) 2016/679 (GDPR), hai diritto di accedere, rettificare, cancellare,
-              esportare (portabilità) e opporti al trattamento dei tuoi dati personali.
+              {t('In conformityà al Regolamento (UE) 2016/679 (GDPR), hai diritto di accedere, rettificare, cancellare, esportare (portabilità) e opporti al trattamento dei tuoi dati personali.')}
             </p>
             <div className="flex flex-wrap gap-2">
               <Button
@@ -744,21 +780,21 @@ export default function Settings() {
                 className="w-full sm:w-auto"
               >
                 <Download className="w-4 h-4 mr-2" />
-                Esporta tutti i miei dati
+                {t('Esporta tutti i miei dati')}
               </Button>
               <Button asChild variant="outline" className="w-full sm:w-auto">
                 <Link to="/privacy">
                   <FileText className="w-4 h-4 mr-2" />
-                  Privacy Policy
+                  {t('Privacy Policy')}
                 </Link>
               </Button>
             </div>
             <p className="text-xs text-muted-foreground">
-              Per richieste relative ai tuoi dati scrivi a{' '}
+              {t('Per richieste relative ai tuoi dati scrivi a')}{' '}
               <a href="mailto:[EMAIL RIMOSSA]" className="text-primary hover:underline">
                 [EMAIL RIMOSSA]
               </a>
-              . Per cancellare definitivamente il tuo account, vedi la sezione "Zona Pericolo" sottostante.
+              {t('. Per cancellare definitivamente il tuo account, vedi la sezione "Zona Pericolo" sottostante.')}
             </p>
           </div>
 
@@ -766,7 +802,7 @@ export default function Settings() {
           <div className="border-t border-border pt-6 space-y-4">
             <h3 className="font-medium text-destructive flex items-center gap-2">
               <Trash2 className="w-5 h-5" />
-              Zona Pericolo
+              {t('Zona Pericolo')}
             </h3>
 
             <div className="flex flex-wrap gap-3">
@@ -776,7 +812,7 @@ export default function Settings() {
                 className="w-full sm:w-auto"
               >
                 <LogOut className="w-5 h-5 mr-2" />
-                Esci dall'account
+                {t('Esci dall\'account')}
               </Button>
 
               {/* Delete Account completely */}
@@ -787,25 +823,25 @@ export default function Settings() {
                     className="w-full sm:w-auto border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground"
                   >
                     <Trash2 className="w-5 h-5 mr-2" />
-                    Elimina account
+                    {t('Elimina account')}
                   </Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
-                    <AlertDialogTitle>Sei sicuro?</AlertDialogTitle>
+                    <AlertDialogTitle>{t('Sei sicuro?')}</AlertDialogTitle>
                     <AlertDialogDescription>
-                      Questa azione è irreversibile. Tutti i tuoi dati verranno eliminati permanentemente, incluse transazioni, budget, obiettivi e portfolio. L'account verrà chiuso.
+                      {t('Questa azione è irreversibile. Tutti i tuoi dati verranno eliminati permanentemente, incluse transazioni, budget, obiettivi e portfolio. L\'account verrà chiuso.')}
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
-                    <AlertDialogCancel>Annulla</AlertDialogCancel>
+                    <AlertDialogCancel>{t('Annulla')}</AlertDialogCancel>
                     <AlertDialogAction
                       onClick={async () => {
                         setIsDeleting(true);
                         try {
                           const { data: { session } } = await supabase.auth.getSession();
                           if (!session) {
-                            toast({ title: 'Errore', description: 'Sessione non valida', variant: 'destructive' });
+                            toast({ title: t('Errore'), description: t('Sessione non valida'), variant: 'destructive' });
                             return;
                           }
 
@@ -824,12 +860,12 @@ export default function Settings() {
                             throw new Error(response.data.error);
                           }
 
-                          toast({ title: 'Account eliminato', description: 'Il tuo account è stato eliminato con successo' });
+                          toast({ title: t('Account eliminato'), description: t('Il tuo account è stato eliminato con successo') });
                           await signOut();
                           navigate('/auth');
                         } catch (error) {
                           console.error('Delete account error:', error);
-                          toast({ title: 'Errore', description: 'Impossibile eliminare l\'account', variant: 'destructive' });
+                          toast({ title: t('Errore'), description: t('Impossibile eliminare l\'account'), variant: 'destructive' });
                         } finally {
                           setIsDeleting(false);
                         }
@@ -837,7 +873,7 @@ export default function Settings() {
                       disabled={isDeleting}
                       className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                     >
-                      {isDeleting ? 'Eliminazione...' : 'Elimina definitivamente'}
+                      {isDeleting ? t('Eliminazione...') : t('Elimina definitivamente')}
                     </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>

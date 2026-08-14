@@ -14,6 +14,7 @@ import { useYearlyData } from '@/hooks/useYearlyData';
 import { useDialogManager } from '@/hooks/useDialogManager';
 import { parseAmount } from '@/lib/utils';
 import { DataTable, Column } from '@/components/ui/data-table';
+import { useTranslation } from 'react-i18next';
 
 interface RakebackEntry {
   id: string;
@@ -33,6 +34,7 @@ interface YearlyData {
 }
 
 export default function PokerRakeback() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const { toast } = useToast();
   
@@ -85,8 +87,8 @@ export default function PokerRakeback() {
   const addEntry = async () => {
     if (!newMonth || !newRakeGenerated || !newRakebackReceived) {
       toast({
-        title: 'Attenzione',
-        description: 'Compila tutti i campi',
+        title: t('Attenzione'),
+        description: t('Compila tutti i campi'),
         variant: 'destructive',
       });
       return;
@@ -114,8 +116,8 @@ export default function PokerRakeback() {
       
       if (existingData) {
         toast({
-          title: 'Attenzione',
-          description: 'Esiste già un rakeback per questo mese',
+          title: t('Attenzione'),
+          description: t('Esiste già un rakeback per questo mese'),
           variant: 'destructive',
         });
         return;
@@ -135,11 +137,11 @@ export default function PokerRakeback() {
       setNewMonth('');
       setNewRakeGenerated('');
       setNewRakebackReceived('');
-      toast({ title: 'Rakeback aggiunto' });
+      toast({ title: t('Rakeback aggiunto') });
       await reload();
     } catch (error) {
       console.error('Errore:', error);
-      toast({ title: 'Errore', variant: 'destructive' });
+      toast({ title: t('Errore'), variant: 'destructive' });
     }
   };
 
@@ -151,11 +153,11 @@ export default function PokerRakeback() {
         .delete()
         .eq('id', id);
       if (error) throw error;
-      toast({ title: 'Rakeback eliminato' });
+      toast({ title: t('Rakeback eliminato') });
       await reload();
     } catch (error) {
       console.error('Errore:', error);
-      toast({ title: 'Errore', variant: 'destructive' });
+      toast({ title: t('Errore'), variant: 'destructive' });
     }
   };
 
@@ -168,8 +170,8 @@ export default function PokerRakeback() {
   const saveEdit = async (id: string) => {
     if (!editRakeGenerated || !editRakebackReceived) {
       toast({
-        title: 'Attenzione',
-        description: 'Compila tutti i campi obbligatori',
+        title: t('Attenzione'),
+        description: t('Compila tutti i campi obbligatori'),
         variant: 'destructive',
       });
       return;
@@ -189,12 +191,12 @@ export default function PokerRakeback() {
       
       if (error) throw error;
       
-      toast({ title: 'Rakeback aggiornato' });
+      toast({ title: t('Rakeback aggiornato') });
       closeEdit();
       await reload();
     } catch (error) {
       console.error('Errore:', error);
-      toast({ title: 'Errore', variant: 'destructive' });
+      toast({ title: t('Errore'), variant: 'destructive' });
     }
   };
 
@@ -210,8 +212,8 @@ export default function PokerRakeback() {
             <ArrowLeft className="w-5 h-5 text-slate-300" />
           </button>
           <div>
-            <h1 className="text-3xl font-display font-bold">Rake Back</h1>
-            <p className="text-muted-foreground">Traccia la tua rakeback</p>
+            <h1 className="text-3xl font-display font-bold">{t('Rake Back')}</h1>
+            <p className="text-muted-foreground">{t('Traccia la tua rakeback')}</p>
           </div>
         </div>
 
@@ -220,7 +222,7 @@ export default function PokerRakeback() {
           <Card>
             <CardHeader>
               <CardTitle className="text-sm font-medium text-muted-foreground">
-                Rake Totale Generato
+                {t('Rake Totale Generato')}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -231,7 +233,7 @@ export default function PokerRakeback() {
           <Card>
             <CardHeader>
               <CardTitle className="text-sm font-medium text-muted-foreground">
-                Rakeback Totale Ricevuto
+                {t('Rakeback Totale Ricevuto')}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -242,7 +244,7 @@ export default function PokerRakeback() {
           <Card>
             <CardHeader>
               <CardTitle className="text-sm font-medium text-muted-foreground">
-                Percentuale Media Rakeback
+                {t('Percentuale Media Rakeback')}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -258,30 +260,30 @@ export default function PokerRakeback() {
           <CardContent>
             <div className="grid gap-4 md:grid-cols-3">
               <div>
-                <label className="text-sm font-medium mb-2 block">Mese</label>
+                <label className="text-sm font-medium mb-2 block">{t('Mese')}</label>
                 <Input
                   type="month"
                   value={newMonth}
                   onChange={(e) => setNewMonth(e.target.value)}
-                  placeholder="MM/AAAA"
+                  placeholder={t('MM/AAAA')}
                 />
               </div>
               <div>
-                <label className="text-sm font-medium mb-2 block">Rake (€)</label>
+                <label className="text-sm font-medium mb-2 block">{t('Rake (€)')}</label>
                 <Input
                   type="number"
                   step="0.01"
-                  placeholder="Es. 100.00"
+                  placeholder={t('Es. 100.00')}
                   value={newRakeGenerated}
                   onChange={(e) => setNewRakeGenerated(e.target.value)}
                 />
               </div>
               <div>
-                <label className="text-sm font-medium mb-2 block">Rake Back (€)</label>
+                <label className="text-sm font-medium mb-2 block">{t('Rake Back (€)')}</label>
                 <Input
                   type="number"
                   step="0.01"
-                  placeholder="Es. 30.00"
+                  placeholder={t('Es. 30.00')}
                   value={newRakebackReceived}
                   onChange={(e) => setNewRakebackReceived(e.target.value)}
                 />
@@ -289,7 +291,7 @@ export default function PokerRakeback() {
             </div>
             <Button onClick={addEntry} className="w-full mt-4 bg-green-500 hover:bg-green-600">
               <Plus className="w-4 h-4 mr-2" />
-              Aggiungi
+              {t('Aggiungi')}
             </Button>
           </CardContent>
         </Card>
@@ -297,19 +299,19 @@ export default function PokerRakeback() {
         {/* Tabella Rakeback per Mese */}
         <Card>
           <CardHeader>
-            <CardTitle>Rakeback per mese nel {currentYear}</CardTitle>
+            <CardTitle>{t('Rakeback per mese nel {{year}}', { year: currentYear })}</CardTitle>
           </CardHeader>
           <CardContent className="p-0">
             {entries.filter(e => new Date(e.date).getFullYear() === currentYear).length === 0 ? (
               <div className="text-center py-12 text-muted-foreground">
-                Nessun rakeback registrato
+                {t('Nessun rakeback registrato')}
               </div>
             ) : (
               <DataTable<RakebackEntry>
                 columns={[
                   {
                     key: 'date',
-                    header: 'Mese',
+                    header: t('Mese'),
                     render: (entry) => new Date(entry.date).toLocaleDateString('it-IT', {
                       month: 'long',
                       year: 'numeric'
@@ -318,13 +320,13 @@ export default function PokerRakeback() {
                   },
                   {
                     key: 'rake_generated',
-                    header: 'Rake',
+                    header: t('Rake'),
                     render: (entry) => `€${entry.rake_generated.toFixed(2)}`,
                     className: 'text-right'
                   },
                   {
                     key: 'rakeback_received',
-                    header: 'Rake Back',
+                    header: t('Rake Back'),
                     render: (entry: RakebackEntry) => (
                       <span className={`text-right font-medium ${entry.rakeback_received >= 0 ? 'text-green-500' : 'text-red-500'}`}>
                         €{entry.rakeback_received.toFixed(2)}
@@ -334,7 +336,7 @@ export default function PokerRakeback() {
                   },
                   {
                     key: 'percentage',
-                    header: 'Percentuale',
+                    header: t('Percentuale'),
                     render: (entry: RakebackEntry) => entry.rake_generated > 0 ? ((entry.rakeback_received / entry.rake_generated) * 100).toFixed(1) + '%' : '0%',
                     className: 'text-right'
                   },
@@ -366,7 +368,7 @@ export default function PokerRakeback() {
                 ]}
                 data={entries.filter(e => new Date(e.date).getFullYear() === currentYear)}
                 loading={loading}
-                emptyMessage="Nessun rakeback registrato"
+                emptyMessage={t('Nessun rakeback registrato')}
               />
             )}
           </CardContent>
@@ -375,31 +377,31 @@ export default function PokerRakeback() {
         {/* Tabella Rakeback per Anno */}
         <Card>
           <CardHeader>
-            <CardTitle>Rakeback per anno</CardTitle>
+            <CardTitle>{t('Rakeback per anno')}</CardTitle>
           </CardHeader>
           <CardContent className="p-0">
             {yearlyData.length === 0 ? (
               <div className="text-center py-12 text-muted-foreground">
-                Nessun rakeback registrato
+                {t('Nessun rakeback registrato')}
               </div>
             ) : (
               <DataTable<YearlyData>
                 columns={[
                   {
                     key: 'year',
-                    header: 'Anno',
+                    header: t('Anno'),
                     render: (data) => data.year,
                     className: 'font-medium'
                   },
                   {
                     key: 'totalRake',
-                    header: 'Rake Totale',
+                    header: t('Rake Totale'),
                     render: (data) => `€${data.totalRake.toFixed(2)}`,
                     className: 'text-right'
                   },
                   {
                     key: 'totalRakeback',
-                    header: 'Rakeback Totale',
+                    header: t('Rakeback Totale'),
                     render: (data: YearlyData) => (
                       <span className={`text-right font-medium ${data.totalRakeback >= 0 ? 'text-green-500' : 'text-red-500'}`}>
                         €{data.totalRakeback.toFixed(2)}
@@ -409,14 +411,14 @@ export default function PokerRakeback() {
                   },
                   {
                     key: 'averagePercentage',
-                    header: 'Percentuale Media',
+                    header: t('Percentuale Media'),
                     render: (data: YearlyData) => `${data.averagePercentage.toFixed(1)}%`,
                     className: 'text-right'
                   }
                 ]}
                 data={yearlyData}
                 loading={loading}
-                emptyMessage="Nessun rakeback registrato"
+                emptyMessage={t('Nessun rakeback registrato')}
               />
             )}
           </CardContent>
@@ -427,12 +429,12 @@ export default function PokerRakeback() {
       <Dialog open={editOpen} onOpenChange={closeEdit}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Modifica Rakeback</DialogTitle>
+            <DialogTitle>{t('Modifica Rakeback')}</DialogTitle>
           </DialogHeader>
           {editingItem && (
             <div className="space-y-4">
               <div>
-                <label className="text-sm font-medium mb-2 block">Mese</label>
+                <label className="text-sm font-medium mb-2 block">{t('Mese')}</label>
                 <Input
                   type="text"
                   value={new Date(editingItem.date).toLocaleDateString('it-IT', {
@@ -444,21 +446,21 @@ export default function PokerRakeback() {
                 />
               </div>
               <div>
-                <label className="text-sm font-medium mb-2 block">Rake (€)</label>
+                <label className="text-sm font-medium mb-2 block">{t('Rake (€)')}</label>
                 <Input
                   type="number"
                   step="0.01"
-                  placeholder="Es. 100.00"
+                  placeholder={t('Es. 100.00')}
                   value={editRakeGenerated}
                   onChange={(e) => setEditRakeGenerated(e.target.value)}
                 />
               </div>
               <div>
-                <label className="text-sm font-medium mb-2 block">Rake Back (€)</label>
+                <label className="text-sm font-medium mb-2 block">{t('Rake Back (€)')}</label>
                 <Input
                   type="number"
                   step="0.01"
-                  placeholder="Es. 30.00"
+                  placeholder={t('Es. 30.00')}
                   value={editRakebackReceived}
                   onChange={(e) => setEditRakebackReceived(e.target.value)}
                 />
@@ -466,11 +468,11 @@ export default function PokerRakeback() {
               <div className="flex gap-2 justify-end pt-4">
                 <Button variant="outline" onClick={closeEdit}>
                   <X className="w-4 h-4 mr-2" />
-                  Annulla
+                  {t('Annulla')}
                 </Button>
                 <Button onClick={() => saveEdit(editingItem.id)} className="bg-green-500 hover:bg-green-600">
                   <Save className="w-4 h-4 mr-2" />
-                  Salva
+                  {t('Salva')}
                 </Button>
               </div>
             </div>

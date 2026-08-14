@@ -1,5 +1,6 @@
 import { Link } from 'react-router'
 import MainLayout from '@/components/layout/MainLayout'
+import { useTranslation, Trans } from 'react-i18next'
 
 const calculators = [
   {
@@ -25,13 +26,15 @@ const calculators = [
 ]
 
 export default function FIREIndex() {
+  const { t } = useTranslation()
+
   return (
     <MainLayout>
       <div className="space-y-12">
         <div>
-          <h1 className="text-3xl font-display font-bold">Calcolatori FIRE</h1>
+          <h1 className="text-3xl font-display font-bold">{t('Calcolatori FIRE')}</h1>
           <p className="text-muted-foreground mt-1">
-            Calcola il tuo percorso verso l'indipendenza finanziaria
+            {t("Calcola il tuo percorso verso l'indipendenza finanziaria")}
           </p>
         </div>
 
@@ -47,15 +50,15 @@ export default function FIREIndex() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <h3 className={`text-lg font-semibold text-gray-900 dark:text-gray-100 group-hover:text-fire-600 dark:group-hover:text-fire-400 transition-colors`}>
-                        {calc.name}
+                        {t(calc.name)}
                       </h3>
                       <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                        {calc.description}
+                        {t(calc.description)}
                       </p>
                     </div>
                   </div>
                   <div className="mt-4 flex items-center text-sm font-medium text-fire-600 dark:text-fire-400 group-hover:translate-x-1 transition-transform">
-                    Inizia a calcolare
+                    {t('Inizia a calcolare')}
                     <svg className="w-4 h-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                     </svg>
@@ -68,11 +71,13 @@ export default function FIREIndex() {
 
         {/* Info Section */}
         <div className="bg-card border-border rounded-xl p-6">
-          <h2 className="text-xl font-semibold mb-4">Cos'è FIRE?</h2>
+          <h2 className="text-xl font-semibold mb-4">{t("Cos'è FIRE?")}</h2>
           <div className="space-y-4 text-sm text-muted-foreground">
             <p>
-              Il <strong>FIRE?</strong> sta per Financial Independence, Retire Early (Indipendenza Finanziaria, Pensionamento Anticipato). 
-              È un movimento finanziario focalizzato sul risparmio estremo e sull'investimento per andare in pensione molto prima dell'età tradizionale.
+              <Trans i18nKey="Il <strong>FIRE?</strong> sta per Financial Independence, Retire Early (Indipendenza Finanziaria, Pensionamento Anticipato). È un movimento finanziario focalizzato sul risparmio estremo e sull'investimento per andare in pensione molto prima dell'età tradizionale.">
+                Il <strong>FIRE?</strong> sta per Financial Independence, Retire Early (Indipendenza Finanziaria, Pensionamento Anticipato).
+                È un movimento finanziario focalizzato sul risparmio estremo e sull'investimento per andare in pensione molto prima dell'età tradizionale.
+              </Trans>
             </p>
             <p>
             </p>

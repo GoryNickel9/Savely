@@ -1,3 +1,5 @@
+import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import MainLayout from '@/components/layout/MainLayout';
 import { useCategories } from '@/hooks/useCategories';
 import { Button } from '@/components/ui/button';
@@ -6,11 +8,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { TransactionType, Category } from '@/lib/types';
 import { Plus, Edit2, Trash2, FolderPlus } from 'lucide-react';
-import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { EMOJI_OPTIONS, COLOR_OPTIONS } from '@/lib/constants';
 
 export default function Categories() {
+  const { t } = useTranslation();
   const { categories, createCategory, updateCategory, deleteCategory } = useCategories();
   const { toast } = useToast();
   
@@ -34,14 +36,14 @@ export default function Categories() {
     if (!catName.trim()) return;
     try {
       await createCategory.mutateAsync({ name: catName.trim(), icon: catIcon, color: catColor, type: catType });
-      toast({ title: 'Categoria creata!' });
+      toast({ title: t('Categoria creata!') });
       setCreateOpen(false);
       setCatName('');
       setCatIcon('📦');
       setCatColor('#6b7280');
       setCatType('expense');
     } catch {
-      toast({ title: 'Errore', variant: 'destructive' });
+      toast({ title: t('Errore'), variant: 'destructive' });
     }
   };
 
@@ -56,7 +58,7 @@ export default function Categories() {
         color: editColor, 
         type: editType 
       });
-      toast({ title: 'Categoria aggiornata!' });
+      toast({ title: t('Categoria aggiornata!') });
       setEditOpen(false);
       setEditingCategory(null);
       setEditName('');
@@ -64,17 +66,17 @@ export default function Categories() {
       setEditColor('#6b7280');
       setEditType('expense');
     } catch {
-      toast({ title: 'Errore', variant: 'destructive' });
+      toast({ title: t('Errore'), variant: 'destructive' });
     }
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Sei sicuro di voler eliminare questa categoria?')) return;
+    if (!confirm(t('Sei sicuro di voler eliminare questa categoria?'))) return;
     try {
       await deleteCategory.mutateAsync(id);
-      toast({ title: 'Categoria eliminata!' });
+      toast({ title: t('Categoria eliminata!') });
     } catch {
-      toast({ title: 'Errore', variant: 'destructive' });
+      toast({ title: t('Errore'), variant: 'destructive' });
     }
   };
 
@@ -95,19 +97,19 @@ export default function Categories() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-display font-bold">Categorie</h1>
-            <p className="text-muted-foreground">Gestisci le tue categorie</p>
+            <h1 className="text-3xl font-display font-bold">{t('Categorie')}</h1>
+            <p className="text-muted-foreground">{t('Gestisci le tue categorie')}</p>
           </div>
           <Dialog open={createOpen} onOpenChange={setCreateOpen}>
             <DialogTrigger asChild>
-              <Button><FolderPlus className="w-4 h-4 mr-2" />Nuova Categoria</Button>
+              <Button><FolderPlus className="w-4 h-4 mr-2" />{t('Nuova Categoria')}</Button>
             </DialogTrigger>
             <DialogContent>
-              <DialogHeader><DialogTitle>Nuova Categoria</DialogTitle></DialogHeader>
+              <DialogHeader><DialogTitle>{t('Nuova Categoria')}</DialogTitle></DialogHeader>
               <form onSubmit={handleCreate} className="space-y-4">
-                <Input placeholder="Nome categoria" value={catName} onChange={e => setCatName(e.target.value)} required />
+                <Input placeholder={t('Nome categoria')} value={catName} onChange={e => setCatName(e.target.value)} required />
                 <div>
-                  <label className="text-sm text-muted-foreground mb-2 block">Icona</label>
+                  <label className="text-sm text-muted-foreground mb-2 block">{t('Icona')}</label>
                   <div className="flex flex-wrap gap-2 max-h-40 overflow-y-auto">
                     {EMOJI_OPTIONS.map(emoji => (
                       <button
@@ -122,7 +124,7 @@ export default function Categories() {
                   </div>
                 </div>
                 <div>
-                  <label className="text-sm text-muted-foreground mb-2 block">Colore</label>
+                  <label className="text-sm text-muted-foreground mb-2 block">{t('Colore')}</label>
                   <div className="flex flex-wrap gap-2">
                     {COLOR_OPTIONS.map(color => (
                       <button
@@ -136,14 +138,14 @@ export default function Categories() {
                   </div>
                 </div>
                 <Select value={catType} onValueChange={(v) => setCatType(v as TransactionType)}>
-                  <SelectTrigger><SelectValue placeholder="Tipo" /></SelectTrigger>
+                  <SelectTrigger><SelectValue placeholder={t('Tipo')} /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="expense">Spesa</SelectItem>
-                    <SelectItem value="income">Entrata</SelectItem>
+                    <SelectItem value="expense">{t('Spesa')}</SelectItem>
+                    <SelectItem value="income">{t('Entrata')}</SelectItem>
                   </SelectContent>
                 </Select>
                 <Button type="submit" className="w-full" disabled={createCategory.isPending}>
-                  {createCategory.isPending ? 'Creazione...' : 'Crea Categoria'}
+                  {createCategory.isPending ? t('Creazione...') : t('Crea Categoria')}
                 </Button>
               </form>
             </DialogContent>
@@ -154,11 +156,11 @@ export default function Categories() {
           {/* Expense Categories */}
           <div>
             <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-              <span className="text-red-500">●</span> Spese
+              <span className="text-red-500">●</span> {t('Spese')}
             </h2>
             <div className="grid gap-3">
               {expenseCategories.length === 0 ? (
-                <div className="glass rounded-xl p-8 text-center text-muted-foreground">Nessuna categoria di spesa</div>
+                <div className="glass rounded-xl p-8 text-center text-muted-foreground">{t('Nessuna categoria di spesa')}</div>
               ) : (
                 expenseCategories.map(category => (
                   <div key={category.id} className="glass rounded-xl p-4 flex items-center justify-between">
@@ -190,11 +192,11 @@ export default function Categories() {
           {/* Income Categories */}
           <div>
             <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-              <span className="text-green-500">●</span> Entrate
+              <span className="text-green-500">●</span> {t('Entrate')}
             </h2>
             <div className="grid gap-3">
               {incomeCategories.length === 0 ? (
-                <div className="glass rounded-xl p-8 text-center text-muted-foreground">Nessuna categoria di entrata</div>
+                <div className="glass rounded-xl p-8 text-center text-muted-foreground">{t('Nessuna categoria di entrata')}</div>
               ) : (
                 incomeCategories.map(category => (
                   <div key={category.id} className="glass rounded-xl p-4 flex items-center justify-between">
@@ -227,11 +229,11 @@ export default function Categories() {
         {/* Edit Dialog */}
         <Dialog open={editOpen} onOpenChange={setEditOpen}>
           <DialogContent>
-            <DialogHeader><DialogTitle>Modifica Categoria</DialogTitle></DialogHeader>
+            <DialogHeader><DialogTitle>{t('Modifica Categoria')}</DialogTitle></DialogHeader>
             <form onSubmit={handleEdit} className="space-y-4">
-              <Input placeholder="Nome categoria" value={editName} onChange={e => setEditName(e.target.value)} required />
+              <Input placeholder={t('Nome categoria')} value={editName} onChange={e => setEditName(e.target.value)} required />
               <div>
-                <label className="text-sm text-muted-foreground mb-2 block">Icona</label>
+                <label className="text-sm text-muted-foreground mb-2 block">{t('Icona')}</label>
                 <div className="flex flex-wrap gap-2 max-h-40 overflow-y-auto">
                   {EMOJI_OPTIONS.map(emoji => (
                     <button
@@ -246,7 +248,7 @@ export default function Categories() {
                 </div>
               </div>
               <div>
-                <label className="text-sm text-muted-foreground mb-2 block">Colore</label>
+                <label className="text-sm text-muted-foreground mb-2 block">{t('Colore')}</label>
                 <div className="flex flex-wrap gap-2">
                   {COLOR_OPTIONS.map(color => (
                     <button
@@ -260,14 +262,14 @@ export default function Categories() {
                 </div>
               </div>
               <Select value={editType} onValueChange={(v) => setEditType(v as TransactionType)}>
-                <SelectTrigger><SelectValue placeholder="Tipo" /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder={t('Tipo')} /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="expense">Spesa</SelectItem>
-                  <SelectItem value="income">Entrata</SelectItem>
+                  <SelectItem value="expense">{t('Spesa')}</SelectItem>
+                  <SelectItem value="income">{t('Entrata')}</SelectItem>
                 </SelectContent>
               </Select>
               <Button type="submit" className="w-full" disabled={updateCategory.isPending}>
-                {updateCategory.isPending ? 'Aggiornamento...' : 'Aggiorna Categoria'}
+                {updateCategory.isPending ? t('Aggiornamento...') : t('Aggiorna Categoria')}
               </Button>
             </form>
           </DialogContent>

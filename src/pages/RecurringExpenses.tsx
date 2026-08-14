@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import MainLayout from '@/components/layout/MainLayout';
 import { useRecurringExpenses, FREQUENCY_LABELS, RecurringFrequency } from '@/hooks/useRecurringExpenses';
 import { useCategories } from '@/hooks/useCategories';
@@ -40,6 +41,7 @@ import { useRecurringCandidates } from '@/hooks/useRecurringCandidates';
 import { Badge } from '@/components/ui/badge';
 
 export default function RecurringExpenses() {
+  const { t } = useTranslation();
   const { recurringExpenses, isLoading, createRecurringExpense, updateRecurringExpense, deleteRecurringExpense, processDueExpenses } = useRecurringExpenses();
   const { categories } = useCategories();
   const { toast } = useToast();
@@ -80,15 +82,15 @@ export default function RecurringExpenses() {
     try {
       if (editingExpense) {
         await updateRecurringExpense.mutateAsync({ id: editingExpense, ...expenseData });
-        toast({ title: 'Uscita ricorrente aggiornata' });
+        toast({ title: t('Uscita ricorrente aggiornata') });
       } else {
         await createRecurringExpense.mutateAsync(expenseData);
-        toast({ title: 'Uscita ricorrente creata' });
+        toast({ title: t('Uscita ricorrente creata') });
       }
       setDialogOpen(false);
       resetForm();
     } catch (error) {
-      toast({ title: 'Errore', description: 'Operazione fallita', variant: 'destructive' });
+      toast({ title: t('Errore'), description: t('Operazione fallita'), variant: 'destructive' });
     }
   };
 
@@ -122,16 +124,16 @@ export default function RecurringExpenses() {
   const handleDelete = async (id: string) => {
     try {
       await deleteRecurringExpense.mutateAsync(id);
-      toast({ title: 'Uscita ricorrente eliminata' });
+      toast({ title: t('Uscita ricorrente eliminata') });
     } catch (error) {
-      toast({ title: 'Errore', description: 'Eliminazione fallita', variant: 'destructive' });
+      toast({ title: t('Errore'), description: t('Eliminazione fallita'), variant: 'destructive' });
     }
   };
 
   const handleToggleActive = async (id: string, isActive: boolean) => {
     try {
       await updateRecurringExpense.mutateAsync({ id, is_active: !isActive });
-      toast({ title: isActive ? 'Uscita disattivata' : 'Uscita attivata' });
+      toast({ title: isActive ? t('Uscita disattivata') : t('Uscita attivata') });
     } catch (error) {
       toast({ title: 'Errore', variant: 'destructive' });
     }
@@ -141,10 +143,10 @@ export default function RecurringExpenses() {
     try {
       const result = await processDueExpenses.mutateAsync();
       toast({
-        title: 'Elaborazione completata',
-        description: result.processed > 0 
-          ? `${result.processed} transazioni create` 
-          : 'Nessuna uscita da elaborare',
+        title: t('Elaborazione completata'),
+        description: result.processed > 0
+          ? t('{{num}} transazioni create', { num: result.processed })
+          : t('Nessuna uscita da elaborare'),
       });
     } catch (error) {
       toast({ title: 'Errore', variant: 'destructive' });
@@ -156,37 +158,37 @@ export default function RecurringExpenses() {
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-display font-bold">Uscite Ricorrenti</h1>
-            <p className="text-muted-foreground mt-1">Automatizza le spese periodiche</p>
+            <h1 className="text-3xl font-display font-bold">{t('Uscite Ricorrenti')}</h1>
+            <p className="text-muted-foreground mt-1">{t('Automatizza le spese periodiche')}</p>
           </div>
           <div className="flex gap-2">
             <Button variant="outline" onClick={handleProcessNow} disabled={processDueExpenses.isPending}>
               <RefreshCw className={`w-4 h-4 mr-2 ${processDueExpenses.isPending ? 'animate-spin' : ''}`} />
-              Elabora Ora
+              {t('Elabora Ora')}
             </Button>
             <Dialog open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) resetForm(); }}>
               <DialogTrigger asChild>
                 <Button>
                   <Plus className="w-4 h-4 mr-2" />
-                  Nuova Uscita
+                  {t('Nuova Uscita')}
                 </Button>
               </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
-                  <DialogTitle>{editingExpense ? 'Modifica' : 'Nuova'} Uscita Ricorrente</DialogTitle>
+                  <DialogTitle>{editingExpense ? t('Modifica Uscita Ricorrente') : t('Nuova Uscita Ricorrente')}</DialogTitle>
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div>
-                    <Label>Nome</Label>
+                    <Label>{t('Nome')}</Label>
                     <Input
                       value={name}
                       onChange={(e) => setName(e.target.value)}
-                      placeholder="Es. Abbonamento Netflix"
+                      placeholder={t('Es. Abbonamento Netflix')}
                       required
                     />
                   </div>
                   <div>
-                    <Label>Importo (€)</Label>
+                    <Label>{t('Importo (€)')}</Label>
                     <Input
                       type="number"
                       step="0.01"
@@ -197,31 +199,31 @@ export default function RecurringExpenses() {
                     />
                   </div>
                   <div>
-                    <Label>Categoria</Label>
+                    <Label>{t('Categoria')}</Label>
                     <CategorySelect
                       categories={expenseCategories}
                       value={categoryId}
                       onValueChange={setCategoryId}
-                      placeholder="Seleziona categoria"
+                      placeholder={t('Seleziona categoria')}
                       filterType="expense"
                     />
                   </div>
                   <div>
-                    <Label>Frequenza</Label>
+                    <Label>{t('Frequenza')}</Label>
                     <Select value={frequency} onValueChange={(v) => setFrequency(v as RecurringFrequency)}>
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
                         {Object.entries(FREQUENCY_LABELS).map(([key, label]) => (
-                          <SelectItem key={key} value={key}>{label}</SelectItem>
+                          <SelectItem key={key} value={key}>{t(label)}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                   </div>
                   {frequency === 'weekly' && (
                     <div>
-                      <Label>Intervallo (settimane)</Label>
+                      <Label>{t('Intervallo (settimane)')}</Label>
                       <Input
                         type="number"
                         min="1"
@@ -232,7 +234,7 @@ export default function RecurringExpenses() {
                     </div>
                   )}
                   <div>
-                    <Label>Prossima Scadenza</Label>
+                    <Label>{t('Prossima Scadenza')}</Label>
                     <Input
                       type="date"
                       value={nextDueDate}
@@ -241,7 +243,7 @@ export default function RecurringExpenses() {
                     />
                   </div>
                   <Button type="submit" className="w-full" disabled={createRecurringExpense.isPending || updateRecurringExpense.isPending}>
-                    {editingExpense ? 'Salva Modifiche' : 'Crea Uscita'}
+                    {editingExpense ? t('Salva Modifiche') : t('Crea Uscita')}
                   </Button>
                 </form>
               </DialogContent>
@@ -254,11 +256,11 @@ export default function RecurringExpenses() {
           <div className="glass rounded-xl p-4 space-y-3">
             <div className="flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-primary" />
-              <h3 className="font-medium">Suggerimenti rilevati</h3>
+              <h3 className="font-medium">{t('Suggerimenti rilevati')}</h3>
               <Badge variant="secondary">{candidates.length}</Badge>
             </div>
             <p className="text-sm text-muted-foreground">
-              Abbiamo rilevato spese ricorrenti nelle tue transazioni. Aggiungile per automatizzarle.
+              {t('Abbiamo rilevato spese ricorrenti nelle tue transazioni. Aggiungile per automatizzarle.')}
             </p>
             <ul className="space-y-2">
               {candidates.map((c) => (
@@ -270,14 +272,14 @@ export default function RecurringExpenses() {
                     <p className="font-medium truncate">{c.description}</p>
                     <p className="text-sm text-muted-foreground">
                       {CURRENCY_SYMBOLS.EUR}{c.medianAmount.toLocaleString('it-IT', { minimumFractionDigits: 2 })} ·{' '}
-                      {FREQUENCY_LABELS[c.frequency]} · {c.occurrenceCount} occorrenze
-                      {c.confidence === 'high' && ' · alta affidabilità'}
+                      {t(FREQUENCY_LABELS[c.frequency])} · {t('{{num}} occorrenze', { num: c.occurrenceCount })}
+                      {c.confidence === 'high' && t(' · alta affidabilità')}
                     </p>
                   </div>
                   <div className="flex items-center gap-2 flex-shrink-0">
                     <Button size="sm" onClick={() => acceptCandidate(c)}>
                       <Check className="w-4 h-4 mr-1" />
-                      Aggiungi
+                      {t('Aggiungi')}
                     </Button>
                     <Button size="icon" variant="ghost" onClick={() => ignoreCandidate(c.normalizedKey)}>
                       <X className="w-4 h-4" />
@@ -290,12 +292,12 @@ export default function RecurringExpenses() {
         )}
 
         {isLoading ? (
-          <div className="text-center py-12 text-muted-foreground">Caricamento...</div>
+          <div className="text-center py-12 text-muted-foreground">{t('Caricamento...')}</div>
         ) : recurringExpenses.length === 0 ? (
           <div className="glass rounded-xl p-12 text-center">
             <Calendar className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-            <h3 className="text-lg font-medium mb-2">Nessuna uscita ricorrente</h3>
-            <p className="text-muted-foreground">Crea la tua prima uscita ricorrente per automatizzare le spese periodiche.</p>
+            <h3 className="text-lg font-medium mb-2">{t('Nessuna uscita ricorrente')}</h3>
+            <p className="text-muted-foreground">{t('Crea la tua prima uscita ricorrente per automatizzare le spese periodiche.')}</p>
           </div>
         ) : (
           <div className="space-y-4">
@@ -308,12 +310,17 @@ export default function RecurringExpenses() {
                     <div className="flex gap-2 text-sm text-muted-foreground">
                       <span>
                         {expense.frequency === 'weekly'
-                          ? `Ogni ${expense.week_interval || 1} settimana${(expense.week_interval || 1) > 1 ? 'e' : ''}`
-                          : FREQUENCY_LABELS[expense.frequency as RecurringFrequency]
+                          ? t(
+                              (expense.week_interval || 1) > 1
+                                ? 'Ogni {{num}} settimane'
+                                : 'Ogni {{num}} settimana',
+                              { num: expense.week_interval || 1 }
+                            )
+                          : t(FREQUENCY_LABELS[expense.frequency as RecurringFrequency])
                         }
                       </span>
                       <span>•</span>
-                      <span>Prossima: {new Date(expense.next_due_date).toLocaleDateString('it-IT')}</span>
+                      <span>{t('Prossima: {{date}}', { date: new Date(expense.next_due_date).toLocaleDateString('it-IT') })}</span>
                     </div>
                   </div>
                 </div>
@@ -336,15 +343,15 @@ export default function RecurringExpenses() {
                     </AlertDialogTrigger>
                     <AlertDialogContent>
                       <AlertDialogHeader>
-                        <AlertDialogTitle>Eliminare questa uscita ricorrente?</AlertDialogTitle>
+                        <AlertDialogTitle>{t('Eliminare questa uscita ricorrente?')}</AlertDialogTitle>
                         <AlertDialogDescription>
-                          L'uscita "{expense.name}" verrà eliminata. Le transazioni già create rimarranno.
+                          {t('L\'uscita "{{name}}" verrà eliminata. Le transazioni già create rimarranno.', { name: expense.name })}
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
-                        <AlertDialogCancel>Annulla</AlertDialogCancel>
+                        <AlertDialogCancel>{t('Annulla')}</AlertDialogCancel>
                         <AlertDialogAction onClick={() => handleDelete(expense.id)} className="bg-destructive hover:bg-destructive/90">
-                          Elimina
+                          {t('Elimina')}
                         </AlertDialogAction>
                       </AlertDialogFooter>
                     </AlertDialogContent>

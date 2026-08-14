@@ -1,4 +1,5 @@
 import { useId } from 'react'
+import { useTranslation } from 'react-i18next'
 
 interface PercentageInputProps {
   label: string
@@ -23,6 +24,7 @@ export default function PercentageInput({
   showSlider = true,
   className = '',
 }: PercentageInputProps) {
+  const { t } = useTranslation()
   const id = useId()
   const sliderId = useId()
   
@@ -67,7 +69,7 @@ export default function PercentageInput({
         htmlFor={id} 
         className="flex items-center gap-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5"
       >
-        {label}
+        {t(label)}
       </label>
       
       <div className="flex items-center gap-3">

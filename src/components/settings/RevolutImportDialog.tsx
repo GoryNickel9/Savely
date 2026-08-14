@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Dialog,
   DialogContent,
@@ -52,6 +53,7 @@ interface PendingTransaction {
 
 export default function RevolutImportDialog({ open, onOpenChange, userId }: RevolutImportDialogProps) {
   const { toast } = useToast();
+  const { t } = useTranslation();
   const { categories, isLoading: categoriesLoading } = useCategories();
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -88,8 +90,8 @@ export default function RevolutImportDialog({ open, onOpenChange, userId }: Revo
 
     if (categoriesLoading || expenseCategories.length === 0) {
       toast({
-        title: 'Categorie mancanti',
-        description: 'Crea almeno una categoria di uscita prima di importare da Revolut.',
+        title: t('Categorie mancanti'),
+        description: t('Crea almeno una categoria di uscita prima di importare da Revolut.'),
         variant: 'destructive',
       });
       return;
@@ -99,8 +101,8 @@ export default function RevolutImportDialog({ open, onOpenChange, userId }: Revo
       validateImportFile(file);
     } catch (error) {
       toast({
-        title: 'File non valido',
-        description: error instanceof Error ? error.message : 'Il file selezionato non e valido.',
+        title: t('File non valido'),
+        description: error instanceof Error ? error.message : t('Il file selezionato non e valido.'),
         variant: 'destructive',
       });
       return;
@@ -118,8 +120,8 @@ export default function RevolutImportDialog({ open, onOpenChange, userId }: Revo
 
       if (cardPayments.length === 0) {
         toast({
-          title: 'Nessuna transazione',
-          description: 'Nessun pagamento con carta trovato nel file',
+          title: t('Nessuna transazione'),
+          description: t('Nessun pagamento con carta trovato nel file'),
           variant: 'destructive',
         });
         setIsProcessing(false);
@@ -187,14 +189,14 @@ export default function RevolutImportDialog({ open, onOpenChange, userId }: Revo
       setCategoryMappings(mappingsMap);
 
       toast({
-        title: 'File Revolut letto',
-        description: `${cardPayments.length} Card Payment • ${pending.length} nuove • ${skipped} duplicate`,
+        title: t('File Revolut letto'),
+        description: t('{{cardPayments}} Card Payment • {{newCount}} nuove • {{duplicates}} duplicate', { cardPayments: cardPayments.length, newCount: pending.length, duplicates: skipped }),
       });
 
       if (pending.length === 0) {
         toast({
-          title: 'Nessuna nuova transazione',
-          description: `${skipped} transazioni già presenti sono state saltate`,
+          title: t('Nessuna nuova transazione'),
+          description: t('{{count}} transazioni già presenti sono state saltate', { count: skipped }),
         });
         setIsProcessing(false);
         return;
@@ -212,8 +214,8 @@ export default function RevolutImportDialog({ open, onOpenChange, userId }: Revo
     } catch (error) {
       console.error('Import error:', error);
       toast({
-        title: 'Errore',
-        description: 'Errore durante la lettura del file',
+        title: t('Errore'),
+        description: t('Errore durante la lettura del file'),
         variant: 'destructive',
       });
     }
@@ -303,8 +305,12 @@ export default function RevolutImportDialog({ open, onOpenChange, userId }: Revo
     queryClient.invalidateQueries({ queryKey: ['transactions'] });
 
     toast({
-      title: 'Import completato',
-      description: `${imported} importate${failed > 0 ? `, ${failed} fallite` : ''}${skippedCount > 0 ? `, ${skippedCount} duplicate saltate` : ''}`,
+      title: t('Import completato'),
+      description: t('{{count}} importate{{failed}}{{skipped}}', {
+        count: imported,
+        failed: failed > 0 ? t(', {{count}} fallite', { count: failed }) : '',
+        skipped: skippedCount > 0 ? t(', {{count}} duplicate saltate', { count: skippedCount }) : '',
+      }),
       variant: imported === 0 ? 'destructive' : 'default',
     });
   };
@@ -316,19 +322,19 @@ export default function RevolutImportDialog({ open, onOpenChange, userId }: Revo
     <Dialog open={open} onOpenChange={(o) => { onOpenChange(o); if (!o) resetState(); }}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Importa da Revolut</DialogTitle>
+          <DialogTitle>{t('Importa da Revolut')}</DialogTitle>
           <DialogDescription>
-            Importa solo transazioni di tipo "Card Payment" dal file CSV Revolut.
+            {t('Importa solo transazioni di tipo "Card Payment" dal file CSV Revolut.')}
           </DialogDescription>
         </DialogHeader>
 
         {step === 'upload' && (
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              Carica il file CSV esportato da Revolut. Verranno importati solo i pagamenti con carta (Card Payment).
+              {t('Carica il file CSV esportato da Revolut. Verranno importati solo i pagamenti con carta (Card Payment).')}
             </p>
             <div>
-              <Label>File Revolut</Label>
+              <Label>{t('File Revolut')}</Label>
               <Input
                 ref={fileInputRef}
                 type="file"
@@ -339,7 +345,7 @@ export default function RevolutImportDialog({ open, onOpenChange, userId }: Revo
             </div>
             {isProcessing && (
               <div className="text-center text-muted-foreground">
-                Elaborazione in corso...
+                {t('Elaborazione in corso...')}
               </div>
             )}
           </div>
@@ -355,14 +361,14 @@ export default function RevolutImportDialog({ open, onOpenChange, userId }: Revo
             </div>
             
             <div className="text-sm text-muted-foreground text-center">
-              {currentIndex + 1} di {pendingTransactions.length} • {uncategorizedCount} da categorizzare
+              {t('{{current}} di {{total}} • {{count}} da categorizzare', { current: currentIndex + 1, total: pendingTransactions.length, count: uncategorizedCount })}
             </div>
 
             <div>
-              <Label>Seleziona categoria</Label>
+              <Label>{t('Seleziona categoria')}</Label>
               <Select onValueChange={handleCategorySelect} disabled={isProcessing}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Scegli una categoria..." />
+                  <SelectValue placeholder={t('Scegli una categoria...')} />
                 </SelectTrigger>
                 <SelectContent>
                   {expenseCategories.map((cat) => (
@@ -376,7 +382,7 @@ export default function RevolutImportDialog({ open, onOpenChange, userId }: Revo
 
             {isProcessing && (
               <div className="text-center text-muted-foreground">
-                Importazione in corso...
+                {t('Importazione in corso...')}
               </div>
             )}
           </div>
@@ -386,15 +392,15 @@ export default function RevolutImportDialog({ open, onOpenChange, userId }: Revo
           <div className="text-center py-6 space-y-4">
             <CheckCircle className="w-16 h-16 mx-auto text-success" />
             <div>
-              <h3 className="text-lg font-medium">Import Completato!</h3>
+              <h3 className="text-lg font-medium">{t('Import Completato!')}</h3>
               <p className="text-muted-foreground">
-                {importedCount} transazioni importate
-                {skippedCount > 0 && `, ${skippedCount} duplicate saltate`}
-                {failedCount > 0 && `, ${failedCount} fallite`}
+                {t('{{count}} transazioni importate', { count: importedCount })}
+                {skippedCount > 0 && t(', {{count}} duplicate saltate', { count: skippedCount })}
+                {failedCount > 0 && t(', {{count}} fallite', { count: failedCount })}
               </p>
             </div>
             <Button onClick={() => onOpenChange(false)}>
-              Chiudi
+              {t('Chiudi')}
             </Button>
           </div>
         )}

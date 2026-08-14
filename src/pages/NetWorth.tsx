@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import MainLayout from '@/components/layout/MainLayout';
 import { useNetWorthHistory, NetWorthSnapshot } from '@/hooks/useNetWorthHistory';
 import { useTransactions } from '@/hooks/useTransactions';
@@ -16,6 +17,7 @@ const eur = (n: number) =>
   `${CURRENCY_SYMBOLS.EUR}${n.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 export default function NetWorth() {
+  const { t } = useTranslation();
   const { data: history = [], isLoading } = useNetWorthHistory();
   const { transactions } = useTransactions();
   const { openAssets } = usePortfolio();
@@ -43,36 +45,36 @@ export default function NetWorth() {
       <div className="space-y-6">
         <div className="flex items-center justify-between flex-wrap gap-4">
           <div>
-            <h1 className="text-3xl font-display font-bold">Patrimonio</h1>
-            <p className="text-muted-foreground">Storico del tuo patrimonio netto nel tempo</p>
+            <h1 className="text-3xl font-display font-bold">{t('Patrimonio')}</h1>
+            <p className="text-muted-foreground">{t('Storico del tuo patrimonio netto nel tempo')}</p>
           </div>
           <Link to="/portfolio" className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1">
-            <ArrowLeft className="w-4 h-4" /> Portfolio
+            <ArrowLeft className="w-4 h-4" /> {t('Portfolio')}
           </Link>
         </div>
 
         {/* Summary cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <SummaryCard
-            title="Patrimonio attuale"
+            title={t('Patrimonio attuale')}
             value={eur(netWorth)}
             icon={<Wallet className="w-5 h-5" />}
           />
           <SummaryCard
-            title="Variazione periodo"
+            title={t('Variazione periodo')}
             value={`${variation >= 0 ? '+' : ''}${eur(variation)}`}
             sub={`${variationPct >= 0 ? '+' : ''}${variationPct.toFixed(1)}%`}
             positive={variation >= 0}
             icon={variation >= 0 ? <TrendingUp className="w-5 h-5" /> : <TrendingDown className="w-5 h-5" />}
           />
           <SummaryCard
-            title="Cashflow"
+            title={t('Cashflow')}
             value={eur(cashflow)}
             icon={<PiggyBank className="w-5 h-5" />}
-            sub="Entrate − uscite (storico)"
+            sub={t('Entrate − uscite (storico)')}
           />
           <SummaryCard
-            title="P&L Investimenti"
+            title={t('P&L Investimenti')}
             value={eur(portfolioPL)}
             icon={<TrendingUp className="w-5 h-5" />}
             positive={portfolioPL >= 0}
@@ -81,13 +83,13 @@ export default function NetWorth() {
 
         {/* Chart */}
         <div className="glass rounded-xl p-6">
-          <h2 className="text-xl font-display font-semibold mb-4">Andamento patrimonio</h2>
+          <h2 className="text-xl font-display font-semibold mb-4">{t('Andamento patrimonio')}</h2>
           {isLoading ? (
-            <p className="text-muted-foreground text-center py-12">Caricamento…</p>
+            <p className="text-muted-foreground text-center py-12">{t('Caricamento…')}</p>
           ) : chartData.length === 0 ? (
             <p className="text-muted-foreground text-center py-12">
-              Nessuno storico ancora. Il primo snapshot viene creato questa notte.
-              Nel mentre, il patrimonio attuale è <strong>{eur(netWorth)}</strong>.
+              {t('Nessuno storico ancora. Il primo snapshot viene creato questa notte.')}{' '}
+              {t('Nel mentre, il patrimonio attuale è')} <strong>{eur(netWorth)}</strong>.
             </p>
           ) : (
             <ResponsiveContainer width="100%" height={360}>
@@ -102,7 +104,7 @@ export default function NetWorth() {
                 <XAxis dataKey="dateLabel" stroke="hsl(var(--muted-foreground))" fontSize={12} minTickGap={30} />
                 <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
                 <Tooltip
-                  formatter={(v: number) => [eur(v), 'Patrimonio']}
+                  formatter={(v: number) => [eur(v), t('Patrimonio')]}
                   contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8 }}
                 />
                 <ReferenceLine y={0} stroke="hsl(var(--destructive))" strokeDasharray="4 4" />
@@ -120,11 +122,11 @@ export default function NetWorth() {
 
         {/* Breakdown */}
         <div className="glass rounded-xl p-6">
-          <h2 className="text-xl font-display font-semibold mb-4">Composizione patrimonio</h2>
+          <h2 className="text-xl font-display font-semibold mb-4">{t('Composizione patrimonio')}</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <ComponentCard label="Cashflow (storico)" value={cashflow} icon={<PiggyBank className="w-4 h-4" />} />
-            <ComponentCard label="P&L Investimenti" value={portfolioPL} icon={<TrendingUp className="w-4 h-4" />} />
-            <ComponentCard label="Immobili (scontati 25%)" value={realEstateDiscounted} icon={<Home className="w-4 h-4" />} />
+            <ComponentCard label={t('Cashflow (storico)')} value={cashflow} icon={<PiggyBank className="w-4 h-4" />} />
+            <ComponentCard label={t('P&L Investimenti')} value={portfolioPL} icon={<TrendingUp className="w-4 h-4" />} />
+            <ComponentCard label={t('Immobili (scontati 25%)')} value={realEstateDiscounted} icon={<Home className="w-4 h-4" />} />
           </div>
         </div>
       </div>

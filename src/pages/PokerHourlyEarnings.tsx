@@ -12,6 +12,7 @@ import { calculateMedian } from '@/lib/statistics';
 import { useSupabaseData } from '@/hooks/useSupabaseData';
 import { useYearlyData } from '@/hooks/useYearlyData';
 import { parseAmount } from '@/lib/utils';
+import { useTranslation } from 'react-i18next';
 
 interface HourlyEarning {
   id: string;
@@ -37,6 +38,7 @@ interface YearlyData {
 }
 
 export default function PokerHourlyEarnings() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const { toast } = useToast();
   
@@ -124,8 +126,8 @@ export default function PokerHourlyEarnings() {
   const addEarning = async () => {
     if (!newMonth || !newHours || !newProfitLoss) {
       toast({
-        title: 'Attenzione',
-        description: 'Compila tutti i campi',
+        title: t('Attenzione'),
+        description: t('Compila tutti i campi'),
         variant: 'destructive',
       });
       return;
@@ -157,8 +159,8 @@ export default function PokerHourlyEarnings() {
       
       if (existingData) {
         toast({
-          title: 'Attenzione',
-          description: 'Esiste già un guadagno orario per questo mese',
+          title: t('Attenzione'),
+          description: t('Esiste già un guadagno orario per questo mese'),
           variant: 'destructive',
         });
         return;
@@ -182,11 +184,11 @@ export default function PokerHourlyEarnings() {
       setNewHours('');
       setNewProfitLoss('');
       setNewNetWonEv('');
-      toast({ title: 'Guadagno orario aggiunto' });
+      toast({ title: t('Guadagno orario aggiunto') });
       await reload();
     } catch (error) {
       console.error('Errore:', error);
-      toast({ title: 'Errore', variant: 'destructive' });
+      toast({ title: t('Errore'), variant: 'destructive' });
     }
   };
 
@@ -198,11 +200,11 @@ export default function PokerHourlyEarnings() {
         .delete()
         .eq('id', id);
       if (error) throw error;
-      toast({ title: 'Guadagno orario eliminato' });
+      toast({ title: t('Guadagno orario eliminato') });
       await reload();
     } catch (error) {
       console.error('Errore:', error);
-      toast({ title: 'Errore', variant: 'destructive' });
+      toast({ title: t('Errore'), variant: 'destructive' });
     }
   };
 
@@ -224,8 +226,8 @@ export default function PokerHourlyEarnings() {
   const saveEdit = async (id: string) => {
     if (!editHours || !editProfitLoss) {
       toast({
-        title: 'Attenzione',
-        description: 'Compila tutti i campi obbligatori',
+        title: t('Attenzione'),
+        description: t('Compila tutti i campi obbligatori'),
         variant: 'destructive',
       });
       return;
@@ -252,12 +254,12 @@ export default function PokerHourlyEarnings() {
       
       if (error) throw error;
       
-      toast({ title: 'Guadagno orario aggiornato' });
+      toast({ title: t('Guadagno orario aggiornato') });
       cancelEdit();
       await reload();
     } catch (error) {
       console.error('Errore:', error);
-      toast({ title: 'Errore', variant: 'destructive' });
+      toast({ title: t('Errore'), variant: 'destructive' });
     }
   };
 
@@ -282,8 +284,8 @@ export default function PokerHourlyEarnings() {
             <ArrowLeft className="w-5 h-5 text-slate-300" />
           </button>
           <div>
-            <h1 className="text-3xl font-display font-bold">Guadagno Orario</h1>
-            <p className="text-muted-foreground">Traccia il tuo guadagno orario nel poker</p>
+            <h1 className="text-3xl font-display font-bold">{t('Guadagno Orario')}</h1>
+            <p className="text-muted-foreground">{t('Traccia il tuo guadagno orario nel poker')}</p>
           </div>
         </div>
 
@@ -294,40 +296,40 @@ export default function PokerHourlyEarnings() {
           <CardContent>
             <div className="grid gap-4 md:grid-cols-4">
               <div>
-                <label className="text-sm font-medium mb-2 block">Mese</label>
+                <label className="text-sm font-medium mb-2 block">{t('Mese')}</label>
                 <Input
                   type="month"
                   value={newMonth}
                   onChange={(e) => setNewMonth(e.target.value)}
-                  placeholder="MM/AAAA"
+                  placeholder={t('MM/AAAA')}
                 />
               </div>
               <div>
-                <label className="text-sm font-medium mb-2 block">Ore giocate (minuti)</label>
+                <label className="text-sm font-medium mb-2 block">{t('Ore giocate (minuti)')}</label>
                 <Input
                   type="number"
                   step="1"
-                  placeholder="Es. 270"
+                  placeholder={t('Es. 270')}
                   value={newHours}
                   onChange={(e) => setNewHours(e.target.value)}
                 />
               </div>
               <div>
-                <label className="text-sm font-medium mb-2 block">Net Won</label>
+                <label className="text-sm font-medium mb-2 block">{t('Net Won')}</label>
                 <Input
                   type="number"
                   step="0.01"
-                  placeholder="Es. 250.00"
+                  placeholder={t('Es. 250.00')}
                   value={newProfitLoss}
                   onChange={(e) => setNewProfitLoss(e.target.value)}
                 />
               </div>
               <div>
-                <label className="text-sm font-medium mb-2 block">Net Won EV</label>
+                <label className="text-sm font-medium mb-2 block">{t('Net Won EV')}</label>
                 <Input
                   type="number"
                   step="0.01"
-                  placeholder="Es. 300.00"
+                  placeholder={t('Es. 300.00')}
                   value={newNetWonEv}
                   onChange={(e) => setNewNetWonEv(e.target.value)}
                 />
@@ -335,7 +337,7 @@ export default function PokerHourlyEarnings() {
             </div>
             <Button onClick={addEarning} className="w-full mt-4 bg-green-500 hover:bg-green-600">
               <Plus className="w-4 h-4 mr-2" />
-              Aggiungi
+              {t('Aggiungi')}
             </Button>
           </CardContent>
         </Card>
@@ -343,24 +345,24 @@ export default function PokerHourlyEarnings() {
         {/* Tabella Guadagni Orari per Mese */}
         <Card>
           <CardHeader>
-            <CardTitle>Guadagni orari per mese nel {currentYear}</CardTitle>
+            <CardTitle>{t('Guadagni orari per mese nel {{year}}', { year: currentYear })}</CardTitle>
           </CardHeader>
           <CardContent className="p-0">
             {earnings.filter(e => new Date(e.date).getFullYear() === currentYear).length === 0 ? (
               <div className="text-center py-12 text-muted-foreground">
-                Nessun guadagno orario registrato
+                {t('Nessun guadagno orario registrato')}
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead className="bg-muted/50">
                     <tr>
-                      <th className="text-left py-3 px-4 font-medium text-sm">Mese</th>
-                      <th className="text-right py-3 px-4 font-medium text-sm">Net won</th>
-                      <th className="text-right py-3 px-4 font-medium text-sm">Net won ev</th>
-                      <th className="text-right py-3 px-4 font-medium text-sm">Ore</th>
-                      <th className="text-right py-3 px-4 font-medium text-sm">€/h reale</th>
-                      <th className="text-right py-3 px-4 font-medium text-sm">€/h ev</th>
+                      <th className="text-left py-3 px-4 font-medium text-sm">{t('Mese')}</th>
+                      <th className="text-right py-3 px-4 font-medium text-sm">{t('Net won')}</th>
+                      <th className="text-right py-3 px-4 font-medium text-sm">{t('Net won ev')}</th>
+                      <th className="text-right py-3 px-4 font-medium text-sm">{t('Ore')}</th>
+                      <th className="text-right py-3 px-4 font-medium text-sm">{t('€/h reale')}</th>
+                      <th className="text-right py-3 px-4 font-medium text-sm">{t('€/h ev')}</th>
                       <th className="text-center py-3 px-4 font-medium text-sm"></th>
                     </tr>
                   </thead>
@@ -403,7 +405,7 @@ export default function PokerHourlyEarnings() {
                                 value={editHours}
                                 onChange={(e) => setEditHours(e.target.value)}
                                 className="w-24 text-right"
-                                placeholder="minuti"
+                                placeholder={t('minuti')}
                               />
                             </td>
                             <td className="text-right py-3 px-4 text-muted-foreground">
@@ -484,25 +486,25 @@ export default function PokerHourlyEarnings() {
         {/* Tabella Guadagni Orari per Anno */}
         <Card>
           <CardHeader>
-            <CardTitle>Guadagni orari per anno</CardTitle>
+            <CardTitle>{t('Guadagni orari per anno')}</CardTitle>
           </CardHeader>
           <CardContent className="p-0">
             {yearlyData.length === 0 ? (
               <div className="text-center py-12 text-muted-foreground">
-                Nessun guadagno orario registrato
+                {t('Nessun guadagno orario registrato')}
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead className="bg-muted/50">
                     <tr>
-                      <th className="text-left py-3 px-4 font-medium text-sm">Anno</th>
-                      <th className="text-right py-3 px-4 font-medium text-sm">Net won</th>
-                      <th className="text-right py-3 px-4 font-medium text-sm">Net won ev</th>
-                      <th className="text-right py-3 px-4 font-medium text-sm">Ore totali</th>
-                      <th className="text-right py-3 px-4 font-medium text-sm">Ore mediana</th>
-                      <th className="text-right py-3 px-4 font-medium text-sm">€/h reale</th>
-                      <th className="text-right py-3 px-4 font-medium text-sm">€/h ev</th>
+                      <th className="text-left py-3 px-4 font-medium text-sm">{t('Anno')}</th>
+                      <th className="text-right py-3 px-4 font-medium text-sm">{t('Net won')}</th>
+                      <th className="text-right py-3 px-4 font-medium text-sm">{t('Net won ev')}</th>
+                      <th className="text-right py-3 px-4 font-medium text-sm">{t('Ore totali')}</th>
+                      <th className="text-right py-3 px-4 font-medium text-sm">{t('Ore mediana')}</th>
+                      <th className="text-right py-3 px-4 font-medium text-sm">{t('€/h reale')}</th>
+                      <th className="text-right py-3 px-4 font-medium text-sm">{t('€/h ev')}</th>
                     </tr>
                   </thead>
                   <tbody>

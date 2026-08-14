@@ -14,6 +14,7 @@ import { format } from 'date-fns';
 import { parseAmount, todayLocalISO } from '@/lib/utils';
 import { useCardTraderSearch, CardTraderCard } from '@/hooks/useCardTraderSearch';
 import { fetchCtZeroPrice } from '@/hooks/useCardTraderPrices';
+import { useTranslation } from 'react-i18next';
 
 const LANGUAGES = ['EN', 'IT', 'JP', 'DE', 'FR', 'ES', 'PT', 'KOR', 'ZHS'];
 const CONDITIONS: CardCondition[] = ['near_mint', 'lightly_played', 'moderately_played', 'heavily_played', 'damaged'];
@@ -53,6 +54,7 @@ export default function TcgCollectionPage({
   filterByTextOrSet = true,
   showCollectorNumber = true,
 }: TcgCollectionPageProps) {
+  const { t } = useTranslation();
   const { cards, isLoading, totalValue, totalCost, totalGain, totalGainPercent, createCard, updateCard, deleteCard } = useTcgCards(category);
   const { toast } = useToast();
 
@@ -124,11 +126,11 @@ export default function TcgCollectionPage({
         current_price: currentPrice ?? undefined,
         image_url: selected.image,
       });
-      toast({ title: 'Carta aggiunta!' });
+      toast({ title: t('Carta aggiunta!') });
       resetDialog();
     } catch {
       setSavingPrice(false);
-      toast({ title: 'Errore', variant: 'destructive' });
+      toast({ title: t('Errore'), variant: 'destructive' });
     }
   };
 
@@ -167,11 +169,11 @@ export default function TcgCollectionPage({
         purchase_price: parseAmount(editPurchasePrice),
         purchase_date: editPurchaseDate,
       });
-      toast({ title: 'Carta aggiornata!' });
+      toast({ title: t('Carta aggiornata!') });
       setEditOpen(false);
       setEditingCard(null);
     } catch {
-      toast({ title: 'Errore', variant: 'destructive' });
+      toast({ title: t('Errore'), variant: 'destructive' });
     }
   };
 
@@ -201,26 +203,26 @@ export default function TcgCollectionPage({
         <div className="flex items-center justify-between flex-wrap gap-4">
           <div>
             <Link to="/tcg" className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-1">
-              <ArrowLeft className="w-4 h-4" />Collezione TCG
+              <ArrowLeft className="w-4 h-4" />{t('Collezione TCG')}
             </Link>
-            <h1 className="text-3xl font-display font-bold">{title}</h1>
-            <p className="text-muted-foreground">{subtitle}</p>
+            <h1 className="text-3xl font-display font-bold">{t(title)}</h1>
+            <p className="text-muted-foreground">{t(subtitle)}</p>
           </div>
           <Dialog open={open} onOpenChange={(o) => { if (!o) resetDialog(); else setOpen(true); }}>
             <DialogTrigger asChild>
-              <Button><Plus className="w-4 h-4 mr-2" />Aggiungi Carta</Button>
+              <Button><Plus className="w-4 h-4 mr-2" />{t('Aggiungi Carta')}</Button>
             </DialogTrigger>
             <DialogContent className={`${addDialogMaxWidth} max-h-[90vh] overflow-y-auto`}>
-              <DialogHeader><DialogTitle>{addCardTitle}</DialogTitle></DialogHeader>
+              <DialogHeader><DialogTitle>{t(addCardTitle)}</DialogTitle></DialogHeader>
               <div className="space-y-4">
                 {/* Search */}
                 <div>
-                  <Label>Cerca carta</Label>
+                  <Label>{t('Cerca carta')}</Label>
                   <div className="flex gap-2 mt-1">
                     <Input
                       value={query}
                       onChange={(e) => setQuery(e.target.value)}
-                      placeholder={searchPlaceholder}
+                      placeholder={t(searchPlaceholder)}
                       onKeyDown={(e) => e.key === 'Enter' && searchCardTrader(query)}
                     />
                     <Button type="button" variant="outline" onClick={() => searchCardTrader(query)} disabled={searching}>
@@ -234,11 +236,11 @@ export default function TcgCollectionPage({
                   <div className="space-y-2">
                     {searchResultSets.length > 1 && (
                       <div className="flex items-center gap-2">
-                        <Label className="text-xs shrink-0">Filtra set:</Label>
+                        <Label className="text-xs shrink-0">{t('Filtra set:')}</Label>
                         <Select value={searchSetFilter} onValueChange={setSearchSetFilter}>
                           <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="all">Tutti i set ({results.length})</SelectItem>
+                            <SelectItem value="all">{t('Tutti i set ({{count}})', { count: results.length })}</SelectItem>
                             {searchResultSets.map(s => (
                               <SelectItem key={s} value={s}>{s}</SelectItem>
                             ))}
@@ -279,20 +281,20 @@ export default function TcgCollectionPage({
                         <p className="font-medium">{selected.name}</p>
                         <p className="text-sm text-muted-foreground">{selected.set.name}</p>
                         <Button variant="link" size="sm" className="p-0 h-auto text-xs" type="button" onClick={() => setSelected(null)}>
-                          Cambia carta
+                          {t('Cambia carta')}
                         </Button>
                       </div>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <Label>Condizione</Label>
+                        <Label>{t('Condizione')}</Label>
                         <Select value={condition} onValueChange={(v) => setCondition(v as CardCondition)}>
                           <SelectTrigger><SelectValue /></SelectTrigger>
-                          <SelectContent>{CONDITIONS.map((c) => <SelectItem key={c} value={c}>{CARD_CONDITION_LABELS[c]}</SelectItem>)}</SelectContent>
+                          <SelectContent>{CONDITIONS.map((c) => <SelectItem key={c} value={c}>{t(CARD_CONDITION_LABELS[c])}</SelectItem>)}</SelectContent>
                         </Select>
                       </div>
                       <div>
-                        <Label>Lingua</Label>
+                        <Label>{t('Lingua')}</Label>
                         <Select value={language} onValueChange={setLanguage}>
                           <SelectTrigger><SelectValue /></SelectTrigger>
                           <SelectContent>{LANGUAGES.map((l) => <SelectItem key={l} value={l}>{l}</SelectItem>)}</SelectContent>
@@ -300,12 +302,12 @@ export default function TcgCollectionPage({
                       </div>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
-                      <div><Label>Quantità</Label><Input type="number" min="1" value={quantity} onChange={(e) => setQuantity(e.target.value)} required /></div>
-                      <div><Label>Prezzo Acquisto (€)</Label><Input type="number" step="0.01" min="0" value={purchasePrice} onChange={(e) => setPurchasePrice(e.target.value)} required /></div>
+                      <div><Label>{t('Quantità')}</Label><Input type="number" min="1" value={quantity} onChange={(e) => setQuantity(e.target.value)} required /></div>
+                      <div><Label>{t('Prezzo Acquisto (€)')}</Label><Input type="number" step="0.01" min="0" value={purchasePrice} onChange={(e) => setPurchasePrice(e.target.value)} required /></div>
                     </div>
-                    <div><Label>Data Acquisto</Label><Input type="date" value={purchaseDate} onChange={(e) => setPurchaseDate(e.target.value)} required /></div>
+                    <div><Label>{t('Data Acquisto')}</Label><Input type="date" value={purchaseDate} onChange={(e) => setPurchaseDate(e.target.value)} required /></div>
                     <Button type="submit" className="w-full" disabled={createCard.isPending || savingPrice}>
-                      {savingPrice ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Recupero prezzo...</> : 'Salva'}
+                      {savingPrice ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />{t('Recupero prezzo...')}</> : t('Salva')}
                     </Button>
                   </form>
                 )}
@@ -317,21 +319,21 @@ export default function TcgCollectionPage({
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="glass rounded-xl p-5 text-center">
-            <p className="text-sm text-muted-foreground">Valore Attuale</p>
+            <p className="text-sm text-muted-foreground">{t('Valore Attuale')}</p>
             <p className="text-xl font-display font-bold">€{totalValue.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
           </div>
           <div className="glass rounded-xl p-5 text-center">
-            <p className="text-sm text-muted-foreground">Investimento</p>
+            <p className="text-sm text-muted-foreground">{t('Investimento')}</p>
             <p className="text-xl font-display font-bold">€{totalCost.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
           </div>
           <div className="glass rounded-xl p-5 text-center">
-            <p className="text-sm text-muted-foreground">Profitto / Perdita</p>
+            <p className="text-sm text-muted-foreground">{t('Profitto / Perdita')}</p>
             <p className={`text-xl font-display font-bold ${totalGain >= 0 ? 'text-success' : 'text-destructive'}`}>
               {totalGain >= 0 ? '+' : ''}€{totalGain.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </p>
           </div>
           <div className="glass rounded-xl p-5 text-center">
-            <p className="text-sm text-muted-foreground">Rendimento</p>
+            <p className="text-sm text-muted-foreground">{t('Rendimento')}</p>
             <p className={`text-xl font-display font-bold ${totalCost === 0 ? 'text-muted-foreground' : totalGainPercent >= 0 ? 'text-success' : 'text-destructive'}`}>
               {totalCost > 0 ? `${totalGainPercent >= 0 ? '+' : ''}${totalGainPercent.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%` : '—'}
             </p>
@@ -341,16 +343,16 @@ export default function TcgCollectionPage({
         {/* Filters */}
         <div className="flex items-center gap-3 flex-wrap">
           <Input
-            placeholder={filterByTextOrSet ? 'Cerca per nome o set...' : 'Cerca per nome...'}
+            placeholder={filterByTextOrSet ? t('Cerca per nome o set...') : t('Cerca per nome...')}
             value={filterText}
             onChange={(e) => setFilterText(e.target.value)}
             className="max-w-sm"
           />
           {uniqueSets.length > 0 && (
             <Select value={setFilter} onValueChange={setSetFilter}>
-              <SelectTrigger className="w-48"><SelectValue placeholder="Tutti i set" /></SelectTrigger>
+              <SelectTrigger className="w-48"><SelectValue placeholder={t('Tutti i set')} /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Tutti i set</SelectItem>
+                <SelectItem value="all">{t('Tutti i set')}</SelectItem>
                 {uniqueSets.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
               </SelectContent>
             </Select>
@@ -361,18 +363,18 @@ export default function TcgCollectionPage({
         <div className="glass rounded-xl divide-y divide-border">
           <div className="grid grid-cols-[auto_1fr_auto_auto_auto_auto_auto_auto] gap-4 px-4 py-2 text-xs text-muted-foreground font-medium">
             <span className="w-8 block"></span>
-            <span>Carta</span>
-            <span>Cond.</span>
-            <span>Lingua</span>
-            <span className="text-right">Qta</span>
-            <span className="text-right">Acquisto</span>
-            <span className="text-right">Attuale</span>
+            <span>{t('Carta')}</span>
+            <span>{t('Cond.')}</span>
+            <span>{t('Lingua')}</span>
+            <span className="text-right">{t('Qta')}</span>
+            <span className="text-right">{t('Acquisto')}</span>
+            <span className="text-right">{t('Attuale')}</span>
             <span className="w-[4.5rem] block"></span>
           </div>
           {isLoading ? (
-            <p className="text-center py-8 text-muted-foreground">Caricamento...</p>
+            <p className="text-center py-8 text-muted-foreground">{t('Caricamento...')}</p>
           ) : filtered.length === 0 ? (
-            <p className="text-center py-8 text-muted-foreground">Nessuna carta. Aggiungine una!</p>
+            <p className="text-center py-8 text-muted-foreground">{t('Nessuna carta. Aggiungine una!')}</p>
           ) : (
             filtered.map((card) => {
               const currentPrice = card.current_price ?? card.purchase_price;
@@ -388,7 +390,7 @@ export default function TcgCollectionPage({
                     <p className="font-medium text-sm">{card.name}</p>
                     {renderSetLine(card.set_code, card.collector_number)}
                   </div>
-                  <span className="text-xs text-muted-foreground">{CARD_CONDITION_LABELS[card.condition].split(' ')[0]}</span>
+                  <span className="text-xs text-muted-foreground">{t(CARD_CONDITION_LABELS[card.condition]).split(' ')[0]}</span>
                   <span className="text-xs">{card.language}</span>
                   <span className="text-right text-sm">×{card.quantity}</span>
                   <span className="text-right text-sm">€{card.purchase_price.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
@@ -415,7 +417,7 @@ export default function TcgCollectionPage({
         {/* Edit dialog */}
         <Dialog open={editOpen} onOpenChange={setEditOpen}>
           <DialogContent>
-            <DialogHeader><DialogTitle>Modifica carta</DialogTitle></DialogHeader>
+            <DialogHeader><DialogTitle>{t('Modifica carta')}</DialogTitle></DialogHeader>
             {editingCard && (
               <form onSubmit={handleEditSubmit} className="space-y-4">
                 <div className="flex items-center gap-3 p-3 bg-secondary rounded-lg">
@@ -426,13 +428,13 @@ export default function TcgCollectionPage({
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
-                  <div><Label>Condizione</Label>
+                  <div><Label>{t('Condizione')}</Label>
                     <Select value={editCondition} onValueChange={(v) => setEditCondition(v as CardCondition)}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>{CONDITIONS.map((c) => <SelectItem key={c} value={c}>{CARD_CONDITION_LABELS[c]}</SelectItem>)}</SelectContent>
+                      <SelectContent>{CONDITIONS.map((c) => <SelectItem key={c} value={c}>{t(CARD_CONDITION_LABELS[c])}</SelectItem>)}</SelectContent>
                     </Select>
                   </div>
-                  <div><Label>Lingua</Label>
+                  <div><Label>{t('Lingua')}</Label>
                     <Select value={editLanguage} onValueChange={setEditLanguage}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>{LANGUAGES.map((l) => <SelectItem key={l} value={l}>{l}</SelectItem>)}</SelectContent>
@@ -440,11 +442,11 @@ export default function TcgCollectionPage({
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
-                  <div><Label>Quantità</Label><Input type="number" min="1" value={editQuantity} onChange={(e) => setEditQuantity(e.target.value)} required /></div>
-                  <div><Label>Prezzo Acquisto (€)</Label><Input type="number" step="0.01" min="0" value={editPurchasePrice} onChange={(e) => setEditPurchasePrice(e.target.value)} required /></div>
+                  <div><Label>{t('Quantità')}</Label><Input type="number" min="1" value={editQuantity} onChange={(e) => setEditQuantity(e.target.value)} required /></div>
+                  <div><Label>{t('Prezzo Acquisto (€)')}</Label><Input type="number" step="0.01" min="0" value={editPurchasePrice} onChange={(e) => setEditPurchasePrice(e.target.value)} required /></div>
                 </div>
-                <div><Label>Data Acquisto</Label><Input type="date" value={editPurchaseDate} onChange={(e) => setEditPurchaseDate(e.target.value)} required /></div>
-                <Button type="submit" className="w-full" disabled={updateCard.isPending}>Salva modifiche</Button>
+                <div><Label>{t('Data Acquisto')}</Label><Input type="date" value={editPurchaseDate} onChange={(e) => setEditPurchaseDate(e.target.value)} required /></div>
+                <Button type="submit" className="w-full" disabled={updateCard.isPending}>{t('Salva modifiche')}</Button>
               </form>
             )}
           </DialogContent>

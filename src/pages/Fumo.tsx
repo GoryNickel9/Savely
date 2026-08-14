@@ -2,14 +2,17 @@ import MainLayout from '@/components/layout/MainLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowRight, Cigarette, Cannabis } from 'lucide-react';
 import { Link } from 'react-router';
+import { useTranslation } from 'react-i18next';
 
 export default function Fumo() {
+  const { t } = useTranslation();
+
   return (
     <MainLayout>
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-display font-bold">Fumo</h1>
-          <p className="text-muted-foreground">Gestisci le spese per fumo e prodotti correlati</p>
+          <h1 className="text-3xl font-display font-bold">{t('Fumo')}</h1>
+          <p className="text-muted-foreground">{t('Gestisci le spese per fumo e prodotti correlati')}</p>
         </div>
 
         <div className="grid gap-6 md:grid-cols-3">
@@ -20,14 +23,14 @@ export default function Fumo() {
                 <div className="flex items-center justify-between">
                   <CardTitle className="flex items-center gap-2">
                     <Cigarette className="w-5 h-5 text-primary" />
-                    Liquido Sigaretta
+                    {t('Liquido Sigaretta')}
                   </CardTitle>
                   <ArrowRight className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
                 </div>
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-muted-foreground">
-                  Traccia le spese per liquidi e sigarette elettroniche
+                  {t('Traccia le spese per liquidi e sigarette elettroniche')}
                 </p>
               </CardContent>
             </Card>
@@ -40,14 +43,14 @@ export default function Fumo() {
                 <div className="flex items-center justify-between">
                   <CardTitle className="flex items-center gap-2">
                     <Cannabis className="w-5 h-5 text-primary" />
-                    CBD
+                    {t('CBD')}
                   </CardTitle>
                   <ArrowRight className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
                 </div>
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-muted-foreground">
-                  Gestisci le spese per prodotti CBD e derivati
+                  {t('Gestisci le spese per prodotti CBD e derivati')}
                 </p>
               </CardContent>
             </Card>
@@ -60,14 +63,14 @@ export default function Fumo() {
                 <div className="flex items-center justify-between">
                   <CardTitle className="flex items-center gap-2">
                     <Cannabis className="w-5 h-5 text-primary" />
-                    THC
+                    {t('THC')}
                   </CardTitle>
                   <ArrowRight className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
                 </div>
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-muted-foreground">
-                  Traccia le spese per prodotti THC e derivati
+                  {t('Traccia le spese per prodotti THC e derivati')}
                 </p>
               </CardContent>
             </Card>

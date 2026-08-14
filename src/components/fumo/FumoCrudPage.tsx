@@ -22,6 +22,7 @@ import type {
   FumoYearRow,
 } from '@/lib/fumoCrud';
 import { computeDerived, computeYearlyStats, readArrivo } from '@/lib/fumoCrud';
+import { useTranslation } from 'react-i18next';
 
 export interface FumoCrudConfig<T extends FumoBaseEntry> {
   /** Nome tabella Supabase ('cbd' | 'thc' | 'liquido_sigaretta'). */
@@ -73,6 +74,7 @@ export default function FumoCrudPage<T extends FumoBaseEntry>({
   filterByCurrentYear,
   yearlyExtraColumns,
 }: FumoCrudConfig<T>) {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -155,13 +157,13 @@ export default function FumoCrudPage<T extends FumoBaseEntry>({
           costo_mensile: campi.costo_mensile,
         });
       if (error) throw error;
-      toast({ title: 'Nuova riga aggiunta' });
+      toast({ title: t('Nuova riga aggiunta') });
       closeCreate();
       resetCreateForm();
       await reload();
     } catch (error) {
       console.error('Errore:', error);
-      toast({ title: 'Errore', variant: 'destructive' });
+      toast({ title: t('Errore'), variant: 'destructive' });
     }
   };
 
@@ -169,11 +171,11 @@ export default function FumoCrudPage<T extends FumoBaseEntry>({
     try {
       const { error } = await supabase.from(tableName as any).delete().eq('id', id);
       if (error) throw error;
-      toast({ title: deleteToast });
+      toast({ title: t(deleteToast) });
       await reload();
     } catch (error) {
       console.error('Errore:', error);
-      toast({ title: 'Errore', variant: 'destructive' });
+      toast({ title: t('Errore'), variant: 'destructive' });
     }
   };
 
@@ -201,12 +203,12 @@ export default function FumoCrudPage<T extends FumoBaseEntry>({
         })
         .eq('id', editingItem.id);
       if (error) throw error;
-      toast({ title: 'Record aggiornato' });
+      toast({ title: t('Record aggiornato') });
       closeEdit();
       await reload();
     } catch (error) {
       console.error('Errore:', error);
-      toast({ title: "Errore nell'aggiornamento", variant: 'destructive' });
+      toast({ title: t("Errore nell'aggiornamento"), variant: 'destructive' });
     }
   };
 
@@ -239,13 +241,13 @@ export default function FumoCrudPage<T extends FumoBaseEntry>({
   const columns: Column<T>[] = [
     {
       key: 'costo',
-      header: 'Costo',
+      header: t('Costo'),
       render: (entry) => `${CURRENCY_SYMBOLS.EUR}${entry.costo.toFixed(2)}`,
       className: 'font-medium',
     },
     {
       key: quantityColumnKey,
-      header: quantityColumnHeader,
+      header: t(quantityColumnHeader),
       render: (entry) => {
         const q = (entry as Record<string, unknown>)[quantityColumnKey] as number | null;
         return q != null ? `${q}${quantitySuffix}` : '-';
@@ -254,25 +256,25 @@ export default function FumoCrudPage<T extends FumoBaseEntry>({
     },
     {
       key: dateArrivoField,
-      header: 'Arrivato',
+      header: t('Arrivato'),
       render: (entry) => new Date(readArrivo(entry, dateArrivoField)).toLocaleDateString('it-IT'),
       className: 'text-center',
     },
     {
       key: 'data_finito',
-      header: 'Finito',
-      render: (entry) => entry.data_finito ? new Date(entry.data_finito).toLocaleDateString('it-IT') : 'In corso',
+      header: t('Finito'),
+      render: (entry) => entry.data_finito ? new Date(entry.data_finito).toLocaleDateString('it-IT') : t('In corso'),
       className: 'text-center',
     },
     {
       key: 'giorni_durata',
-      header: 'Giorni Durata',
+      header: t('Giorni Durata'),
       render: (entry) => entry.giorni_durata || '-',
       className: 'text-center',
     },
     {
       key: quantitaPerDayKey,
-      header: quantityPerDayColumnHeader,
+      header: t(quantityPerDayColumnHeader),
       render: (entry) => {
         const v = (entry as Record<string, unknown>)[quantitaPerDayKey] as number | null;
         return v != null ? v.toFixed(2) : '-';
@@ -281,13 +283,13 @@ export default function FumoCrudPage<T extends FumoBaseEntry>({
     },
     {
       key: 'euro_al_giorno',
-      header: '€/d',
+      header: t('€/d'),
       render: (entry) => entry.euro_al_giorno ? `${CURRENCY_SYMBOLS.EUR}${entry.euro_al_giorno.toFixed(2)}` : '-',
       className: 'text-center',
     },
     {
       key: 'costo_mensile',
-      header: 'Costo Mensile',
+      header: t('Costo Mensile'),
       render: (entry) => entry.costo_mensile
         ? `${CURRENCY_SYMBOLS.EUR}${entry.costo_mensile.toFixed(2)}`
         : entry.giorni_durata && entry.costo
@@ -322,8 +324,8 @@ export default function FumoCrudPage<T extends FumoBaseEntry>({
             </Button>
           </Link>
           <div>
-            <h1 className="text-3xl font-display font-bold">{title}</h1>
-            <p className="text-muted-foreground">{subtitle}</p>
+            <h1 className="text-3xl font-display font-bold">{t(title)}</h1>
+            <p className="text-muted-foreground">{t(subtitle)}</p>
           </div>
         </div>
 
@@ -332,37 +334,37 @@ export default function FumoCrudPage<T extends FumoBaseEntry>({
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle>
-                {filterByCurrentYear ? `Spesa mensile per anno ${currentYear}` : 'Spesa mensile'}
+                {filterByCurrentYear ? t('Spesa mensile per anno {{year}}', { year: currentYear }) : t('Spesa mensile')}
               </CardTitle>
               <Dialog open={createOpen} onOpenChange={(open) => (open ? openCreate() : closeCreate())}>
                 <DialogTrigger asChild>
                   <Button>
                     <Plus className="w-4 h-4 mr-2" />
-                    Aggiungi riga
+                    {t('Aggiungi riga')}
                   </Button>
                 </DialogTrigger>
                 <DialogContent>
                   <DialogHeader>
-                    <DialogTitle>Nuova riga</DialogTitle>
+                    <DialogTitle>{t('Nuova riga')}</DialogTitle>
                   </DialogHeader>
                   <form onSubmit={addNewRecord} className="space-y-4">
                     <div>
-                      <Label>Costo (€)</Label>
+                      <Label>{t('Costo (€)')}</Label>
                       <Input type="number" step="0.01" value={newCosto} onChange={(e) => setNewCosto(e.target.value)} required />
                     </div>
                     <div>
-                      <Label>{quantityLabel}</Label>
+                      <Label>{t(quantityLabel)}</Label>
                       <Input type="number" step="0.01" value={newQuantita} onChange={(e) => setNewQuantita(e.target.value)} required />
                     </div>
                     <div>
-                      <Label>Data Arrivo</Label>
+                      <Label>{t('Data Arrivo')}</Label>
                       <Input type="date" value={newDataArrivo} onChange={(e) => setNewDataArrivo(e.target.value)} required />
                     </div>
                     <div>
-                      <Label>Data Finito (opzionale)</Label>
+                      <Label>{t('Data Finito (opzionale)')}</Label>
                       <Input type="date" value={newDataFinito} onChange={(e) => setNewDataFinito(e.target.value)} />
                     </div>
-                    <Button type="submit" className="w-full">Salva</Button>
+                    <Button type="submit" className="w-full">{t('Salva')}</Button>
                   </form>
                 </DialogContent>
               </Dialog>
@@ -372,10 +374,10 @@ export default function FumoCrudPage<T extends FumoBaseEntry>({
             {visibleEntries.length === 0 ? (
               <div className="text-center py-12">
                 <p className="text-muted-foreground mb-4">
-                  {filterByCurrentYear ? `Nessun record registrato per l'anno ${currentYear}` : 'Nessun record registrato'}
+                  {filterByCurrentYear ? t("Nessun record registrato per l'anno {{year}}", { year: currentYear }) : t('Nessun record registrato')}
                 </p>
                 <Button onClick={openCreate} className="bg-green-500 hover:bg-green-600">
-                  Aggiungi prima riga
+                  {t('Aggiungi prima riga')}
                 </Button>
               </div>
             ) : (
@@ -386,10 +388,10 @@ export default function FumoCrudPage<T extends FumoBaseEntry>({
                 emptyMessage={
                   <div className="text-center py-12">
                     <p className="text-muted-foreground mb-4">
-                      {filterByCurrentYear ? `Nessun record registrato per l'anno ${currentYear}` : 'Nessun record registrato'}
+                      {filterByCurrentYear ? t("Nessun record registrato per l'anno {{year}}", { year: currentYear }) : t('Nessun record registrato')}
                     </p>
                     <Button onClick={openCreate} className="bg-green-500 hover:bg-green-600">
-                      Aggiungi prima riga
+                      {t('Aggiungi prima riga')}
                     </Button>
                   </div>
                 }
@@ -402,53 +404,53 @@ export default function FumoCrudPage<T extends FumoBaseEntry>({
         <Dialog open={editOpen} onOpenChange={(open) => (open ? undefined : closeEdit())}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Modifica riga</DialogTitle>
-            </DialogHeader>
-            <form onSubmit={updateEntry} className="space-y-4">
-              <div>
-                <Label>Costo (€)</Label>
-                <Input type="number" step="0.01" value={editCosto} onChange={(e) => setEditCosto(e.target.value)} required />
-              </div>
-              <div>
-                <Label>{quantityLabel}</Label>
-                <Input type="number" step="0.01" value={editQuantita} onChange={(e) => setEditQuantita(e.target.value)} required />
-              </div>
-              <div>
-                <Label>Data Arrivo</Label>
-                <Input type="date" value={editDataArrivo} onChange={(e) => setEditDataArrivo(e.target.value)} required />
-              </div>
-              <div>
-                <Label>Data Finito (opzionale)</Label>
-                <Input type="date" value={editDataFinito} onChange={(e) => setEditDataFinito(e.target.value)} />
-              </div>
-              <Button type="submit" className="w-full">Aggiorna</Button>
-            </form>
+            <DialogTitle>{t('Modifica riga')}</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={updateEntry} className="space-y-4">
+            <div>
+              <Label>{t('Costo (€)')}</Label>
+              <Input type="number" step="0.01" value={editCosto} onChange={(e) => setEditCosto(e.target.value)} required />
+            </div>
+            <div>
+              <Label>{t(quantityLabel)}</Label>
+              <Input type="number" step="0.01" value={editQuantita} onChange={(e) => setEditQuantita(e.target.value)} required />
+            </div>
+            <div>
+              <Label>{t('Data Arrivo')}</Label>
+              <Input type="date" value={editDataArrivo} onChange={(e) => setEditDataArrivo(e.target.value)} required />
+            </div>
+            <div>
+              <Label>{t('Data Finito (opzionale)')}</Label>
+              <Input type="date" value={editDataFinito} onChange={(e) => setEditDataFinito(e.target.value)} />
+            </div>
+            <Button type="submit" className="w-full">{t('Aggiorna')}</Button>
+          </form>
           </DialogContent>
         </Dialog>
 
         {/* Statistiche Annuale */}
         <Card>
           <CardHeader>
-            <CardTitle>Spese per anno</CardTitle>
+            <CardTitle>{t('Spese per anno')}</CardTitle>
           </CardHeader>
           <CardContent className="p-0">
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead className="bg-muted/50">
                   <tr>
-                    <th className="text-left py-3 px-4 font-medium text-sm">Anno</th>
-                    <th className="text-center py-3 px-4 font-medium text-sm">Costo Totale</th>
+                    <th className="text-left py-3 px-4 font-medium text-sm">{t('Anno')}</th>
+                    <th className="text-center py-3 px-4 font-medium text-sm">{t('Costo Totale')}</th>
                     {yearlyExtraColumns.map((c) => (
-                      <th key={c.key} className="text-center py-3 px-4 font-medium text-sm">{c.header}</th>
+                      <th key={c.key} className="text-center py-3 px-4 font-medium text-sm">{t(c.header)}</th>
                     ))}
-                    <th className="text-center py-3 px-4 font-medium text-sm">Costo Mensile</th>
+                    <th className="text-center py-3 px-4 font-medium text-sm">{t('Costo Mensile')}</th>
                   </tr>
                 </thead>
                 <tbody>
                   {yearlyStats.length === 0 ? (
                     <tr>
                       <td colSpan={3 + yearlyExtraColumns.length} className="text-center py-12 text-muted-foreground">
-                        Nessun dato annuale disponibile
+                        {t('Nessun dato annuale disponibile')}
                       </td>
                     </tr>
                   ) : (

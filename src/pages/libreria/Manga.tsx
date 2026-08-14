@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Plus, Trash2, Search, Loader2, Pencil, ArrowLeft } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { parseAmount } from '@/lib/utils';
+import { useTranslation } from 'react-i18next';
 
 const VOLUME_RANGE_RE = /^(\d+)\s*[-–]\s*(\d+)$/;
 
@@ -32,6 +33,7 @@ function parseVolumeRange(s: string): number[] | null {
 }
 
 export default function LibreriaManga() {
+  const { t } = useTranslation();
   const { items, isLoading, createItem, updateItem, deleteItem, totalCost, totalReselling, totalGain } = useLibraryItems('manga');
   const { toast } = useToast();
 
@@ -114,7 +116,7 @@ export default function LibreriaManga() {
             notes: notes.trim() || undefined,
           });
         }
-        toast({ title: volumes.length > 1 ? `${volumes.length} volumi aggiunti!` : 'Volume aggiunto!' });
+        toast({ title: volumes.length > 1 ? t('{{count}} volumi aggiunti!', { count: volumes.length }) : t('Volume aggiunto!') });
       } else {
         await createItem.mutateAsync({
           category: 'manga',
@@ -128,11 +130,11 @@ export default function LibreriaManga() {
           quantity: Number.parseInt(quantity, 10) || 1,
           notes: notes.trim() || undefined,
         });
-        toast({ title: 'Manga aggiunto!' });
+        toast({ title: t('Manga aggiunto!') });
       }
       resetAddDialog();
     } catch {
-      toast({ title: 'Errore', variant: 'destructive' });
+      toast({ title: t('Errore'), variant: 'destructive' });
     }
   };
 
@@ -180,19 +182,19 @@ export default function LibreriaManga() {
         quantity: Number.parseInt(editQuantity, 10) || 1,
         notes: editNotes.trim() || undefined,
       });
-      toast({ title: 'Manga aggiornato!' });
+      toast({ title: t('Manga aggiornato!') });
       setEditOpen(false);
     } catch {
-      toast({ title: 'Errore', variant: 'destructive' });
+      toast({ title: t('Errore'), variant: 'destructive' });
     }
   };
 
   const handleDelete = async (id: string) => {
     try {
       await deleteItem.mutateAsync(id);
-      toast({ title: 'Manga rimosso' });
+      toast({ title: t('Manga rimosso') });
     } catch {
-      toast({ title: 'Errore', variant: 'destructive' });
+      toast({ title: t('Errore'), variant: 'destructive' });
     }
   };
 
@@ -205,71 +207,71 @@ export default function LibreriaManga() {
               <ArrowLeft className="w-5 h-5" />
             </Link>
             <div>
-              <h1 className="text-3xl font-display font-bold">Manga</h1>
-              <p className="text-muted-foreground">La tua collezione di manga</p>
+              <h1 className="text-3xl font-display font-bold">{t('Manga')}</h1>
+              <p className="text-muted-foreground">{t('La tua collezione di manga')}</p>
             </div>
           </div>
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
               <Button>
                 <Plus className="w-4 h-4 mr-2" />
-                Aggiungi Manga
+                {t('Aggiungi Manga')}
               </Button>
             </DialogTrigger>
             <DialogContent className="w-full max-w-xl max-h-[90vh] overflow-y-auto overflow-x-hidden" aria-describedby={undefined}>
               <DialogHeader>
-                <DialogTitle>Aggiungi Manga</DialogTitle>
+                <DialogTitle>{t('Aggiungi Manga')}</DialogTitle>
               </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="sm:col-span-2">
-                    <Label htmlFor="title">Titolo *</Label>
+                    <Label htmlFor="title">{t('Titolo *')}</Label>
                     <Input
                       id="title"
                       value={title}
                       onChange={(e) => setTitle(e.target.value)}
-                      placeholder="Es. Berserk"
+                      placeholder={t('Es. Berserk')}
                       required
                     />
                   </div>
                   <div>
-                    <Label htmlFor="author">Autore</Label>
-                    <Input id="author" value={author} onChange={(e) => setAuthor(e.target.value)} placeholder="Es. Kentaro Miura" />
+                    <Label htmlFor="author">{t('Autore')}</Label>
+                    <Input id="author" value={author} onChange={(e) => setAuthor(e.target.value)} placeholder={t('Es. Kentaro Miura')} />
                   </div>
                   <div>
-                    <Label htmlFor="publisher">Editore</Label>
-                    <Input id="publisher" value={publisher} onChange={(e) => setPublisher(e.target.value)} placeholder="Es. Panini Comics" />
+                    <Label htmlFor="publisher">{t('Editore')}</Label>
+                    <Input id="publisher" value={publisher} onChange={(e) => setPublisher(e.target.value)} placeholder={t('Es. Panini Comics')} />
                   </div>
                   <div>
-                    <Label htmlFor="year">Anno</Label>
-                    <Input id="year" type="number" min="1900" max="2100" value={year} onChange={(e) => setYear(e.target.value)} placeholder="Es. 1997" />
+                    <Label htmlFor="year">{t('Anno')}</Label>
+                    <Input id="year" type="number" min="1900" max="2100" value={year} onChange={(e) => setYear(e.target.value)} placeholder={t('Es. 1997')} />
                   </div>
                   <div>
-                    <Label htmlFor="volume_range">N° volume o range</Label>
+                    <Label htmlFor="volume_range">{t('N° volume o range')}</Label>
                     <Input
                       id="volume_range"
                       value={volumeRange}
                       onChange={(e) => setVolumeRange(e.target.value)}
-                      placeholder="Es. 3 oppure 1-5"
+                      placeholder={t('Es. 3 oppure 1-5')}
                     />
                     {volumeRange && !volumes && (
-                      <p className="text-xs text-destructive mt-1">Formato non valido. Usa 3 oppure 1-5.</p>
+                      <p className="text-xs text-destructive mt-1">{t('Formato non valido. Usa 3 oppure 1-5.')}</p>
                     )}
                   </div>
                 </div>
 
                 <div>
-                  <Label htmlFor="cover_image_url">URL copertina</Label>
+                  <Label htmlFor="cover_image_url">{t('URL copertina')}</Label>
                   <Input
                     id="cover_image_url"
                     value={coverImageUrl}
                     onChange={(e) => setCoverImageUrl(e.target.value)}
-                    placeholder="https://… (da Amazon, MyAnimeList, ecc.)"
+                    placeholder={t('https://… (da Amazon, MyAnimeList, ecc.)')}
                   />
                   {coverImageUrl && (
                     <img
                       src={coverImageUrl}
-                      alt="Anteprima copertina"
+                      alt={t('Anteprima copertina')}
                       className="mt-2 h-24 w-16 object-cover rounded"
                       onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
                     />
@@ -278,30 +280,30 @@ export default function LibreriaManga() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="purchase_price">Acquistato a (€)</Label>
+                    <Label htmlFor="purchase_price">{t('Acquistato a (€)')}</Label>
                     <Input id="purchase_price" type="number" step="0.01" min="0" value={purchasePrice} onChange={(e) => setPurchasePrice(e.target.value)} placeholder="0.00" />
                   </div>
                   <div>
-                    <Label htmlFor="reselling_value">Reselling Value (€)</Label>
+                    <Label htmlFor="reselling_value">{t('Reselling Value (€)')}</Label>
                     <Input id="reselling_value" type="number" step="0.01" min="0" value={resellingValue} onChange={(e) => setResellingValue(e.target.value)} placeholder="0.00" />
                   </div>
                   {!volumes && (
                     <div>
-                      <Label htmlFor="quantity">Quantità</Label>
+                      <Label htmlFor="quantity">{t('Quantità')}</Label>
                       <Input id="quantity" type="number" min="1" value={quantity} onChange={(e) => setQuantity(e.target.value)} />
                     </div>
                   )}
                   <div>
-                    <Label htmlFor="notes">Note</Label>
-                    <Input id="notes" value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Facoltativo" />
+                    <Label htmlFor="notes">{t('Note')}</Label>
+                    <Input id="notes" value={notes} onChange={(e) => setNotes(e.target.value)} placeholder={t('Facoltativo')} />
                   </div>
                 </div>
 
                 <div className="flex gap-2 justify-end">
-                  <Button type="button" variant="outline" onClick={resetAddDialog}>Annulla</Button>
+                  <Button type="button" variant="outline" onClick={resetAddDialog}>{t('Annulla')}</Button>
                   <Button type="submit" disabled={!title.trim() || createItem.isPending || (volumeRange.trim() !== '' && !volumes)}>
                     {createItem.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                    {volumes && volumes.length > 1 ? `Aggiungi ${volumes.length} volumi` : 'Aggiungi'}
+                    {volumes && volumes.length > 1 ? t('Aggiungi {{count}} volumi', { count: volumes.length }) : t('Aggiungi')}
                   </Button>
                 </div>
               </form>
@@ -311,15 +313,15 @@ export default function LibreriaManga() {
 
         <div className="grid grid-cols-3 gap-4">
           <div className="glass rounded-xl p-4 text-center">
-            <p className="text-sm text-muted-foreground">Investimento</p>
+            <p className="text-sm text-muted-foreground">{t('Investimento')}</p>
             <p className="text-xl font-display font-bold">€{totalCost.toLocaleString('it-IT', { minimumFractionDigits: 2 })}</p>
           </div>
           <div className="glass rounded-xl p-4 text-center">
-            <p className="text-sm text-muted-foreground">Valore Reselling</p>
+            <p className="text-sm text-muted-foreground">{t('Valore Reselling')}</p>
             <p className="text-xl font-display font-bold">€{totalReselling.toLocaleString('it-IT', { minimumFractionDigits: 2 })}</p>
           </div>
           <div className="glass rounded-xl p-4 text-center">
-            <p className="text-sm text-muted-foreground">Profitto / Perdita</p>
+            <p className="text-sm text-muted-foreground">{t('Profitto / Perdita')}</p>
             <p className={`text-xl font-display font-bold ${totalGain >= 0 ? 'text-success' : 'text-destructive'}`}>
               {totalGain >= 0 ? '+' : ''}€{totalGain.toLocaleString('it-IT', { minimumFractionDigits: 2 })}
             </p>
@@ -329,26 +331,26 @@ export default function LibreriaManga() {
         <div className="glass rounded-xl p-4 grid sm:grid-cols-4 gap-3">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input className="pl-9" placeholder="Cerca titolo…" value={filterText} onChange={(e) => setFilterText(e.target.value)} />
+            <Input className="pl-9" placeholder={t('Cerca titolo…')} value={filterText} onChange={(e) => setFilterText(e.target.value)} />
           </div>
           <Select value={filterAuthor} onValueChange={setFilterAuthor}>
-            <SelectTrigger><SelectValue placeholder="Autore" /></SelectTrigger>
+            <SelectTrigger><SelectValue placeholder={t('Autore')} /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Tutti gli autori</SelectItem>
+              <SelectItem value="all">{t('Tutti gli autori')}</SelectItem>
               {uniqueAuthors.map((a) => <SelectItem key={a} value={a}>{a}</SelectItem>)}
             </SelectContent>
           </Select>
           <Select value={filterPublisher} onValueChange={setFilterPublisher}>
-            <SelectTrigger><SelectValue placeholder="Editore" /></SelectTrigger>
+            <SelectTrigger><SelectValue placeholder={t('Editore')} /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Tutti gli editori</SelectItem>
+              <SelectItem value="all">{t('Tutti gli editori')}</SelectItem>
               {uniquePublishers.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}
             </SelectContent>
           </Select>
           <Select value={filterYear} onValueChange={setFilterYear}>
-            <SelectTrigger><SelectValue placeholder="Anno" /></SelectTrigger>
+            <SelectTrigger><SelectValue placeholder={t('Anno')} /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Tutti gli anni</SelectItem>
+              <SelectItem value="all">{t('Tutti gli anni')}</SelectItem>
               {uniqueYears.map((y) => <SelectItem key={y} value={String(y)}>{y}</SelectItem>)}
             </SelectContent>
           </Select>
@@ -358,7 +360,7 @@ export default function LibreriaManga() {
           <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin text-muted-foreground" /></div>
         ) : filteredItems.length === 0 ? (
           <div className="text-center py-12 text-muted-foreground">
-            {items.length === 0 ? 'Nessun manga aggiunto. Inizia aggiungendo il primo!' : 'Nessun risultato per i filtri selezionati.'}
+            {items.length === 0 ? t('Nessun manga aggiunto. Inizia aggiungendo il primo!') : t('Nessun risultato per i filtri selezionati.')}
           </div>
         ) : (
           <div className="grid gap-3">
@@ -375,8 +377,8 @@ export default function LibreriaManga() {
                   <p className="text-xs text-muted-foreground">{item.publisher ?? '—'}{item.year ? ` · ${item.year}` : ''}</p>
                 </div>
                 <div className="text-right flex-shrink-0 space-y-1">
-                  <p className="text-sm"><span className="text-muted-foreground">Acquistato: </span>{item.purchase_price != null ? `€${item.purchase_price.toLocaleString('it-IT', { minimumFractionDigits: 2 })}` : '—'}</p>
-                  <p className="text-sm"><span className="text-muted-foreground">Reselling: </span>{item.reselling_value != null ? `€${item.reselling_value.toLocaleString('it-IT', { minimumFractionDigits: 2 })}` : '—'}</p>
+                  <p className="text-sm"><span className="text-muted-foreground">{t('Acquistato: ')}</span>{item.purchase_price != null ? `€${item.purchase_price.toLocaleString('it-IT', { minimumFractionDigits: 2 })}` : '—'}</p>
+                  <p className="text-sm"><span className="text-muted-foreground">{t('Reselling: ')}</span>{item.reselling_value != null ? `€${item.reselling_value.toLocaleString('it-IT', { minimumFractionDigits: 2 })}` : '—'}</p>
                   {item.quantity > 1 && <p className="text-xs text-muted-foreground">x{item.quantity}</p>}
                 </div>
                 <div className="flex gap-1 flex-shrink-0">
@@ -391,30 +393,30 @@ export default function LibreriaManga() {
         <Dialog open={editOpen} onOpenChange={setEditOpen}>
           <DialogContent className="w-full max-w-xl max-h-[90vh] overflow-y-auto overflow-x-hidden" aria-describedby={undefined}>
             <DialogHeader>
-              <DialogTitle>Modifica — {editingItem?.title}</DialogTitle>
+              <DialogTitle>{t('Modifica — {{title}}', { title: editingItem?.title ?? '' })}</DialogTitle>
             </DialogHeader>
             <form onSubmit={handleEditSubmit} className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="sm:col-span-2">
-                  <Label htmlFor="edit_title">Titolo</Label>
+                  <Label htmlFor="edit_title">{t('Titolo')}</Label>
                   <Input id="edit_title" value={editTitle} onChange={(e) => setEditTitle(e.target.value)} />
                 </div>
                 <div>
-                  <Label htmlFor="edit_author">Autore</Label>
+                  <Label htmlFor="edit_author">{t('Autore')}</Label>
                   <Input id="edit_author" value={editAuthor} onChange={(e) => setEditAuthor(e.target.value)} />
                 </div>
                 <div>
-                  <Label htmlFor="edit_publisher">Editore</Label>
+                  <Label htmlFor="edit_publisher">{t('Editore')}</Label>
                   <Input id="edit_publisher" value={editPublisher} onChange={(e) => setEditPublisher(e.target.value)} />
                 </div>
                 <div>
-                  <Label htmlFor="edit_year">Anno</Label>
+                  <Label htmlFor="edit_year">{t('Anno')}</Label>
                   <Input id="edit_year" type="number" min="1900" max="2100" value={editYear} onChange={(e) => setEditYear(e.target.value)} />
                 </div>
               </div>
 
               <div>
-                <Label htmlFor="edit_cover_image">URL copertina</Label>
+                <Label htmlFor="edit_cover_image">{t('URL copertina')}</Label>
                 <Input
                   id="edit_cover_image"
                   value={editCoverImage}
@@ -424,7 +426,7 @@ export default function LibreriaManga() {
                 {editCoverImage && (
                   <img
                     src={editCoverImage}
-                    alt="Anteprima copertina"
+                    alt={t('Anteprima copertina')}
                     className="mt-2 h-24 w-16 object-cover rounded"
                     onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
                   />
@@ -433,27 +435,27 @@ export default function LibreriaManga() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="edit_purchase_price">Acquistato a (€)</Label>
+                  <Label htmlFor="edit_purchase_price">{t('Acquistato a (€)')}</Label>
                   <Input id="edit_purchase_price" type="number" step="0.01" min="0" value={editPurchasePrice} onChange={(e) => setEditPurchasePrice(e.target.value)} placeholder="0.00" />
                 </div>
                 <div>
-                  <Label htmlFor="edit_reselling_value">Reselling Value (€)</Label>
+                  <Label htmlFor="edit_reselling_value">{t('Reselling Value (€)')}</Label>
                   <Input id="edit_reselling_value" type="number" step="0.01" min="0" value={editResellingValue} onChange={(e) => setEditResellingValue(e.target.value)} placeholder="0.00" />
                 </div>
                 <div>
-                  <Label htmlFor="edit_quantity">Quantità</Label>
+                  <Label htmlFor="edit_quantity">{t('Quantità')}</Label>
                   <Input id="edit_quantity" type="number" min="1" value={editQuantity} onChange={(e) => setEditQuantity(e.target.value)} />
                 </div>
                 <div>
-                  <Label htmlFor="edit_notes">Note</Label>
+                  <Label htmlFor="edit_notes">{t('Note')}</Label>
                   <Input id="edit_notes" value={editNotes} onChange={(e) => setEditNotes(e.target.value)} />
                 </div>
               </div>
               <div className="flex gap-2 justify-end">
-                <Button type="button" variant="outline" onClick={() => setEditOpen(false)}>Annulla</Button>
+                <Button type="button" variant="outline" onClick={() => setEditOpen(false)}>{t('Annulla')}</Button>
                 <Button type="submit" disabled={updateItem.isPending}>
                   {updateItem.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                  Salva
+                  {t('Salva')}
                 </Button>
               </div>
             </form>

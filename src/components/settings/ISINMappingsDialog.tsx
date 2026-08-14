@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -44,6 +45,7 @@ const ASSET_TYPES = [
 
 export default function ISINMappingsDialog({ open, onOpenChange, userId }: ISINMappingsDialogProps) {
   const { toast } = useToast();
+  const { t } = useTranslation();
   const [mappings, setMappings] = useState<ISINMapping[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -67,8 +69,8 @@ export default function ISINMappingsDialog({ open, onOpenChange, userId }: ISINM
     if (error) {
       console.error('Error fetching ISIN mappings:', error);
       toast({
-        title: 'Errore',
-        description: 'Impossibile caricare i mapping ISIN.',
+        title: t('Errore'),
+        description: t('Impossibile caricare i mapping ISIN.'),
         variant: 'destructive',
       });
     } else {
@@ -103,14 +105,14 @@ export default function ISINMappingsDialog({ open, onOpenChange, userId }: ISINM
 
     if (error) {
       toast({
-        title: 'Errore',
-        description: 'Impossibile aggiornare il mapping.',
+        title: t('Errore'),
+        description: t('Impossibile aggiornare il mapping.'),
         variant: 'destructive',
       });
     } else {
       toast({
-        title: 'Mapping aggiornato',
-        description: 'Il mapping ISIN è stato aggiornato.',
+        title: t('Mapping aggiornato'),
+        description: t('Il mapping ISIN è stato aggiornato.'),
       });
       setEditingId(null);
       fetchMappings();
@@ -125,14 +127,14 @@ export default function ISINMappingsDialog({ open, onOpenChange, userId }: ISINM
 
     if (error) {
       toast({
-        title: 'Errore',
-        description: 'Impossibile eliminare il mapping.',
+        title: t('Errore'),
+        description: t('Impossibile eliminare il mapping.'),
         variant: 'destructive',
       });
     } else {
       toast({
-        title: 'Mapping eliminato',
-        description: 'Il mapping ISIN è stato eliminato.',
+        title: t('Mapping eliminato'),
+        description: t('Il mapping ISIN è stato eliminato.'),
       });
       fetchMappings();
     }
@@ -142,9 +144,9 @@ export default function ISINMappingsDialog({ open, onOpenChange, userId }: ISINM
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[80vh]">
         <DialogHeader>
-          <DialogTitle>Gestione Mapping ISIN</DialogTitle>
+          <DialogTitle>{t('Gestione Mapping ISIN')}</DialogTitle>
           <DialogDescription>
-            Visualizza, modifica o elimina i mapping ISIN salvati per gli investimenti.
+            {t('Visualizza, modifica o elimina i mapping ISIN salvati per gli investimenti.')}
           </DialogDescription>
         </DialogHeader>
 
@@ -154,7 +156,7 @@ export default function ISINMappingsDialog({ open, onOpenChange, userId }: ISINM
           </div>
         ) : mappings.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
-            Nessun mapping ISIN salvato. I mapping vengono creati automaticamente durante l'import da Trade Republic.
+            {t('Nessun mapping ISIN salvato. I mapping vengono creati automaticamente durante l\'import da Trade Republic.')}
           </div>
         ) : (
           <ScrollArea className="h-[400px] pr-4">
@@ -171,7 +173,7 @@ export default function ISINMappingsDialog({ open, onOpenChange, userId }: ISINM
                       </div>
                       <div className="grid grid-cols-3 gap-2">
                         <div className="space-y-1">
-                          <Label className="text-xs">Simbolo</Label>
+                          <Label className="text-xs">{t('Simbolo')}</Label>
                           <Input
                             value={editForm.symbol}
                             onChange={(e) => setEditForm({ ...editForm, symbol: e.target.value.toUpperCase() })}
@@ -179,7 +181,7 @@ export default function ISINMappingsDialog({ open, onOpenChange, userId }: ISINM
                           />
                         </div>
                         <div className="space-y-1">
-                          <Label className="text-xs">Nome</Label>
+                          <Label className="text-xs">{t('Nome')}</Label>
                           <Input
                             value={editForm.name}
                             onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
@@ -187,7 +189,7 @@ export default function ISINMappingsDialog({ open, onOpenChange, userId }: ISINM
                           />
                         </div>
                         <div className="space-y-1">
-                          <Label className="text-xs">Tipo</Label>
+                          <Label className="text-xs">{t('Tipo')}</Label>
                           <Select 
                             value={editForm.asset_type} 
                             onValueChange={(v) => setEditForm({ ...editForm, asset_type: v })}
@@ -198,7 +200,7 @@ export default function ISINMappingsDialog({ open, onOpenChange, userId }: ISINM
                             <SelectContent>
                               {ASSET_TYPES.map((type) => (
                                 <SelectItem key={type.value} value={type.value}>
-                                  {type.label}
+                                  {t(type.label)}
                                 </SelectItem>
                               ))}
                             </SelectContent>
@@ -208,11 +210,11 @@ export default function ISINMappingsDialog({ open, onOpenChange, userId }: ISINM
                       <div className="flex justify-end gap-2">
                         <Button variant="ghost" size="sm" onClick={handleCancelEdit}>
                           <X className="w-4 h-4 mr-1" />
-                          Annulla
+                          {t('Annulla')}
                         </Button>
                         <Button size="sm" onClick={() => handleSaveEdit(mapping.id)}>
                           <Save className="w-4 h-4 mr-1" />
-                          Salva
+                          {t('Salva')}
                         </Button>
                       </div>
                     </div>
@@ -227,7 +229,7 @@ export default function ISINMappingsDialog({ open, onOpenChange, userId }: ISINM
                         <div className="flex items-center gap-2 text-xs text-muted-foreground">
                           <span className="font-mono">{mapping.isin}</span>
                           <span>•</span>
-                          <span>{ASSET_TYPES.find(t => t.value === mapping.asset_type)?.label || mapping.asset_type}</span>
+                          <span>{t(ASSET_TYPES.find(type => type.value === mapping.asset_type)?.label ?? '') || mapping.asset_type}</span>
                         </div>
                       </div>
                       <div className="flex items-center gap-1">
@@ -242,19 +244,18 @@ export default function ISINMappingsDialog({ open, onOpenChange, userId }: ISINM
                           </AlertDialogTrigger>
                           <AlertDialogContent>
                             <AlertDialogHeader>
-                              <AlertDialogTitle>Eliminare questo mapping?</AlertDialogTitle>
+                              <AlertDialogTitle>{t('Eliminare questo mapping?')}</AlertDialogTitle>
                               <AlertDialogDescription>
-                                Stai per eliminare il mapping per {mapping.symbol} ({mapping.isin}). 
-                                Questa azione non può essere annullata.
+                                {t('Stai per eliminare il mapping per {{symbol}} ({{isin}}). Questa azione non può essere annullata.', { symbol: mapping.symbol, isin: mapping.isin })}
                               </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
-                              <AlertDialogCancel>Annulla</AlertDialogCancel>
-                              <AlertDialogAction 
+                              <AlertDialogCancel>{t('Annulla')}</AlertDialogCancel>
+                              <AlertDialogAction
                                 onClick={() => handleDelete(mapping.id)}
                                 className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                               >
-                                Elimina
+                                {t('Elimina')}
                               </AlertDialogAction>
                             </AlertDialogFooter>
                           </AlertDialogContent>

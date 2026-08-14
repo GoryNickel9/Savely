@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { CURRENCY_SYMBOLS } from '@/lib/constants';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -50,6 +51,7 @@ export default function CategoryAnalysisChart({
   totalLabel,
   totalColorClass,
 }: CategoryAnalysisChartProps) {
+  const { t } = useTranslation();
   const { transactions } = useTransactions();
   const { expenseCategories, incomeCategories } = useCategories();
   const categories = type === 'expense' ? expenseCategories : incomeCategories;
@@ -100,13 +102,13 @@ export default function CategoryAnalysisChart({
       .map(([categoryId, value]) => {
         const category = categories.find(c => c.id === categoryId);
         return {
-          name: category?.name || 'Senza categoria',
+          name: category?.name || t('Senza categoria'),
           value,
           color: category?.color || '#888888'
         };
       })
       .sort((a, b) => b.value - a.value);
-  }, [filteredTransactions, categories, type]);
+  }, [filteredTransactions, categories, type, t]);
 
   const total = categoryData.reduce((sum, item) => sum + item.value, 0);
 
@@ -194,8 +196,8 @@ export default function CategoryAnalysisChart({
           </Button>
         </Link>
         <div>
-          <h1 className="text-3xl font-display font-bold">{title}</h1>
-          <p className="text-muted-foreground">{subtitle}</p>
+          <h1 className="text-3xl font-display font-bold">{t(title)}</h1>
+          <p className="text-muted-foreground">{t(subtitle)}</p>
         </div>
       </div>
 
@@ -203,22 +205,22 @@ export default function CategoryAnalysisChart({
       <div className="glass rounded-xl p-4">
         <div className="flex flex-wrap gap-4 items-end">
           <div>
-            <label className="text-sm text-muted-foreground block mb-1">Filtro</label>
+            <label className="text-sm text-muted-foreground block mb-1">{t('Filtro')}</label>
             <Select value={filterMode} onValueChange={(v) => setFilterMode(v as FilterMode)}>
               <SelectTrigger className="w-[140px]"><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Tutto</SelectItem>
-                <SelectItem value="year">Anno</SelectItem>
-                <SelectItem value="month">Mese</SelectItem>
-                <SelectItem value="since">Da data</SelectItem>
-                <SelectItem value="between">Tra date</SelectItem>
+                <SelectItem value="all">{t('Tutto')}</SelectItem>
+                <SelectItem value="year">{t('Anno')}</SelectItem>
+                <SelectItem value="month">{t('Mese')}</SelectItem>
+                <SelectItem value="since">{t('Da data')}</SelectItem>
+                <SelectItem value="between">{t('Tra date')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           {(filterMode === 'year' || filterMode === 'month') && (
             <div>
-              <label className="text-sm text-muted-foreground block mb-1">Anno</label>
+              <label className="text-sm text-muted-foreground block mb-1">{t('Anno')}</label>
               <Select value={selectedYear} onValueChange={setSelectedYear}>
                 <SelectTrigger className="w-[100px]"><SelectValue /></SelectTrigger>
                 <SelectContent>{years.map(y => <SelectItem key={y} value={y.toString()}>{y}</SelectItem>)}</SelectContent>
@@ -228,7 +230,7 @@ export default function CategoryAnalysisChart({
 
           {filterMode === 'month' && (
             <div>
-              <label className="text-sm text-muted-foreground block mb-1">Mese</label>
+              <label className="text-sm text-muted-foreground block mb-1">{t('Mese')}</label>
               <Select value={selectedMonth} onValueChange={setSelectedMonth}>
                 <SelectTrigger className="w-[120px]"><SelectValue /></SelectTrigger>
                 <SelectContent>
@@ -244,7 +246,7 @@ export default function CategoryAnalysisChart({
 
           {filterMode === 'since' && (
             <div>
-              <label className="text-sm text-muted-foreground block mb-1">Da</label>
+              <label className="text-sm text-muted-foreground block mb-1">{t('Da')}</label>
               <Input type="date" value={sinceDate} onChange={e => setSinceDate(e.target.value)} className="w-[160px]" />
             </div>
           )}
@@ -252,24 +254,24 @@ export default function CategoryAnalysisChart({
           {filterMode === 'between' && (
             <>
               <div>
-                <label className="text-sm text-muted-foreground block mb-1">Da</label>
+                <label className="text-sm text-muted-foreground block mb-1">{t('Da')}</label>
                 <Input type="date" value={fromDate} onChange={e => setFromDate(e.target.value)} className="w-[160px]" />
               </div>
               <div>
-                <label className="text-sm text-muted-foreground block mb-1">A</label>
+                <label className="text-sm text-muted-foreground block mb-1">{t('A')}</label>
                 <Input type="date" value={toDate} onChange={e => setToDate(e.target.value)} className="w-[160px]" />
               </div>
             </>
           )}
 
           <div>
-            <label className="text-sm text-muted-foreground block mb-1">Tipo grafico</label>
+            <label className="text-sm text-muted-foreground block mb-1">{t('Tipo grafico')}</label>
             <Select value={chartType} onValueChange={(v) => setChartType(v as 'pie' | 'bar' | 'line')}>
               <SelectTrigger className="w-[140px]"><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="bar">Barre</SelectItem>
-                <SelectItem value="pie">Torta</SelectItem>
-                <SelectItem value="line">Linea</SelectItem>
+                <SelectItem value="bar">{t('Barre')}</SelectItem>
+                <SelectItem value="pie">{t('Torta')}</SelectItem>
+                <SelectItem value="line">{t('Linea')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -278,13 +280,13 @@ export default function CategoryAnalysisChart({
 
       {/* Summary card */}
       <div className="glass rounded-xl p-6 text-center">
-        <p className="text-sm text-muted-foreground">{totalLabel}</p>
+        <p className="text-sm text-muted-foreground">{t(totalLabel)}</p>
         <p className={`text-2xl font-display font-bold ${totalColorClass}`}>{CURRENCY_SYMBOLS.EUR}{total.toLocaleString('it-IT', { minimumFractionDigits: 2 })}</p>
       </div>
 
       {/* Chart */}
       <div className="glass rounded-xl p-6">
-        <h3 className="font-semibold mb-4">Distribuzione per Categoria</h3>
+        <h3 className="font-semibold mb-4">{t('Distribuzione per Categoria')}</h3>
         {(chartType === 'line' ? lineChartData.length > 0 : categoryData.length > 0) ? (
           <ResponsiveContainer width="100%" height={400}>
             {chartType === 'bar' ? (
@@ -309,7 +311,7 @@ export default function CategoryAnalysisChart({
                   itemStyle={{ color: 'white' }}
                   formatter={(value: number) => `${CURRENCY_SYMBOLS.EUR}${value.toFixed(2)}`}
                 />
-                <Bar dataKey="value" name="Importo">
+                <Bar dataKey="value" name={t('Importo')}>
                   {categoryData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
@@ -381,14 +383,14 @@ export default function CategoryAnalysisChart({
             )}
           </ResponsiveContainer>
         ) : (
-          <p className="text-muted-foreground text-center py-12">Nessuna transazione nel periodo selezionato</p>
+          <p className="text-muted-foreground text-center py-12">{t('Nessuna transazione nel periodo selezionato')}</p>
         )}
       </div>
 
       {/* Category breakdown table */}
       {categoryData.length > 0 && (
         <div className="glass rounded-xl p-6">
-          <h3 className="font-semibold mb-4">Dettaglio per Categoria</h3>
+          <h3 className="font-semibold mb-4">{t('Dettaglio per Categoria')}</h3>
           <div className="space-y-3">
             {categoryData.map((item) => {
               const percentage = total > 0 ? (item.value / total) * 100 : 0;

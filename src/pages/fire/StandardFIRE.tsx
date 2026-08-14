@@ -10,8 +10,10 @@ import { Card, CardHeader, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Link } from 'react-router'
 import { ArrowLeft, RotateCcw } from 'lucide-react'
+import { useTranslation, Trans } from 'react-i18next'
 
 export default function StandardFIRE() {
+  const { t } = useTranslation()
   const dbDefaults = useFireDefaultsFromDB()
   const { params, setParam, resetToDBDefaults } = useFireCalculatorParams(dbDefaults || undefined)
 
@@ -38,15 +40,15 @@ export default function StandardFIRE() {
             <div className="flex items-center gap-3">
               <Link to="/fire" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground hover:scale-110 transition-all duration-200">
                 <ArrowLeft className="w-4 h-4" />
-                Torna ai calcolatori
+                {t('Torna ai calcolatori')}
               </Link>
             </div>
             <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-3">
-              <span className="text-3xl" role="img" aria-label="Target emoji">🎯</span>
-              FIRE Calculator
+              <span className="text-3xl" role="img" aria-label={t('Target emoji')}>🎯</span>
+              {t('FIRE Calculator')}
             </h1>
             <p className="text-gray-600 dark:text-gray-400 mt-1">
-              Calcola il tuo percorso verso l'indipendenza finanziaria.
+              {t("Calcola il tuo percorso verso l'indipendenza finanziaria.")}
             </p>
           </div>
       </div>
@@ -63,7 +65,7 @@ export default function StandardFIRE() {
         <Card className="lg:col-span-1">
           <CardHeader>
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Le tue informazioni</h2>
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{t('Le tue informazioni')}</h2>
               {dbDefaults && (
                 <Button
                   variant="outline"
@@ -72,7 +74,7 @@ export default function StandardFIRE() {
                   className="text-xs"
                 >
                   <RotateCcw className="w-3 h-3 mr-1" />
-                  Reset ai valori dal database
+                  {t('Reset ai valori dal database')}
                 </Button>
               )}
             </div>
@@ -146,30 +148,30 @@ export default function StandardFIRE() {
           {/* Key Metrics */}
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <ResultCard
-              label="FIRE Number"
+              label={t('FIRE Number')}
               value={results.fireNumber}
               format="currency"
               highlight
-              subtext="Target portfolio"
+              subtext={t('Target portfolio')}
             />
             <ResultCard
-              label="Anni al FIRE"
+              label={t('Anni al FIRE')}
               value={results.yearsToFIRE}
               format="anni"
-              subtext={`All'età di ${Math.round(results.fireAge)}`}
+              subtext={t("All'età di {{age}}", { age: Math.round(results.fireAge) })}
             />
             <ResultCard
-              label="Savings Rate"
+              label={t('Savings Rate')}
               value={results.savingsRate}
               format="percent"
-              subtext={`${formatCurrency(results.monthlyContribution)}/mese`}
+              subtext={t('{{amount}}/mese', { amount: formatCurrency(results.monthlyContribution) })}
             />
           </div>
 
           {/* Chart */}
           <Card>
             <CardHeader>
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Proiezione Portfolio</h2>
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{t('Proiezione Portfolio')}</h2>
             </CardHeader>
             <CardContent>
               <ProjectionChart
@@ -184,21 +186,24 @@ export default function StandardFIRE() {
           {/* Additional Info */}
           <Card>
             <CardHeader>
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Capire questi risultati</h2>
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{t('Capire questi risultati')}</h2>
             </CardHeader>
             <CardContent className="prose dark:prose-invert max-w-none text-sm">
               <p>
-                Il tuo <strong>FIRE Number</strong> ({formatCurrency(results.fireNumber)}) viene calcolato come le tue 
-                spese annuali ({formatCurrency(params.annualExpenses)}) diviso per il tasso di prelievo. 
-                ({(params.withdrawalRate * 100).toFixed(1)}%).
+                <Trans i18nKey="Il tuo <strong>FIRE Number</strong> ({{fireNumber}}) viene calcolato come le tue spese annuali ({{annualExpenses}}) diviso per il tasso di prelievo. ({{withdrawalRate}}%)." values={{ fireNumber: formatCurrency(results.fireNumber), annualExpenses: formatCurrency(params.annualExpenses), withdrawalRate: (params.withdrawalRate * 100).toFixed(1) }}>
+                  Il tuo <strong>FIRE Number</strong> ({formatCurrency(results.fireNumber)}) viene calcolato come le tue
+                  spese annuali ({formatCurrency(params.annualExpenses)}) diviso per il tasso di prelievo.
+                  ({(params.withdrawalRate * 100).toFixed(1)}%).
+                </Trans>
               </p>
               <p>
-                Al tuo attuale tasso di risparmio, raggiungerai l'indipendenza finanziaria in circa{' '}
-                <strong>{results.yearsToFIRE.toFixed(1)} anni</strong> (all'età di {Math.round(results.fireAge)}).
+                <Trans i18nKey="Al tuo attuale tasso di risparmio, raggiungerai l'indipendenza finanziaria in circa <strong>{{years}} anni</strong> (all'età di {{age}})." values={{ years: results.yearsToFIRE.toFixed(1), age: Math.round(results.fireAge) }}>
+                  Al tuo attuale tasso di risparmio, raggiungerai l'indipendenza finanziaria in circa{' '}
+                  <strong>{results.yearsToFIRE.toFixed(1)} anni</strong> (all'età di {Math.round(results.fireAge)}).
+                </Trans>
               </p>
               <p className="text-gray-500 dark:text-gray-400">
-                Il grafico mostra la crescita del tuo portafoglio nel tempo. La linea tratteggiata rappresenta i valori corretti per l'inflazione 
-                (potere d'acquisto). La linea rossa è il tuo obiettivo FIRE.
+                {t("Il grafico mostra la crescita del tuo portafoglio nel tempo. La linea tratteggiata rappresenta i valori corretti per l'inflazione (potere d'acquisto). La linea rossa è il tuo obiettivo FIRE.")}
               </p>
             </CardContent>
           </Card>

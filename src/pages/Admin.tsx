@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { RefreshCw } from 'lucide-react';
 import MainLayout from '@/components/layout/MainLayout';
 import { Card, CardContent } from '@/components/ui/card';
@@ -20,6 +21,7 @@ export default function Admin() {
   const { user } = useAuth();
   const { permissions } = usePermissions();
   const { toast } = useToast();
+  const { t } = useTranslation();
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -27,7 +29,7 @@ export default function Admin() {
 
   const loadUsers = useCallback(async () => {
     if (!user?.id) return;
-    
+
     setLoading(true);
     try {
       const { data, error } = await getAllUsersWithPermissions(user.id);
@@ -36,14 +38,14 @@ export default function Admin() {
     } catch (error) {
       console.error('Errore nel caricamento degli utenti:', error);
       toast({
-        title: 'Errore',
-        description: 'Impossibile caricare gli utenti',
+        title: t('Errore'),
+        description: t('Impossibile caricare gli utenti'),
         variant: 'destructive',
       });
     } finally {
       setLoading(false);
     }
-  }, [toast, user?.id]);
+  }, [toast, t, user?.id]);
 
   useEffect(() => {
     // Carica gli utenti solo quando l'utente è autenticato e ha i permessi admin
@@ -69,8 +71,8 @@ export default function Admin() {
       if (error) throw error;
 
       toast({
-        title: 'Permesso aggiornato',
-        description: `Il permesso ${permission} è stato aggiornato`,
+        title: t('Permesso aggiornato'),
+        description: t('Il permesso {{permission}} è stato aggiornato', { permission }),
       });
 
       // Ricarica gli utenti
@@ -78,8 +80,8 @@ export default function Admin() {
     } catch (error) {
       console.error('Errore nell\'aggiornamento del permesso:', error);
       toast({
-        title: 'Errore',
-        description: 'Impossibile aggiornare il permesso',
+        title: t('Errore'),
+        description: t('Impossibile aggiornare il permesso'),
         variant: 'destructive',
       });
     } finally {
@@ -102,8 +104,8 @@ export default function Admin() {
       <div className="space-y-6 max-w-[1600px] mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-display font-bold">Amministrazione</h1>
-          <p className="text-muted-foreground">Gestisci i permessi degli utenti</p>
+          <h1 className="text-3xl font-display font-bold">{t('Amministrazione')}</h1>
+          <p className="text-muted-foreground">{t('Gestisci i permessi degli utenti')}</p>
         </div>
 
         {/* Card principale */}
@@ -117,16 +119,16 @@ export default function Admin() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                   </svg>
                 </div>
-                <h2 className="text-xl font-semibold">Gestione Permessi Utenti</h2>
+                <h2 className="text-xl font-semibold">{t('Gestione Permessi Utenti')}</h2>
               </div>
-              
+
               <Button
                 onClick={handleRefresh}
                 variant="outline"
                 className="flex items-center gap-2"
               >
                 <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-                <span className="text-sm">Aggiorna</span>
+                <span className="text-sm">{t('Aggiorna')}</span>
               </Button>
             </div>
 
@@ -146,10 +148,10 @@ export default function Admin() {
                     {/* Nome, ID e pulsanti */}
                     <div className="flex-1 space-y-1">
                       <div className="flex items-center gap-2">
-                        <span className="font-medium">{userProfile.full_name || 'Utente senza nome'}</span>
+                        <span className="font-medium">{userProfile.full_name || t('Utente senza nome')}</span>
                         {userProfile.user_id === user.id && (
                           <span className="px-2 py-0.5 bg-emerald-500/20 text-emerald-400 text-xs rounded-md">
-                            Tu
+                            {t('Tu')}
                           </span>
                         )}
                       </div>
@@ -158,7 +160,7 @@ export default function Admin() {
                       {/* Pulsanti permessi */}
                       <div className="flex items-center gap-8 pt-0.5">
                         <div className="flex items-center gap-2">
-                          <span className="text-sm text-muted-foreground w-16">Poker</span>
+                          <span className="text-sm text-muted-foreground w-16">{t('Poker')}</span>
                           <Switch
                             checked={userProfile.permissions.poker || false}
                             onCheckedChange={() => togglePermission(userProfile.user_id, 'poker', userProfile.permissions.poker || false)}
@@ -166,7 +168,7 @@ export default function Admin() {
                           />
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="text-sm text-muted-foreground w-16">Fumo</span>
+                          <span className="text-sm text-muted-foreground w-16">{t('Fumo')}</span>
                           <Switch
                             checked={userProfile.permissions.fumo || false}
                             onCheckedChange={() => togglePermission(userProfile.user_id, 'fumo', userProfile.permissions.fumo || false)}
@@ -174,7 +176,7 @@ export default function Admin() {
                           />
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="text-sm text-muted-foreground w-16">FIRE</span>
+                          <span className="text-sm text-muted-foreground w-16">{t('FIRE')}</span>
                           <Switch
                             checked={userProfile.permissions.fire || false}
                             onCheckedChange={() => togglePermission(userProfile.user_id, 'fire', userProfile.permissions.fire || false)}
@@ -182,7 +184,7 @@ export default function Admin() {
                           />
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="text-sm text-muted-foreground w-16">TCG</span>
+                          <span className="text-sm text-muted-foreground w-16">{t('TCG')}</span>
                           <Switch
                             checked={userProfile.permissions.tcg || false}
                             onCheckedChange={() => togglePermission(userProfile.user_id, 'tcg', userProfile.permissions.tcg || false)}
@@ -190,7 +192,7 @@ export default function Admin() {
                           />
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="text-sm text-muted-foreground w-16">Libreria</span>
+                          <span className="text-sm text-muted-foreground w-16">{t('Libreria')}</span>
                           <Switch
                             checked={userProfile.permissions.libreria || false}
                             onCheckedChange={() => togglePermission(userProfile.user_id, 'libreria', userProfile.permissions.libreria || false)}
@@ -198,7 +200,7 @@ export default function Admin() {
                           />
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="text-sm text-muted-foreground w-24">Spese Familiari</span>
+                          <span className="text-sm text-muted-foreground w-24">{t('Spese Familiari')}</span>
                           <Switch
                             checked={userProfile.permissions.couple_expenses || false}
                             onCheckedChange={() => togglePermission(userProfile.user_id, 'couple_expenses', userProfile.permissions.couple_expenses || false)}

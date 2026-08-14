@@ -12,6 +12,7 @@
  * tweaked in one place.
  */
 
+import i18n from '@/i18n';
 import type { Transaction, Budget, Category, PortfolioAsset } from './types';
 import type { NetWorthSnapshot } from '@/hooks/useNetWorthHistory';
 import type { RecurringCandidate } from './recurringDetection';
@@ -165,13 +166,17 @@ function detectSpendingAnomalies(
     if (median <= 0) continue;
     if (currentAmount >= median * ANOMALY_FACTOR) {
       const pct = Math.round(((currentAmount - median) / median) * 100);
-      const name = categoryName.get(catId) ?? 'Senza categoria';
+      const name = categoryName.get(catId) ?? i18n.t('Senza categoria');
       insights.push({
         id: `spending_anomaly:${catId}`,
         kind: 'spending_anomaly',
         severity: 'warning',
-        title: `Spesa anomala in ${name}`,
-        message: `Hai speso ${formatEur(currentAmount)} questo mese, +${pct}% rispetto alla mediana mensile (${formatEur(median)}).`,
+        title: i18n.t('Spesa anomala in {{name}}', { name }),
+        message: i18n.t('Hai speso {{amount}} questo mese, +{{pct}}% rispetto alla mediana mensile ({{median}}).', {
+          amount: formatEur(currentAmount),
+          pct,
+          median: formatEur(median),
+        }),
         value: currentAmount - median,
         category: name,
       });
@@ -205,14 +210,18 @@ function detectBudgetExceeded(
   for (const b of budgets) {
     const spent = spentByCategory.get(b.category_id) ?? 0;
     if (b.amount > 0 && spent > b.amount) {
-      const name = categoryName.get(b.category_id) ?? b.category?.name ?? 'Categoria';
+      const name = categoryName.get(b.category_id) ?? b.category?.name ?? i18n.t('Categoria');
       const over = spent - b.amount;
       insights.push({
         id: `budget_exceeded:${b.category_id}`,
         kind: 'budget_exceeded',
         severity: 'warning',
-        title: `Budget superato in ${name}`,
-        message: `Hai speso ${formatEur(spent)} su un budget di ${formatEur(b.amount)} (${formatEur(over)} oltre).`,
+        title: i18n.t('Budget superato in {{name}}', { name }),
+        message: i18n.t('Hai speso {{spent}} su un budget di {{budget}} ({{over}} oltre).', {
+          spent: formatEur(spent),
+          budget: formatEur(b.amount),
+          over: formatEur(over),
+        }),
         value: over,
         category: name,
       });
@@ -238,8 +247,11 @@ function detectPortfolioLoss(openAssets: PortfolioAsset[]): Insight[] {
         id: `portfolio_loss:${a.id}`,
         kind: 'portfolio_loss',
         severity: 'warning',
-        title: `Posizione in perdita: ${a.name}`,
-        message: `${a.symbol ?? a.name} è al ${pct}% rispetto al prezzo di acquisto.`,
+        title: i18n.t('Posizione in perdita: {{name}}', { name: a.name }),
+        message: i18n.t('{{symbol}} è al {{pct}}% rispetto al prezzo di acquisto.', {
+          symbol: a.symbol ?? a.name,
+          pct,
+        }),
         value: plPct,
       });
     }
@@ -262,8 +274,10 @@ function detectNetWorthMilestone(history: NetWorthSnapshot[]): Insight[] {
         id: 'net_worth_milestone',
         kind: 'net_worth_milestone',
         severity: 'positive',
-        title: 'Nuovo massimo di Patrimonio Netto! 🎉',
-        message: `Il tuo patrimonio ha raggiunto ${formatEur(latest.net_worth)}, il livello più alto di sempre.`,
+        title: i18n.t('Nuovo massimo di Patrimonio Netto! 🎉'),
+        message: i18n.t('Il tuo patrimonio ha raggiunto {{amount}}, il livello più alto di sempre.', {
+          amount: formatEur(latest.net_worth),
+        }),
         value: latest.net_worth,
       },
     ];
@@ -305,8 +319,12 @@ function detectSavingMonth(transactions: Transaction[], referenceDate: Date): In
         id: 'saving_month',
         kind: 'saving_month',
         severity: 'positive',
-        title: 'Ottimo mese di risparmio! 💪',
-        message: `Stai risparmiando ${formatEur(currentNet)} questo mese, +${pct}% rispetto alla media annua (${formatEur(avgMonthly)}).`,
+        title: i18n.t('Ottimo mese di risparmio! 💪'),
+        message: i18n.t('Stai risparmiando {{amount}} questo mese, +{{pct}}% rispetto alla media annua ({{average}}).', {
+          amount: formatEur(currentNet),
+          pct,
+          average: formatEur(avgMonthly),
+        }),
         value: currentNet,
       },
     ];
@@ -350,14 +368,19 @@ function detectCategoryTrend(
     const median12 = calculateMedian(baseline);
     if (median12 <= 0 || median3 < ANOMALY_MIN_AMOUNT) continue;
     if (median3 >= median12 * TREND_FACTOR) {
-      const name = categoryName.get(catId) ?? 'Senza categoria';
+      const name = categoryName.get(catId) ?? i18n.t('Senza categoria');
       const pct = Math.round(((median3 - median12) / median12) * 100);
       insights.push({
         id: `category_trend:${catId}`,
         kind: 'category_trend',
         severity: 'info',
-        title: `${name} in trend crescente`,
-        message: `La spesa mensile in ${name} è cresciuta del ${pct}% negli ultimi 3 mesi (${formatEur(median3)} vs ${formatEur(median12)}).`,
+        title: i18n.t('{{name}} in trend crescente', { name }),
+        message: i18n.t('La spesa mensile in {{name}} è cresciuta del {{pct}}% negli ultimi 3 mesi ({{recent}} vs {{baseline}}).', {
+          name,
+          pct,
+          recent: formatEur(median3),
+          baseline: formatEur(median12),
+        }),
         value: median3 - median12,
         category: name,
       });
@@ -382,8 +405,12 @@ function detectNewRecurring(candidates: RecurringCandidate[]): Insight[] {
     id: `new_recurring_detected:${c.normalizedKey}`,
     kind: 'new_recurring_detected',
     severity: 'info',
-    title: `Possibile spesa ricorrente: ${c.description}`,
-    message: `Rilevata ${frequencyLabel(c.frequency)} di ${formatEur(c.medianAmount)} (${c.occurrenceCount} occorrenze). Vuoi tenerla tracciata?`,
+    title: i18n.t('Possibile spesa ricorrente: {{description}}', { description: c.description }),
+    message: i18n.t('Rilevata {{frequency}} di {{amount}} ({{num}} occorrenze). Vuoi tenerla tracciata?', {
+      frequency: frequencyLabel(c.frequency),
+      amount: formatEur(c.medianAmount),
+      num: c.occurrenceCount,
+    }),
     value: c.medianAmount,
   }));
 }
@@ -419,14 +446,18 @@ function detectRecurringPriceChange(
     const change = (latest.amount - c.medianAmount) / c.medianAmount;
     if (Math.abs(change) >= RECURRING_PRICE_CHANGE) {
       const pct = Math.round(change * 100);
-      const dir = change > 0 ? 'aumentato' : 'diminuito';
+      const dir = change > 0 ? i18n.t('aumentato') : i18n.t('diminuito');
       const severity = change > 0 ? 'warning' : 'info';
       insights.push({
         id: `recurring_price_change:${c.normalizedKey}`,
         kind: 'recurring_price_change',
         severity,
-        title: `Spesa ricorrente ${dir}: ${c.description}`,
-        message: `L'ultimo importo (${formatEur(latest.amount)}) è ${pct}% rispetto al solito (${formatEur(c.medianAmount)}).`,
+        title: i18n.t('Spesa ricorrente {{dir}}: {{description}}', { dir, description: c.description }),
+        message: i18n.t("L'ultimo importo ({{latest}}) è {{pct}}% rispetto al solito ({{median}}).", {
+          latest: formatEur(latest.amount),
+          pct,
+          median: formatEur(c.medianAmount),
+        }),
         value: latest.amount - c.medianAmount,
       });
     }
@@ -480,13 +511,13 @@ function pushToMap(map: Map<string, number[]>, key: string, value: number): void
 function frequencyLabel(f: RecurringCandidate['frequency']): string {
   switch (f) {
     case 'weekly':
-      return 'una cadenza settimanale';
+      return i18n.t('una cadenza settimanale');
     case 'monthly':
-      return 'una cadenza mensile';
+      return i18n.t('una cadenza mensile');
     case 'quarterly':
-      return 'una cadenza trimestrale';
+      return i18n.t('una cadenza trimestrale');
     case 'yearly':
-      return 'una cadenza annuale';
+      return i18n.t('una cadenza annuale');
   }
 }
 

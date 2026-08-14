@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,13 +17,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { supabase } from '@/integrations/supabase/client';
 import { challengeAndVerify } from '@/hooks/useMfa';
 
-const authSchema = z.object({
-  email: z.string().email('Email non valida'),
-  password: passwordSchema,
-  fullName: z.string().optional(),
-});
-
 export default function Auth() {
+  const { t } = useTranslation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
@@ -42,6 +38,12 @@ export default function Auth() {
   const { user, signIn, signUp, resetPassword } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  const authSchema = z.object({
+    email: z.string().email(t('Email non valida')),
+    password: passwordSchema,
+    fullName: z.string().optional(),
+  });
 
   useEffect(() => {
     // Navigate to "/" only when fully authenticated and no MFA is pending.
@@ -81,9 +83,9 @@ export default function Auth() {
     if (error) {
       setLoading(false);
       toast({
-        title: 'Errore di accesso',
+        title: t('Errore di accesso'),
         description: error.message === 'Invalid login credentials'
-          ? 'Email o password non corretti'
+          ? t('Email o password non corretti')
           : error.message,
         variant: 'destructive',
       });
@@ -123,8 +125,8 @@ export default function Auth() {
       // Navigation to "/" is handled by the useEffect on `user`.
     } catch (err) {
       toast({
-        title: 'Codice 2FA non valido',
-        description: (err as Error).message || 'Verifica non riuscita, riprova',
+        title: t('Codice 2FA non valido'),
+        description: (err as Error).message || t('Verifica non riuscita, riprova'),
         variant: 'destructive',
       });
     } finally {
@@ -145,8 +147,8 @@ export default function Auth() {
 
     if (!privacyAccepted) {
       toast({
-        title: 'Consenso obbligatorio',
-        description: 'Devi accettare la Privacy Policy, la Cookie Policy e i Termini di servizio per registrarti.',
+        title: t('Consenso obbligatorio'),
+        description: t('Devi accettare la Privacy Policy, la Cookie Policy e i Termini di servizio per registrarti.'),
         variant: 'destructive',
       });
       return;
@@ -159,17 +161,17 @@ export default function Auth() {
     if (error) {
       let message = error.message;
       if (error.message.includes('already registered')) {
-        message = 'Questa email è già registrata. Prova ad accedere.';
+        message = t('Questa email è già registrata. Prova ad accedere.');
       }
       toast({
-        title: 'Errore di registrazione',
+        title: t('Errore di registrazione'),
         description: message,
         variant: 'destructive',
       });
     } else {
       toast({
-        title: 'Registrazione completata!',
-        description: 'Benvenuto in Spendy',
+        title: t('Registrazione completata!'),
+        description: t('Benvenuto in Spendy'),
       });
     }
   };
@@ -177,7 +179,7 @@ export default function Auth() {
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!resetEmail) {
-      toast({ title: 'Inserisci la tua email', variant: 'destructive' });
+      toast({ title: t('Inserisci la tua email'), variant: 'destructive' });
       return;
     }
 
@@ -187,7 +189,7 @@ export default function Auth() {
 
     if (error) {
       toast({
-        title: 'Errore',
+        title: t('Errore'),
         description: error.message,
         variant: 'destructive',
       });
@@ -204,8 +206,8 @@ export default function Auth() {
       {/* Left side - Branding */}
       <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-primary/20 via-background to-accent/20 p-12 flex-col justify-between">
         <div>
-          <h1 className="text-4xl font-display font-bold">Spendy</h1>
-          <p className="text-muted-foreground mt-2">La tua finanza personale, semplificata</p>
+          <h1 className="text-4xl font-display font-bold">{t('Spendy')}</h1>
+          <p className="text-muted-foreground mt-2">{t('La tua finanza personale, semplificata')}</p>
         </div>
         
         <div className="space-y-8">
@@ -214,8 +216,8 @@ export default function Auth() {
               <TrendingUp className="w-6 h-6" />
             </div>
             <div>
-              <h3 className="font-semibold text-foreground">Traccia le tue finanze</h3>
-              <p className="text-sm text-muted-foreground">Monitora entrate, uscite e investimenti in un unico posto</p>
+              <h3 className="font-semibold text-foreground">{t('Traccia le tue finanze')}</h3>
+              <p className="text-sm text-muted-foreground">{t('Monitora entrate, uscite e investimenti in un unico posto')}</p>
             </div>
           </div>
           
@@ -224,8 +226,8 @@ export default function Auth() {
               <PieChart className="w-6 h-6" />
             </div>
             <div>
-              <h3 className="font-semibold text-foreground">Analisi del portfolio</h3>
-              <p className="text-sm text-muted-foreground">Visualizza la tua asset allocation e performance</p>
+              <h3 className="font-semibold text-foreground">{t('Analisi del portfolio')}</h3>
+              <p className="text-sm text-muted-foreground">{t('Visualizza la tua asset allocation e performance')}</p>
             </div>
           </div>
           
@@ -234,23 +236,25 @@ export default function Auth() {
               <Shield className="w-6 h-6" />
             </div>
             <div>
-              <h3 className="font-semibold text-foreground">Sicuro e privato</h3>
-              <p className="text-sm text-muted-foreground">I tuoi dati finanziari sono protetti e criptati</p>
+              <h3 className="font-semibold text-foreground">{t('Sicuro e privato')}</h3>
+              <p className="text-sm text-muted-foreground">{t('I tuoi dati finanziari sono protetti e criptati')}</p>
             </div>
           </div>
         </div>
         
-        <p className="text-sm text-muted-foreground">© 2024 Spendy. Tutti i diritti riservati.</p>
-        <div className="flex gap-4 text-sm text-muted-foreground">
-          <a href="/privacy" target="_blank" rel="noopener noreferrer" className="hover:text-foreground hover:underline">
-            Privacy
-          </a>
-          <a href="/cookies" target="_blank" rel="noopener noreferrer" className="hover:text-foreground hover:underline">
-            Cookie
-          </a>
-          <a href="/terms" target="_blank" rel="noopener noreferrer" className="hover:text-foreground hover:underline">
-            Termini
-          </a>
+        <div className="space-y-2">
+          <div className="flex gap-4 text-sm text-muted-foreground">
+            <a href="/privacy" target="_blank" rel="noopener noreferrer" className="hover:text-foreground hover:underline">
+              {t('Privacy')}
+            </a>
+            <a href="/cookies" target="_blank" rel="noopener noreferrer" className="hover:text-foreground hover:underline">
+              {t('Cookie')}
+            </a>
+            <a href="/terms" target="_blank" rel="noopener noreferrer" className="hover:text-foreground hover:underline">
+              {t('Termini')}
+            </a>
+          </div>
+          <p className="text-sm text-muted-foreground">{t('© {{year}} Spendy. Tutti i diritti riservati.', { year: new Date().getFullYear() })}</p>
         </div>
       </div>
 
@@ -259,11 +263,11 @@ export default function Auth() {
         <Card className="w-full max-w-md glass border-border/50">
           <CardHeader className="space-y-1 text-center">
             <div className="lg:hidden mb-4">
-              <h1 className="text-3xl font-display font-bold text-gradient">Spendy</h1>
-              <p className="text-muted-foreground mt-1">La tua finanza personale semplificata</p>
+              <h1 className="text-3xl font-display font-bold text-gradient">{t('Spendy')}</h1>
+              <p className="text-muted-foreground mt-1">{t('La tua finanza personale semplificata')}</p>
             </div>
-            <CardTitle className="text-2xl font-display">Benvenuto</CardTitle>
-            <CardDescription>Accedi o crea un account per continuare</CardDescription>
+            <CardTitle className="text-2xl font-display">{t('Benvenuto')}</CardTitle>
+            <CardDescription>{t('Accedi o crea un account per continuare')}</CardDescription>
           </CardHeader>
           <CardContent>
             {resetSent ? (
@@ -272,13 +276,13 @@ export default function Auth() {
                   <MailCheck className="w-6 h-6" />
                 </div>
                 <div>
-                  <h2 className="text-2xl font-display mb-2">Controlla la tua email</h2>
+                  <h2 className="text-2xl font-display mb-2">{t('Controlla la tua email')}</h2>
                   <p className="text-muted-foreground">
-                    Abbiamo inviato le istruzioni per recuperare la password a <strong>{sentEmail}</strong>.
+                    {t('Abbiamo inviato le istruzioni per recuperare la password a')} <strong>{sentEmail}</strong>.
                   </p>
                 </div>
                 <Button variant="outline" onClick={() => setResetSent(false)}>
-                  Torna al login
+                  {t('Torna al login')}
                 </Button>
               </div>
             ) : mfaFactorId ? (
@@ -287,9 +291,9 @@ export default function Auth() {
                   <div className="mx-auto p-3 rounded-xl bg-primary/10 text-primary w-fit">
                     <KeyRound className="w-6 h-6" />
                   </div>
-                  <h2 className="text-xl font-display">Verifica in due passaggi</h2>
+                  <h2 className="text-xl font-display">{t('Verifica in due passaggi')}</h2>
                   <p className="text-sm text-muted-foreground">
-                    Inserisci il codice a 6 cifre dalla tua app di autenticazione.
+                    {t('Inserisci il codice a 6 cifre dalla tua app di autenticazione.')}
                   </p>
                 </div>
                 <div className="flex flex-col items-center gap-3">
@@ -306,27 +310,27 @@ export default function Auth() {
                 </div>
                 <Button type="submit" className="w-full" disabled={mfaVerifying || mfaCode.length !== 6}>
                   {mfaVerifying && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Verifica
+                  {t('Verifica')}
                 </Button>
                 <Button type="button" variant="link" className="w-full text-muted-foreground" onClick={handleMfaCancel}>
-                  Annulla
+                  {t('Annulla')}
                 </Button>
               </form>
             ) : (
             <Tabs defaultValue="signin" className="w-full">
               <TabsList className="grid w-full grid-cols-2 mb-6">
-                <TabsTrigger value="signin">Accedi</TabsTrigger>
-                <TabsTrigger value="signup">Registrati</TabsTrigger>
+                <TabsTrigger value="signin">{t('Accedi')}</TabsTrigger>
+                <TabsTrigger value="signup">{t('Registrati')}</TabsTrigger>
               </TabsList>
               
               <TabsContent value="signin">
                 <form onSubmit={handleSignIn} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="email-signin">Email</Label>
+                    <Label htmlFor="email-signin">{t('Email')}</Label>
                     <Input
                       id="email-signin"
                       type="email"
-                      placeholder="nome@esempio.com"
+                      placeholder={t('nome@esempio.com')}
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       className={errors.email ? 'border-destructive' : ''}
@@ -334,7 +338,7 @@ export default function Auth() {
                     {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="password-signin">Password</Label>
+                    <Label htmlFor="password-signin">{t('Password')}</Label>
                     <Input
                       id="password-signin"
                       type="password"
@@ -347,26 +351,26 @@ export default function Auth() {
                   </div>
                   <Button type="submit" className="w-full" disabled={loading}>
                     {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Accedi
+                    {t('Accedi')}
                   </Button>
                   
                   <Dialog open={resetDialogOpen} onOpenChange={setResetDialogOpen}>
                     <DialogTrigger asChild>
                       <Button type="button" variant="link" className="w-full text-muted-foreground">
-                        Password dimenticata?
+                        {t('Password dimenticata?')}
                       </Button>
                     </DialogTrigger>
                     <DialogContent>
                       <DialogHeader>
-                        <DialogTitle>Recupera Password</DialogTitle>
+                        <DialogTitle>{t('Recupera Password')}</DialogTitle>
                       </DialogHeader>
                       <form onSubmit={handleResetPassword} className="space-y-4">
                         <div className="space-y-2">
-                          <Label htmlFor="reset-email">Email</Label>
+                          <Label htmlFor="reset-email">{t('Email')}</Label>
                           <Input
                             id="reset-email"
                             type="email"
-                            placeholder="nome@esempio.com"
+                            placeholder={t('nome@esempio.com')}
                             value={resetEmail}
                             onChange={(e) => setResetEmail(e.target.value)}
                             required
@@ -374,7 +378,7 @@ export default function Auth() {
                         </div>
                         <Button type="submit" className="w-full" disabled={resetLoading}>
                           {resetLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                          Invia link di recupero
+                          {t('Invia link di recupero')}
                         </Button>
                       </form>
                     </DialogContent>
@@ -385,21 +389,21 @@ export default function Auth() {
               <TabsContent value="signup">
                 <form onSubmit={handleSignUp} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="fullname">Nome completo</Label>
+                    <Label htmlFor="fullname">{t('Nome completo')}</Label>
                     <Input
                       id="fullname"
                       type="text"
-                      placeholder="Mario Rossi"
+                      placeholder={t('Mario Rossi')}
                       value={fullName}
                       onChange={(e) => setFullName(e.target.value)}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="email-signup">Email</Label>
+                    <Label htmlFor="email-signup">{t('Email')}</Label>
                     <Input
                       id="email-signup"
                       type="email"
-                      placeholder="nome@esempio.com"
+                      placeholder={t('nome@esempio.com')}
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       className={errors.email ? 'border-destructive' : ''}
@@ -407,7 +411,7 @@ export default function Auth() {
                     {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="password-signup">Password</Label>
+                    <Label htmlFor="password-signup">{t('Password')}</Label>
                     <Input
                       id="password-signup"
                       type="password"
@@ -421,7 +425,7 @@ export default function Auth() {
                     {/* Password Requirements Indicator */}
                     {password && (
                       <div className="mt-3 space-y-2 p-3 bg-muted/50 rounded-lg">
-                        <p className="text-sm font-medium mb-2">Requisiti password:</p>
+                        <p className="text-sm font-medium mb-2">{t('Requisiti password:')}</p>
                         {passwordRequirementsList.map((req) => {
                           const isMet = checkPasswordRequirements(password)[req.key];
                           return (
@@ -448,24 +452,24 @@ export default function Auth() {
                       className="mt-0.5"
                     />
                     <label htmlFor="privacy-consent" className="text-sm text-muted-foreground cursor-pointer leading-relaxed">
-                      Ho letto e accetto la{' '}
+                      {t('Ho letto e accetto la')}{' '}
                       <a href="/privacy" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
-                        Privacy Policy
+                        {t('Privacy Policy')}
                       </a>
-                      , la{' '}
+                      {t(', la')}{' '}
                       <a href="/cookies" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
-                        Cookie Policy
+                        {t('Cookie Policy')}
                       </a>{' '}
-                      e i{' '}
+                      {t('e i')}{' '}
                       <a href="/terms" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
-                        Termini di servizio
+                        {t('Termini di servizio')}
                       </a>
                       .
                     </label>
                   </div>
                   <Button type="submit" className="w-full" disabled={loading}>
                     {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Crea account
+                    {t('Crea account')}
                   </Button>
                 </form>
               </TabsContent>

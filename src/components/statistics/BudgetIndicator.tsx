@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { CheckCircle2, AlertTriangle } from 'lucide-react';
@@ -17,8 +18,9 @@ export function BudgetIndicator({
   isOverBudget,
   variant = 'badge' 
 }: BudgetIndicatorProps) {
+  const { t } = useTranslation();
   if (budget === null) {
-    return <span className="text-muted-foreground text-sm">Nessun budget</span>;
+    return <span className="text-muted-foreground text-sm">{t('Nessun budget')}</span>;
   }
 
   if (variant === 'badge') {
@@ -62,7 +64,10 @@ export function BudgetIndicator({
           <CheckCircle2 className="w-5 h-5 text-green-500" />
         )}
         <span className="text-sm">
-          {isOverBudget && budgetPercentage && budgetPercentage > 0 ? '+' : ''}{budgetPercentage?.toFixed(0)}% del budget
+          {t('{{sign}}{{pct}}% del budget', {
+            sign: isOverBudget && budgetPercentage && budgetPercentage > 0 ? '+' : '',
+            pct: budgetPercentage?.toFixed(0) ?? '',
+          })}
         </span>
       </div>
     );

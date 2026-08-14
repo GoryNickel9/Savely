@@ -1,4 +1,5 @@
 import MainLayout from '@/components/layout/MainLayout';
+import { useTranslation } from 'react-i18next';
 import { usePortfolio } from '@/hooks/usePortfolio';
 import { useTcgCards } from '@/hooks/useTcgCards';
 import { usePriceHistory } from '@/hooks/usePriceHistory';
@@ -33,6 +34,7 @@ export default function Portfolio() {
   const { historyByAsset, priceHistory } = usePriceHistory();
   const { lastUpdate } = useLastPriceUpdate();
   const { toast } = useToast();
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState('');
   const [symbol, setSymbol] = useState('');
@@ -123,11 +125,11 @@ export default function Portfolio() {
       }
 
       await createAsset.mutateAsync(assetData);
-      toast({ title: 'Acquisto aggiunto!' });
+      toast({ title: t('Acquisto aggiunto!') });
       setOpen(false);
       resetForm();
     } catch {
-      toast({ title: 'Errore', variant: 'destructive' });
+      toast({ title: t('Errore'), variant: 'destructive' });
     }
   };
 
@@ -160,12 +162,12 @@ export default function Portfolio() {
         ? { id: editingAsset.id, quantity: parseAmount(editValue) }
         : { id: editingAsset.id, purchase_price: parseAmount(editValue), current_price: parseAmount(editValue) };
       await updateAsset.mutateAsync(updates);
-      toast({ title: 'Liquidità aggiornata!' });
+      toast({ title: t('Liquidità aggiornata!') });
       setEditDialogOpen(false);
       setEditingAsset(null);
       setEditValue('');
     } catch {
-      toast({ title: 'Errore', variant: 'destructive' });
+      toast({ title: t('Errore'), variant: 'destructive' });
     }
   };
 
@@ -176,7 +178,7 @@ export default function Portfolio() {
       return acc;
     }, {} as Record<string, number>)
   ).map(([type, value]) => ({ name: ASSET_TYPE_LABELS[type as AssetType], value }));
-  const chartData = tcgTotalValue > 0 ? [...chartDataRaw, { name: 'TCG', value: tcgTotalValue }] : chartDataRaw;
+  const chartData = tcgTotalValue > 0 ? [...chartDataRaw, { name: t('TCG'), value: tcgTotalValue }] : chartDataRaw;
 
   // Calcola il totale per le percentuali (incluso cash)
   const totalForPercentage = chartData.reduce((sum, item) => sum + item.value, 0);
@@ -299,8 +301,8 @@ export default function Portfolio() {
 
   // Dati per il grafico a torta liquido/illiquido
   const liquidityData = [
-    { name: 'Valore Liquido', value: liquidValue },
-    { name: 'Valore Illiquido', value: illiquidValue },
+    { name: t('Valore Liquido'), value: liquidValue },
+    { name: t('Valore Illiquido'), value: illiquidValue },
   ];
 
   const totalLiquidity = liquidValue + illiquidValue;
@@ -314,18 +316,18 @@ export default function Portfolio() {
       <div className="space-y-6">
         <div className="flex items-center justify-between flex-wrap gap-4">
           <div>
-            <h1 className="text-3xl font-display font-bold">Portfolio</h1>
-            <p className="text-muted-foreground">I tuoi investimenti</p>
+            <h1 className="text-3xl font-display font-bold">{t('Portfolio')}</h1>
+            <p className="text-muted-foreground">{t('I tuoi investimenti')}</p>
             {lastUpdate && (
               <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
                 <Clock className="w-3 h-3" />
-                I prezzi sono stati aggiornati il {format(parseISO(lastUpdate.updated_at), "dd.MM.yy 'alle ore' HH:mm", { locale: it })}
+                {t('I prezzi sono stati aggiornati il {{date}}', { date: format(parseISO(lastUpdate.updated_at), "dd.MM.yy 'alle ore' HH:mm", { locale: it }) })}
               </p>
             )}
           </div>
           <div className="flex gap-2">
             <Button asChild variant="outline">
-              <Link to="/net-worth">Patrimonio</Link>
+              <Link to="/net-worth">{t('Patrimonio')}</Link>
             </Button>
             <Button
               onClick={() => manualUpdatePrices()}
@@ -335,33 +337,33 @@ export default function Portfolio() {
               {isUpdating ? (
                 <>
                   <Clock className="w-4 h-4 mr-2 animate-spin" />
-                  Aggiornamento...
+                  {t('Aggiornamento...')}
                 </>
               ) : !canUpdate && timeUntilNextUpdate ? (
                 <>
                   <Clock className="w-4 h-4 mr-2" />
-                  Disponibile tra {timeUntilNextUpdate.hours}h {timeUntilNextUpdate.minutes}m
+                  {t('Disponibile tra {{hours}}h {{minutes}}m', { hours: timeUntilNextUpdate.hours, minutes: timeUntilNextUpdate.minutes })}
                 </>
               ) : (
                 <>
                   <Clock className="w-4 h-4 mr-2" />
-                  Aggiorna Prezzi
+                  {t('Aggiorna Prezzi')}
                 </>
               )}
             </Button>
             <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) resetForm(); }}>
-              <DialogTrigger asChild><Button><Plus className="w-4 h-4 mr-2" />Aggiungi</Button></DialogTrigger>
+              <DialogTrigger asChild><Button><Plus className="w-4 h-4 mr-2" />{t('Aggiungi')}</Button></DialogTrigger>
               <DialogContent>
-                <DialogHeader><DialogTitle>Nuovo Asset</DialogTitle></DialogHeader>
+                <DialogHeader><DialogTitle>{t('Nuovo Asset')}</DialogTitle></DialogHeader>
                 <form onSubmit={handleSubmit} className="space-y-4">
                   {/* Quick select existing instrument */}
                   {existingInstruments.length > 0 && (
                     <div>
-                      <Label>Strumento esistente (opzionale)</Label>
+                      <Label>{t('Strumento esistente (opzionale)')}</Label>
                       <Select value={selectedExisting} onValueChange={handleSelectExisting}>
-                        <SelectTrigger><SelectValue placeholder="Seleziona o aggiungi nuovo..." /></SelectTrigger>
+                        <SelectTrigger><SelectValue placeholder={t('Seleziona o aggiungi nuovo...')} /></SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="_new">➕ Nuovo strumento</SelectItem>
+                          <SelectItem value="_new">➕ {t('Nuovo strumento')}</SelectItem>
                           {existingInstruments.map(i => (
                             <SelectItem key={i.symbol} value={i.symbol.toUpperCase()}>
                               {i.symbol} - {i.name}
@@ -372,22 +374,22 @@ export default function Portfolio() {
                     </div>
                   )}
 
-                  <div><Label>Nome</Label><Input value={name} onChange={e => setName(e.target.value)} required /></div>
+                  <div><Label>{t('Nome')}</Label><Input value={name} onChange={e => setName(e.target.value)} required /></div>
                   {type !== 'cash' && type !== 'real_estate' && type !== 'other' && (
                     <div>
-                      <Label>Simbolo (per aggiornamento prezzi)</Label>
-                      <Input value={symbol} onChange={e => setSymbol(e.target.value.toUpperCase())} placeholder="es. AAPL, BTC, VWCE.DE" />
-                      <p className="text-xs text-muted-foreground mt-1">Usa simboli Yahoo Finance per azioni/ETF, simboli standard per crypto</p>
+                      <Label>{t('Simbolo (per aggiornamento prezzi)')}</Label>
+                      <Input value={symbol} onChange={e => setSymbol(e.target.value.toUpperCase())} placeholder={t('es. AAPL, BTC, VWCE.DE')} />
+                      <p className="text-xs text-muted-foreground mt-1">{t('Usa simboli Yahoo Finance per azioni/ETF, simboli standard per crypto')}</p>
                     </div>
                   )}
-                  <div><Label>Tipo</Label>
+                  <div><Label>{t('Tipo')}</Label>
                     <Select value={type} onValueChange={v => setType(v as AssetType)}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>{Object.entries(ASSET_TYPE_LABELS).map(([k, v]) => <SelectItem key={k} value={k as AssetType}>{v}</SelectItem>)}</SelectContent>
                     </Select>
                   </div>
                   {type === 'cash' && (
-                    <div><Label>Valuta</Label>
+                    <div><Label>{t('Valuta')}</Label>
                       <Select value={cashCurrency} onValueChange={v => setCashCurrency(v as CurrencyCode)}>
                         <SelectTrigger><SelectValue /></SelectTrigger>
                         <SelectContent>
@@ -399,25 +401,25 @@ export default function Portfolio() {
                     </div>
                   )}
                   {type !== 'cash' && type !== 'other' && (
-                    <div><Label>Data Acquisto</Label><Input type="date" value={purchaseDate} onChange={e => setPurchaseDate(e.target.value)} required /></div>
+                    <div><Label>{t('Data Acquisto')}</Label><Input type="date" value={purchaseDate} onChange={e => setPurchaseDate(e.target.value)} required /></div>
                   )}
                   {type !== 'cash' && type !== 'real_estate' && type !== 'other' ? (
                     <div className="grid grid-cols-2 gap-4">
-                      <div><Label>Quantità</Label><Input type="number" step="any" value={quantity} onChange={e => setQuantity(e.target.value)} required /></div>
-                      <div><Label>Prezzo Acquisto (€)</Label><Input type="number" step="0.01" value={price} onChange={e => setPrice(e.target.value)} required /></div>
+                      <div><Label>{t('Quantità')}</Label><Input type="number" step="any" value={quantity} onChange={e => setQuantity(e.target.value)} required /></div>
+                      <div><Label>{t('Prezzo Acquisto (€)')}</Label><Input type="number" step="0.01" value={price} onChange={e => setPrice(e.target.value)} required /></div>
                     </div>
                   ) : (
                     <div>
-                      <Label>{type === 'cash' && cashCurrency !== 'EUR' ? `Importo (${cashCurrency})` : 'Valore (€)'}</Label>
+                      <Label>{type === 'cash' && cashCurrency !== 'EUR' ? t('Importo ({{currency}})', { currency: cashCurrency }) : t('Valore (€)')}</Label>
                       <Input type="number" step="0.01" value={price} onChange={e => setPrice(e.target.value)} required />
                       {type === 'cash' && cashCurrency !== 'EUR' ? (
-                        <p className="text-xs text-muted-foreground mt-1">Il tasso EUR/{cashCurrency} verrà aggiornato automaticamente alla prossima sincronizzazione prezzi</p>
+                        <p className="text-xs text-muted-foreground mt-1">{t('Il tasso EUR/{{currency}} verrà aggiornato automaticamente alla prossima sincronizzazione prezzi', { currency: cashCurrency })}</p>
                       ) : (
-                        <p className="text-xs text-muted-foreground mt-1">Inserisci il valore totale dell'asset</p>
+                        <p className="text-xs text-muted-foreground mt-1">{t('Inserisci il valore totale dell\'asset')}</p>
                       )}
                     </div>
                   )}
-                  <Button type="submit" className="w-full">Salva</Button>
+                  <Button type="submit" className="w-full">{t('Salva')}</Button>
                 </form>
               </DialogContent>
             </Dialog>
@@ -427,31 +429,31 @@ export default function Portfolio() {
         {/* Summary cards */}
         <div className="grid md:grid-cols-6 gap-4">
           <div className="glass rounded-xl p-6 text-center">
-            <p className="text-sm text-muted-foreground">Valore Attuale</p>
+            <p className="text-sm text-muted-foreground">{t('Valore Attuale')}</p>
             <p className="text-2xl font-display font-bold">{CURRENCY_SYMBOLS.EUR}{(totalValue + tcgTotalValue).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
           </div>
           <div className="glass rounded-xl p-6 text-center">
-            <p className="text-sm text-muted-foreground">Valore Liquido</p>
+            <p className="text-sm text-muted-foreground">{t('Valore Liquido')}</p>
             <p className="text-2xl font-display font-bold">{CURRENCY_SYMBOLS.EUR}{liquidValue.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
             <p className="text-xs text-muted-foreground mt-1"></p>
           </div>
           <div className="glass rounded-xl p-6 text-center">
-            <p className="text-sm text-muted-foreground">Valore Illiquido</p>
+            <p className="text-sm text-muted-foreground">{t('Valore Illiquido')}</p>
             <p className="text-2xl font-display font-bold">{CURRENCY_SYMBOLS.EUR}{illiquidValue.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
             <p className="text-xs text-muted-foreground mt-1"></p>
           </div>
           <div className="glass rounded-xl p-6 text-center">
-            <p className="text-sm text-muted-foreground">Investito</p>
+            <p className="text-sm text-muted-foreground">{t('Investito')}</p>
             <p className="text-2xl font-display font-bold">{CURRENCY_SYMBOLS.EUR}{totalInvested.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
           </div>
           <div className="glass rounded-xl p-6 text-center">
-            <p className="text-sm text-muted-foreground">Profitto/Perdita</p>
+            <p className="text-sm text-muted-foreground">{t('Profitto/Perdita')}</p>
             <p className={`text-2xl font-display font-bold ${totalGainExcludingCashAndOther >= 0 ? 'text-success' : 'text-destructive'}`}>
               {totalGainExcludingCashAndOther >= 0 ? '+' : ''}{CURRENCY_SYMBOLS.EUR}{totalGainExcludingCashAndOther.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </p>
           </div>
           <div className="glass rounded-xl p-6 text-center">
-            <p className="text-sm text-muted-foreground">Rendimento</p>
+            <p className="text-sm text-muted-foreground">{t('Rendimento')}</p>
             <p className={`text-2xl font-display font-bold ${totalGainPercentExcludingCashAndRealEstate >= 0 ? 'text-success' : 'text-destructive'}`}>
               {totalGainPercentExcludingCashAndRealEstate >= 0 ? '+' : ''}{totalGainPercentExcludingCashAndRealEstate.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%
             </p>
@@ -462,7 +464,7 @@ export default function Portfolio() {
         <div className="grid lg:grid-cols-5 gap-6">
           {/* Liquidity pie chart */}
           <div className="glass rounded-xl p-6 lg:col-span-1">
-            <h3 className="font-semibold mb-4">Distribuzione Liquido/Illiquido</h3>
+            <h3 className="font-semibold mb-4">{t('Distribuzione Liquido/Illiquido')}</h3>
             {totalLiquidity > 0 ? (
               <ResponsiveContainer width="100%" height={250}>
                 <PieChart>
@@ -472,24 +474,24 @@ export default function Portfolio() {
                   <Tooltip formatter={(v: number) => `${v.toFixed(1)}%`} />
                 </PieChart>
               </ResponsiveContainer>
-            ) : <p className="text-muted-foreground text-center py-8">Aggiungi asset per vedere la distribuzione liquido/illiquido</p>}
+            ) : <p className="text-muted-foreground text-center py-8">{t('Aggiungi asset per vedere la distribuzione liquido/illiquido')}</p>}
           </div>
 
           {/* Pie chart */}
           <div className="glass rounded-xl p-6 lg:col-span-1">
-            <h3 className="font-semibold mb-4">Asset Allocation</h3>
+            <h3 className="font-semibold mb-4">{t('Asset Allocation')}</h3>
             {chartDataPercentage.length > 0 ? (
               <ResponsiveContainer width="100%" height={250}>
                 <PieChart><Pie data={chartDataPercentage} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80}>
                   {chartDataPercentage.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
                 </Pie><Tooltip formatter={(v: number) => `${v.toFixed(1)}%`} /></PieChart>
               </ResponsiveContainer>
-            ) : <p className="text-muted-foreground text-center py-8">Aggiungi asset per vedere l'allocazione</p>}
+            ) : <p className="text-muted-foreground text-center py-8">{t('Aggiungi asset per vedere l\'allocazione')}</p>}
           </div>
 
           {/* Performance chart */}
           <div className="glass rounded-xl p-6 lg:col-span-3">
-            <h3 className="font-semibold mb-2">Andamento Investimenti</h3>
+            <h3 className="font-semibold mb-2">{t('Andamento Investimenti')}</h3>
             {priceHistory.length === 0 && openAssets.length > 0 && (
               <p className="text-xs text-muted-foreground mb-2">
               </p>
@@ -505,23 +507,23 @@ export default function Portfolio() {
                     labelStyle={{ color: 'hsl(var(--foreground))' }}
                     formatter={(value: number, name: string) => [
                       `${CURRENCY_SYMBOLS.EUR}${value.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
-                      name === 'invested' ? 'Investito' : name === 'current' ? 'Valore' : 'Profitto',
+                      name === 'invested' ? t('Investito') : name === 'current' ? t('Valore') : t('Profitto'),
                     ]}
                   />
-                  <Legend formatter={(value) => value === 'invested' ? 'Investito' : value === 'current' ? 'Valore Attuale' : 'Profitto'} />
+                  <Legend formatter={(value) => value === 'invested' ? t('Investito') : value === 'current' ? t('Valore Attuale') : t('Profitto')} />
                   <Area type="monotone" dataKey="invested" name="invested" stroke="hsl(var(--muted-foreground))" fill="hsl(var(--muted) / 0.5)" />
                   <Area type="monotone" dataKey="current" name="current" stroke="hsl(var(--primary))" fill="hsl(var(--primary) / 0.3)" />
                 </AreaChart>
               </ResponsiveContainer>
-            ) : <p className="text-muted-foreground text-center py-8">Aggiungi asset per vedere l'andamento</p>}
+            ) : <p className="text-muted-foreground text-center py-8">{t('Aggiungi asset per vedere l\'andamento')}</p>}
           </div>
         </div>
 
         {/* Open positions - grouped by symbol */}
         <div className="glass rounded-xl divide-y divide-border">
-          <h3 className="font-semibold p-4 border-b border-border">Posizioni Aperte</h3>
+          <h3 className="font-semibold p-4 border-b border-border">{t('Posizioni Aperte')}</h3>
           {(openAssets.length === 0 && tcgPortfolioCards.length === 0) ? (
-            <p className="text-muted-foreground text-center py-12">Nessuna posizione aperta</p>
+            <p className="text-muted-foreground text-center py-12">{t('Nessuna posizione aperta')}</p>
           ) : (
             <>
             {openAssets.length > 0 && (() => {
@@ -563,11 +565,16 @@ export default function Portfolio() {
                             </span>
                           )}
                           <span className="ml-2 text-xs text-muted-foreground">
-                            - Aggiornato al {format(parseISO(first.updated_at), 'dd.MM.yy', { locale: it })}
+                            - {t('Aggiornato al {{date}}', { date: format(parseISO(first.updated_at), 'dd.MM.yy', { locale: it }) })}
                           </span>
                         </span>
                       ) : (
-                        `${ASSET_TYPE_LABELS[first.type]} · ${totalQuantity.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} unità @ ${CURRENCY_SYMBOLS.EUR}${avgPurchasePrice.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                        t('{{type}} · {{quantity}} unità @ {{symbol}}{{price}}', {
+                          type: ASSET_TYPE_LABELS[first.type],
+                          quantity: totalQuantity.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+                          symbol: CURRENCY_SYMBOLS.EUR,
+                          price: avgPurchasePrice.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+                        })
                       )}
                     </p>
                   </div>
@@ -586,7 +593,7 @@ export default function Portfolio() {
                         size="sm"
                         onClick={() => handleEditCash(first)}
                       >
-                        Modifica
+                        {t('Modifica')}
                       </Button>
                     )}
                     {first.type !== 'cash' && first.type !== 'other' && (
@@ -604,7 +611,7 @@ export default function Portfolio() {
                         }}
                       >
                         <X className="w-4 h-4 mr-1" />
-                        Chiudi
+                        {t('Chiudi')}
                       </Button>
                     )}
                     <Button
@@ -612,7 +619,7 @@ export default function Portfolio() {
                       size="icon"
                       onClick={() => {
                         Promise.all(group.map(a => deleteAsset.mutateAsync(a.id))).catch(() => {
-                          toast({ title: 'Errore durante l\'eliminazione', variant: 'destructive' });
+                          toast({ title: t('Errore durante l\'eliminazione'), variant: 'destructive' });
                         });
                       }}
                     >
@@ -640,7 +647,7 @@ export default function Portfolio() {
                       <span className="text-muted-foreground text-xs font-normal ml-1">(TCG)</span>
                     </p>
                     <p className="text-sm text-muted-foreground">
-                      Carte da gioco · {totalCards} carte totali
+                      {t('Carte da gioco · {{count}} carte totali', { count: totalCards })}
                     </p>
                   </div>
                   <div className="text-right">
@@ -660,9 +667,9 @@ export default function Portfolio() {
         {closedAssets.length > 0 && (
           <div className="glass rounded-xl divide-y divide-border">
             <div className="p-4 border-b border-border flex items-center justify-between">
-              <h3 className="font-semibold">Posizioni Chiuse</h3>
+              <h3 className="font-semibold">{t('Posizioni Chiuse')}</h3>
               <span className={`text-sm font-medium ${realizedGain >= 0 ? 'text-success' : 'text-destructive'}`}>
-                P/L Realizzato: {realizedGain >= 0 ? '+' : ''}{CURRENCY_SYMBOLS.EUR}{realizedGain.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                {t('P/L Realizzato: {{value}}', { value: `${realizedGain >= 0 ? '+' : ''}${CURRENCY_SYMBOLS.EUR}${realizedGain.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` })}
               </span>
             </div>
             {(() => {
@@ -690,9 +697,13 @@ export default function Portfolio() {
                       <p className="font-medium">{first.name} {first.symbol && <span className="text-muted-foreground">({first.symbol})</span>}</p>
                       <p className="text-sm text-muted-foreground">
                         {first.type === 'cash' || first.type === 'other' ? (
-                          `${ASSET_TYPE_LABELS[first.type]} · Venduto ${soldDate}`
+                          t('{{type}} · Venduto {{date}}', { type: ASSET_TYPE_LABELS[first.type], date: soldDate })
                         ) : (
-                          `${ASSET_TYPE_LABELS[first.type]} · ${totalQuantity.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} unità · Venduto ${soldDate}`
+                          t('{{type}} · {{quantity}} unità · Venduto {{date}}', {
+                            type: ASSET_TYPE_LABELS[first.type],
+                            quantity: totalQuantity.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+                            date: soldDate,
+                          })
                         )}
                       </p>
                     </div>
@@ -705,12 +716,12 @@ export default function Portfolio() {
                           </p>
                         )}
                       </div>
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
+                      <Button
+                        variant="ghost"
+                        size="icon"
                         onClick={() => {
                           Promise.all(group.map(a => deleteAsset.mutateAsync(a.id))).catch(() => {
-                            toast({ title: 'Errore durante l\'eliminazione', variant: 'destructive' });
+                            toast({ title: t('Errore durante l\'eliminazione'), variant: 'destructive' });
                           });
                         }}
                       >
@@ -742,10 +753,10 @@ export default function Portfolio() {
                   sold_price: soldPrice,
                 });
               }
-              toast({ title: 'Posizione chiusa!' });
+              toast({ title: t('Posizione chiusa!') });
               setClosingGroup(null);
             } catch {
-              toast({ title: 'Errore', variant: 'destructive' });
+              toast({ title: t('Errore'), variant: 'destructive' });
             }
           }}
         />
@@ -754,15 +765,15 @@ export default function Portfolio() {
         <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Modifica Liquidità</DialogTitle>
+              <DialogTitle>{t('Modifica Liquidità')}</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
               <div>
-                <Label>Nome</Label>
+                <Label>{t('Nome')}</Label>
                 <Input value={editingAsset?.name || ''} disabled />
               </div>
               <div>
-                <Label>{editingAsset?.currency && editingAsset.currency !== 'EUR' ? `Importo (${editingAsset.currency})` : 'Valore (€)'}</Label>
+                <Label>{editingAsset?.currency && editingAsset.currency !== 'EUR' ? t('Importo ({{currency}})', { currency: editingAsset.currency }) : t('Valore (€)')}</Label>
                 <Input
                   type="number"
                   step="0.01"
@@ -772,11 +783,11 @@ export default function Portfolio() {
                 />
                 {editingAsset?.currency && editingAsset.currency !== 'EUR' && (
                   <p className="text-xs text-muted-foreground mt-1">
-                    Equivalente attuale: ~{CURRENCY_SYMBOLS.EUR}{(parseAmount(editValue || '0') * (editingAsset.current_price ?? 1)).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    {t('Equivalente attuale: ~{{symbol}}{{value}}', { symbol: CURRENCY_SYMBOLS.EUR, value: (parseAmount(editValue || '0') * (editingAsset.current_price ?? 1)).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) })}
                   </p>
                 )}
               </div>
-              <Button onClick={handleSaveEdit} className="w-full">Salva</Button>
+              <Button onClick={handleSaveEdit} className="w-full">{t('Salva')}</Button>
             </div>
           </DialogContent>
         </Dialog>

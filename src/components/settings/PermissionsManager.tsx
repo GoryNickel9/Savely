@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
@@ -20,6 +21,7 @@ interface PermissionsManagerProps {
 
 export default function PermissionsManager({ currentUserId }: PermissionsManagerProps) {
   const { toast } = useToast();
+  const { t } = useTranslation();
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState<string | null>(null);
@@ -33,8 +35,8 @@ export default function PermissionsManager({ currentUserId }: PermissionsManager
     } catch (error) {
       console.error('Errore nel caricamento degli utenti:', error);
       toast({
-        title: 'Errore',
-        description: 'Impossibile caricare gli utenti',
+        title: t('Errore'),
+        description: t('Impossibile caricare gli utenti'),
         variant: 'destructive',
       });
     } finally {
@@ -61,8 +63,8 @@ export default function PermissionsManager({ currentUserId }: PermissionsManager
       if (error) throw error;
 
       toast({
-        title: 'Permesso aggiornato',
-        description: `Il permesso ${permission} è stato aggiornato`,
+        title: t('Permesso aggiornato'),
+        description: t('Il permesso {{permission}} è stato aggiornato', { permission }),
       });
 
       // Ricarica gli utenti
@@ -70,8 +72,8 @@ export default function PermissionsManager({ currentUserId }: PermissionsManager
     } catch (error) {
       console.error('Errore nell\'aggiornamento del permesso:', error);
       toast({
-        title: 'Errore',
-        description: 'Impossibile aggiornare il permesso',
+        title: t('Errore'),
+        description: t('Impossibile aggiornare il permesso'),
         variant: 'destructive',
       });
     } finally {
@@ -97,11 +99,11 @@ export default function PermissionsManager({ currentUserId }: PermissionsManager
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Shield className="w-5 h-5" />
-          <h3 className="font-medium">Gestione Permessi Utenti</h3>
+          <h3 className="font-medium">{t('Gestione Permessi Utenti')}</h3>
         </div>
         <Button variant="outline" size="sm" onClick={loadUsers}>
           <RefreshCw className="w-4 h-4 mr-2" />
-          Aggiorna
+          {t('Aggiorna')}
         </Button>
       </div>
 
@@ -114,10 +116,10 @@ export default function PermissionsManager({ currentUserId }: PermissionsManager
               </div>
               <div className="flex-1">
                 <div className="font-medium">
-                  {user.full_name || 'Utente senza nome'}
+                  {user.full_name || t('Utente senza nome')}
                   {user.user_id === currentUserId && (
                     <span className="ml-2 text-xs bg-primary/20 text-primary px-2 py-0.5 rounded-full">
-                      Tu
+                      {t('Tu')}
                     </span>
                   )}
                 </div>
@@ -127,7 +129,7 @@ export default function PermissionsManager({ currentUserId }: PermissionsManager
             <div className="grid grid-cols-2 gap-3 pt-3 border-t border-border">
               {(Object.keys(permissionLabels) as Array<keyof Permissions>).filter(key => permissionLabels[key]).map((permission) => (
                 <div key={permission} className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">{permissionLabels[permission]}</span>
+                  <span className="text-sm text-muted-foreground">{t(permissionLabels[permission]!)}</span>
                   <Switch
                     checked={user.permissions[permission] || false}
                     onCheckedChange={() =>

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { QRCodeSVG } from 'qrcode.react';
 import { Shield, ShieldCheck, ShieldX, Smartphone, Monitor, Trash2, Loader2, LogOut, KeyRound, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -21,6 +22,7 @@ import { validateTotpCode, extractSecretFromUri } from '@/lib/mfa';
  */
 export default function SecuritySection() {
   const { toast } = useToast();
+  const { t } = useTranslation();
   const { data: factorsData, isLoading: factorsLoading } = useFactors();
   const enroll = useEnrollTotp();
   const verify = useVerifyEnrollment();
@@ -52,8 +54,8 @@ export default function SecuritySection() {
       setEnrollOpen(true);
     } catch (err) {
       toast({
-        title: 'Errore',
-        description: (err as Error).message || 'Impossibile avviare la configurazione 2FA',
+        title: t('Errore'),
+        description: (err as Error).message || t('Impossibile avviare la configurazione 2FA'),
         variant: 'destructive',
       });
     }
@@ -63,19 +65,19 @@ export default function SecuritySection() {
     if (!pendingEnrollment) return;
     const codeErr = validateTotpCode(code);
     if (codeErr) {
-      toast({ title: 'Codice non valido', description: codeErr, variant: 'destructive' });
+      toast({ title: t('Codice non valido'), description: codeErr, variant: 'destructive' });
       return;
     }
     try {
       await verify.mutateAsync({ factorId: pendingEnrollment.factorId, code });
-      toast({ title: '2FA attivato!', description: 'Da ora dovrai inserire il codice dell\'app al login.' });
+      toast({ title: t('2FA attivato!'), description: t('Da ora dovrai inserire il codice dell\'app al login.') });
       setEnrollOpen(false);
       setPendingEnrollment(null);
       setCode('');
     } catch (err) {
       toast({
-        title: 'Verifica fallita',
-        description: (err as Error).message || 'Codice non corretto, riprova',
+        title: t('Verifica fallita'),
+        description: (err as Error).message || t('Codice non corretto, riprova'),
         variant: 'destructive',
       });
     }
@@ -95,18 +97,18 @@ export default function SecuritySection() {
     if (!unenrollTarget) return;
     const codeErr = validateTotpCode(unenrollCode);
     if (codeErr) {
-      toast({ title: 'Codice non valido', description: codeErr, variant: 'destructive' });
+      toast({ title: t('Codice non valido'), description: codeErr, variant: 'destructive' });
       return;
     }
     setUnenrollVerifying(true);
     try {
       await challengeAndVerify(unenrollTarget, unenrollCode);
       await unenroll.mutateAsync(unenrollTarget);
-      toast({ title: '2FA disattivato' });
+      toast({ title: t('2FA disattivato') });
       setUnenrollTarget(null);
       setUnenrollCode('');
     } catch (err) {
-      toast({ title: 'Errore', description: (err as Error).message, variant: 'destructive' });
+      toast({ title: t('Errore'), description: (err as Error).message, variant: 'destructive' });
     } finally {
       setUnenrollVerifying(false);
     }
@@ -118,9 +120,9 @@ export default function SecuritySection() {
       const { error } = await supabase.auth.signOut({ scope: 'others' });
       if (error) throw error;
       await refetchSessions();
-      toast({ title: 'Altre sessioni chiuse' });
+      toast({ title: t('Altre sessioni chiuse') });
     } catch (err) {
-      toast({ title: 'Errore', description: (err as Error).message, variant: 'destructive' });
+      toast({ title: t('Errore'), description: (err as Error).message, variant: 'destructive' });
     } finally {
       setSigningOutOthers(false);
     }
@@ -130,9 +132,9 @@ export default function SecuritySection() {
     setDisconnectingId(sessionId);
     try {
       await deleteSession.mutateAsync(sessionId);
-      toast({ title: 'Dispositivo disconnesso' });
+      toast({ title: t('Dispositivo disconnesso') });
     } catch (err) {
-      toast({ title: 'Errore', description: (err as Error).message, variant: 'destructive' });
+      toast({ title: t('Errore'), description: (err as Error).message, variant: 'destructive' });
     } finally {
       setDisconnectingId(null);
     }
@@ -144,7 +146,7 @@ export default function SecuritySection() {
     <div className="border-t border-border pt-6 space-y-6">
       <h3 className="font-medium flex items-center gap-2">
         <Shield className="w-5 h-5" />
-        Sicurezza
+        {t('Sicurezza')}
       </h3>
 
       {/* 2FA status */}
@@ -157,11 +159,11 @@ export default function SecuritySection() {
               <ShieldX className="w-5 h-5 text-muted-foreground" />
             )}
             <div>
-              <p className="font-medium">Autenticazione a due fattori (2FA)</p>
+              <p className="font-medium">{t('Autenticazione a due fattori (2FA)')}</p>
               <p className="text-sm text-muted-foreground">
                 {twoFactorActive
-                  ? `Attiva · livello ${aal.toUpperCase()}`
-                  : 'Non configurata — aggiungi un livello di sicurezza al tuo account'}
+                  ? t('Attiva · livello {{level}}', { level: aal.toUpperCase() })
+                  : t('Non configurata — aggiungi un livello di sicurezza al tuo account')}
               </p>
             </div>
           </div>
@@ -169,7 +171,7 @@ export default function SecuritySection() {
             {!twoFactorActive && (
               <Button onClick={startEnrollment} disabled={enroll.isPending}>
                 {enroll.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <KeyRound className="w-4 h-4 mr-2" />}
-                Attiva 2FA
+                {t('Attiva 2FA')}
               </Button>
             )}
             {twoFactorActive && factors.map((f) => (
@@ -180,18 +182,18 @@ export default function SecuritySection() {
                 onClick={() => setUnenrollTarget(f.id)}
               >
                 <Trash2 className="w-4 h-4 mr-2" />
-                Rimuovi
+                {t('Rimuovi')}
               </Button>
             ))}
           </div>
         </div>
-        {factorsLoading && <p className="text-sm text-muted-foreground">Caricamento…</p>}
+        {factorsLoading && <p className="text-sm text-muted-foreground">{t('Caricamento…')}</p>}
       </div>
 
       {/* Current accesses */}
       <div className="glass rounded-lg p-4 space-y-3">
         <div className="flex items-center justify-between">
-          <p className="font-medium">Accessi attuali</p>
+          <p className="font-medium">{t('Accessi attuali')}</p>
           <Button
             variant="outline"
             size="sm"
@@ -199,16 +201,16 @@ export default function SecuritySection() {
             disabled={signingOutOthers}
           >
             {signingOutOthers ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <LogOut className="w-4 h-4 mr-2" />}
-            Disconnetti altre sessioni
+            {t('Disconnetti altre sessioni')}
           </Button>
         </div>
 
         {sessionsLoading ? (
-          <p className="text-sm text-muted-foreground">Caricamento…</p>
+          <p className="text-sm text-muted-foreground">{t('Caricamento…')}</p>
         ) : sessionsError ? (
-          <p className="text-sm text-destructive">Errore nel caricamento delle sessioni.</p>
+          <p className="text-sm text-destructive">{t('Errore nel caricamento delle sessioni.')}</p>
         ) : !sessions || sessions.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Nessuna sessione attiva.</p>
+          <p className="text-sm text-muted-foreground">{t('Nessuna sessione attiva.')}</p>
         ) : (
           <ul className="space-y-2 max-h-64 overflow-y-auto">
             {sessions.map((session) => {
@@ -223,10 +225,10 @@ export default function SecuritySection() {
                   <Icon className={`w-4 h-4 flex-shrink-0 ${isCurrent ? 'text-primary' : 'text-muted-foreground'}`} />
                   <div className="flex-1 min-w-0">
                     <span className="font-medium">{ua.browser} su {ua.os}</span>
-                    {isCurrent && <span className="text-muted-foreground"> · Questo dispositivo</span>}
+                    {isCurrent && <span className="text-muted-foreground"> · {t('Questo dispositivo')}</span>}
                   </div>
                   <div className="flex items-center gap-2 flex-shrink-0">
-                    {isCurrent && <Badge variant="secondary" className="text-xs">Attuale</Badge>}
+                    {isCurrent && <Badge variant="secondary" className="text-xs">{t('Attuale')}</Badge>}
                     {!isCurrent && session.session_id && (
                       <Button
                         variant="ghost"
@@ -234,7 +236,7 @@ export default function SecuritySection() {
                         className="w-7 h-7 text-muted-foreground hover:text-destructive"
                         onClick={() => handleDisconnectSession(session.session_id!)}
                         disabled={disconnectingId === session.session_id}
-                        title="Disconnetti questo dispositivo"
+                        title={t('Disconnetti questo dispositivo')}
                       >
                         {disconnectingId === session.session_id ? <Loader2 className="w-3 h-3 animate-spin" /> : <LogOut className="w-3 h-3" />}
                       </Button>
@@ -254,10 +256,9 @@ export default function SecuritySection() {
       <Dialog open={enrollOpen} onOpenChange={(o) => !o && cancelEnrollment()}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Configura l'autenticazione a due fattori</DialogTitle>
+            <DialogTitle>{t('Configura l\'autenticazione a due fattori')}</DialogTitle>
             <DialogDescription>
-              Scansiona il QR code con la tua app di autenticazione (Google Authenticator,
-              Authy, 1Password…) e inserisci il codice a 6 cifre.
+              {t('Scansiona il QR code con la tua app di autenticazione (Google Authenticator, Authy, 1Password…) e inserisci il codice a 6 cifre.')}
             </DialogDescription>
           </DialogHeader>
 
@@ -267,7 +268,7 @@ export default function SecuritySection() {
                 <QRCodeSVG value={pendingEnrollment.uri} size={192} />
               </div>
               <div className="space-y-1">
-                <Label className="text-xs text-muted-foreground">Chiave manuale (se non puoi scansionare)</Label>
+                <Label className="text-xs text-muted-foreground">{t('Chiave manuale (se non puoi scansionare)')}</Label>
                 <code className="block text-xs font-mono bg-muted p-2 rounded break-all">
                   {extractSecretFromUri(pendingEnrollment.uri) ?? pendingEnrollment.secret}
                 </code>
@@ -275,12 +276,11 @@ export default function SecuritySection() {
               <div className="rounded-lg border border-yellow-500/40 bg-yellow-500/10 p-3 flex gap-2">
                 <AlertTriangle className="w-4 h-4 text-yellow-500 flex-shrink-0 mt-0.5" />
                 <p className="text-xs text-muted-foreground">
-                  Salva questa chiave in un posto sicuro: è l'unico backup se perdi il telefono.
-                  Senza di essa potresti non riuscire più ad accedere al tuo account.
+                  {t('Salva questa chiave in un posto sicuro: è l\'unico backup se perdi il telefono. Senza di essa potresti non riuscire più ad accedere al tuo account.')}
                 </p>
               </div>
               <div className="space-y-2">
-                <Label>Codice di verifica</Label>
+                <Label>{t('Codice di verifica')}</Label>
                 <InputOTP maxLength={6} value={code} onChange={(v) => setCode(v)}>
                   <InputOTPGroup>
                     <InputOTPSlot index={0} />
@@ -296,10 +296,10 @@ export default function SecuritySection() {
           )}
 
           <DialogFooter>
-            <Button variant="outline" onClick={cancelEnrollment}>Annulla</Button>
+            <Button variant="outline" onClick={cancelEnrollment}>{t('Annulla')}</Button>
             <Button onClick={confirmEnrollment} disabled={verify.isPending || code.length !== 6}>
               {verify.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-              Verifica e attiva
+              {t('Verifica e attiva')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -309,14 +309,14 @@ export default function SecuritySection() {
       <Dialog open={!!unenrollTarget} onOpenChange={(o) => { if (!o) { setUnenrollTarget(null); setUnenrollCode(''); } }}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Disattivare il 2FA?</DialogTitle>
+            <DialogTitle>{t('Disattivare il 2FA?')}</DialogTitle>
             <DialogDescription>
-              Inserisci il codice della tua app di autenticazione per confermare la disattivazione.
+              {t('Inserisci il codice della tua app di autenticazione per confermare la disattivazione.')}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label>Codice di verifica</Label>
+              <Label>{t('Codice di verifica')}</Label>
               <InputOTP maxLength={6} value={unenrollCode} onChange={(v) => setUnenrollCode(v.replace(/\D/g, ''))}>
                 <InputOTPGroup>
                   <InputOTPSlot index={0} />
@@ -331,7 +331,7 @@ export default function SecuritySection() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => { setUnenrollTarget(null); setUnenrollCode(''); }}>
-              Annulla
+              {t('Annulla')}
             </Button>
             <Button
               onClick={handleUnenrollVerify}
@@ -339,7 +339,7 @@ export default function SecuritySection() {
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               {unenrollVerifying && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-              Disattiva
+              {t('Disattiva')}
             </Button>
           </DialogFooter>
         </DialogContent>

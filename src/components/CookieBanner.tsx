@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router';
+import { useTranslation } from 'react-i18next';
 import { Cookie, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -38,6 +39,7 @@ function writeConsent() {
  * Non blocca alcuno script: l'app utilizza solo cookie tecnici necessari.
  */
 export default function CookieBanner() {
+  const { t } = useTranslation();
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
@@ -55,7 +57,7 @@ export default function CookieBanner() {
   return (
     <div
       role="dialog"
-      aria-label="Informativa cookie"
+      aria-label={t('Informativa cookie')}
       aria-live="polite"
       className="fixed inset-x-0 bottom-0 z-50 p-3 sm:p-4"
     >
@@ -65,22 +67,21 @@ export default function CookieBanner() {
             <Cookie className="w-5 h-5" />
           </div>
           <p className="text-sm text-muted-foreground">
-            Utilizziamo solo <strong className="text-foreground">cookie tecnici necessari</strong> al funzionamento
-            (autenticazione, preferenze). Nessun cookie di profilazione o analytics.{' '}
+            {t('Utilizziamo solo ')}<strong className="text-foreground">{t('cookie tecnici necessari')}</strong>{t(' al funzionamento (autenticazione, preferenze). Nessun cookie di profilazione o analytics.')}{' '}
             <Link to="/cookies" className="text-primary hover:underline">
-              Scopri di più
+              {t('Scopri di più')}
             </Link>
           </p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
           <Button size="sm" onClick={accept}>
-            Accetta e chiudi
+            {t('Accetta e chiudi')}
           </Button>
           <Button
             size="icon"
             variant="ghost"
             onClick={accept}
-            aria-label="Chiudi informativa cookie"
+            aria-label={t('Chiudi informativa cookie')}
             className="text-muted-foreground hover:text-foreground"
           >
             <X className="w-4 h-4" />

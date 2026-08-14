@@ -11,6 +11,7 @@ import {
 } from 'recharts'
 import type { ProjectionPoint } from '@/lib/fire/calculations'
 import { formatCurrency } from '@/lib/fire/calculations'
+import { useTranslation } from 'react-i18next'
 
 interface ProjectionChartProps {
   data: ProjectionPoint[]
@@ -62,6 +63,7 @@ export default function ProjectionChart({
   height = 300,
   colorScheme = 'orange',
 }: ProjectionChartProps) {
+  const { t } = useTranslation()
   const colors = colorSchemes[colorScheme]
 
   // Calculate milestone values
@@ -92,23 +94,23 @@ export default function ProjectionChart({
       return (
         <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg p-3">
           <p className="font-semibold text-gray-900 dark:text-gray-100 mb-2">
-            Age {point.age} ({point.year})
+            {t('Age {{age}} ({{year}})', { age: point.age, year: point.year })}
           </p>
           <div className="space-y-1 text-sm">
             <p className="text-gray-600 dark:text-gray-400">
-              Portfolio: <span className="font-medium" style={{ color: colors.primary }}>{formatCurrency(point.portfolio)}</span>
+              {t('Portfolio:')} <span className="font-medium" style={{ color: colors.primary }}>{formatCurrency(point.portfolio)}</span>
             </p>
             {showInflationAdjusted && (
               <p className="text-gray-600 dark:text-gray-400">
-                Inflation Adjusted: <span className="font-medium" style={{ color: colors.secondary }}>{formatCurrency(point.inflationAdjusted)}</span>
+                {t('Inflation Adjusted:')} <span className="font-medium" style={{ color: colors.secondary }}>{formatCurrency(point.inflationAdjusted)}</span>
               </p>
             )}
             <p className="text-gray-600 dark:text-gray-400">
-              Total Contributed: <span className="font-medium text-gray-900 dark:text-gray-100">{formatCurrency(point.totalContributions)}</span>
+              {t('Total Contributed:')} <span className="font-medium text-gray-900 dark:text-gray-100">{formatCurrency(point.totalContributions)}</span>
             </p>
             {fireNumber && (
               <p className={`${reachedFire ? 'text-green-600 dark:text-green-400' : 'text-gray-600 dark:text-gray-400'}`}>
-                FIRE Number: <span className="font-medium">{formatCurrency(fireNumber)}</span>
+                {t('FIRE Number:')} <span className="font-medium">{formatCurrency(fireNumber)}</span>
                 {reachedFire && <span className="ml-1">✓</span>}
               </p>
             )}
@@ -162,18 +164,18 @@ export default function ProjectionChart({
           <Area
             type="monotone"
             dataKey="inflationAdjusted"
-            name="Aggiustato per Inflazione"
+            name={t('Aggiustato per Inflazione')}
             stroke={colors.secondary}
             strokeWidth={2}
             fill={`url(#gradient-${colorScheme}-secondary)`}
             strokeDasharray="5 5"
           />
         )}
-        
+
         <Area
           type="monotone"
           dataKey="portfolio"
-          name="Valore Portfolio"
+          name={t('Valore Portfolio')}
           stroke={colors.primary}
           strokeWidth={2}
           fill={`url(#gradient-${colorScheme})`}
@@ -203,7 +205,7 @@ export default function ProjectionChart({
             strokeWidth={2}
             strokeDasharray="8 4"
             label={{
-              value: 'FIRE',
+              value: t('FIRE'),
               fill: '#dc2626',
               fontSize: 11,
               fontWeight: 600,
