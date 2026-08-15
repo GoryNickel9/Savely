@@ -14,6 +14,7 @@ import { Loader2, TrendingUp, Shield, PieChart, Check, X, MailCheck, KeyRound } 
 import { z } from 'zod';
 import { passwordSchema, checkPasswordRequirements, passwordRequirementsList } from '@/lib/passwordValidation';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { supabase } from '@/integrations/supabase/client';
 import { challengeAndVerify } from '@/hooks/useMfa';
 
@@ -30,6 +31,9 @@ export default function Auth() {
   const [resetSent, setResetSent] = useState(false);
   const [sentEmail, setSentEmail] = useState('');
   const [privacyAccepted, setPrivacyAccepted] = useState(false);
+  // Toggle admin: se le registrazioni sono chiuse, il form di signup viene
+  // disabilitato (l'enforcement reale è il trigger su auth.users).
+  const [registrationsEnabled, setRegistrationsEnabled] = useState<boolean | null>(null);
   // MFA challenge state: when the user has an active TOTP factor, we require a
   // second step after the password succeeds.
   const [mfaFactorId, setMfaFactorId] = useState<string | null>(null);
@@ -44,6 +48,13 @@ export default function Auth() {
     password: passwordSchema,
     fullName: z.string().optional(),
   });
+
+  useEffect(() => {
+    // In caso di errore (funzione non disponibile) resta abilitato.
+    supabase.rpc('get_registrations_enabled').then(({ data }) => {
+      setRegistrationsEnabled(data !== false);
+    });
+  }, []);
 
   useEffect(() => {
     // Navigate to "/" only when fully authenticated and no MFA is pending.
@@ -388,6 +399,14 @@ export default function Auth() {
               
               <TabsContent value="signup">
                 <form onSubmit={handleSignUp} className="space-y-4">
+                  {registrationsEnabled === false && (
+                    <Alert variant="destructive">
+                      <AlertTitle>{t('Registrazioni chiuse')}</AlertTitle>
+                      <AlertDescription>
+                        {t('Le registrazioni sono temporaneamente disabilitate. Torna più tardi.')}
+                      </AlertDescription>
+                    </Alert>
+                  )}
                   <div className="space-y-2">
                     <Label htmlFor="fullname">{t('Nome completo')}</Label>
                     <Input
@@ -467,7 +486,7 @@ export default function Auth() {
                       .
                     </label>
                   </div>
-                  <Button type="submit" className="w-full" disabled={loading}>
+                  <Button type="submit" className="w-full" disabled={loading || registrationsEnabled === false}>
                     {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     {t('Crea account')}
                   </Button>

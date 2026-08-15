@@ -165,6 +165,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const siteUrl = import.meta.env.VITE_SITE_URL || window.location.origin;
 
   const signUp = async (email: string, password: string, fullName?: string) => {
+    // Le registrazioni possono essere state disabilitate dagli admin:
+    // il check qui è solo per un messaggio chiaro, l'enforcement reale
+    // è il trigger su auth.users (migrazione registration_toggle).
+    const { data: registrationsEnabled } = await supabase.rpc('get_registrations_enabled');
+    if (registrationsEnabled === false) {
+      return { error: new Error('Le registrazioni sono temporaneamente disabilitate') };
+    }
+
     const redirectUrl = `${siteUrl}/auth/callback`;
     
     const { data, error } = await supabase.auth.signUp({
