@@ -25,6 +25,9 @@ export default defineConfig({
 
   use: {
     baseURL: `http://localhost:${PORT}`,
+    // L'app rileva la lingua dal browser: sui runner CI (en-US) si
+    // renderizzerebbe in inglese e i selettori su testo italiano fallirebbero.
+    locale: 'it-IT',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
