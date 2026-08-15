@@ -203,6 +203,7 @@ Per gestire le finanze condivise con un partner:
 
 ```
 spendy_cloud/
+├── api/                    # Vercel Functions (invio email via Resend)
 ├── src/
 │   ├── components/          # Componenti React
 │   │   ├── dashboard/       #   widget dashboard (StatCard)
@@ -455,7 +456,20 @@ Su push/PR su `main` vengono eseguiti 5 gate paralleli:
 | **e2e** | `npm run e2e` (Playwright) — richiede i secrets `E2E_USER_EMAIL` / `E2E_USER_PASSWORD`; genera un report caricato come artifact |
 
 ### Deploy
-L'app è pronta per il deploy su **Vercel**: `vercel.json` gestisce i rewrite SPA (tutto a `index.html`) e gli security headers.
+L'app è pronta per il deploy su **Vercel**: `vercel.json` gestisce i rewrite SPA (tutto a `index.html`, tranne `/api/*`) e gli security headers.
+
+### Email transazionali (Resend)
+Il reset password passa dalla route serverless `api/reset-password.ts` (Vercel Function): genera il recovery link con la Admin API di Supabase (`generateLink`) e invia l'email branded via **Resend**. Le altre email di Supabase Auth (conferma signup, cambio email) continuano a usare il canale SMTP configurato in Supabase.
+
+Environment variable richieste su **Vercel** (solo server-side, mai con prefisso `VITE_`):
+
+| Variabile | Descrizione |
+|-----------|-------------|
+| `RESEND_API_KEY` | API key di Resend |
+| `SUPABASE_SERVICE_ROLE_KEY` | Service key di Supabase (bypassa RLS — non deve mai finire nel bundle client) |
+| `RESEND_FROM` | Mittente, es. `Savely <noreply@savely.app>` (default di test: `onboarding@resend.dev`) |
+
+In locale la SPA non serve `/api`: usare `vercel dev` per provare il flusso completo. Nuove email transazionali: aggiungere una route in `api/` riutilizzando il pattern di `reset-password.ts`.
 
 ---
 

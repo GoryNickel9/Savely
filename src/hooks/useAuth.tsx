@@ -191,11 +191,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const resetPassword = async (email: string) => {
-    const redirectUrl = `${siteUrl}/reset-password`;
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: redirectUrl,
-    });
-    return { error: error as Error | null };
+    // Passa dalla route /api/reset-password (Vercel): genera il link di
+    // recovery con Supabase e invia l'email branded via Resend.
+    try {
+      const res = await fetch('/api/reset-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      if (!res.ok) {
+        return { error: new Error(`Richiesta fallita (${res.status})`) };
+      }
+      return { error: null };
+    } catch (e) {
+      return { error: e as Error };
+    }
   };
 
   const updateEmail = async (newEmail: string) => {
