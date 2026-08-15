@@ -5,7 +5,7 @@ import { Cookie, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 // Chiave localStorage e durata del consenso informativo (12 mesi).
-const CONSENT_KEY = 'spendy_cookie_consent';
+const CONSENT_KEY = 'savely_cookie_consent';
 const CONSENT_TTL_MS = 365 * 24 * 60 * 60 * 1000;
 
 type ConsentRecord = { value: 'essential'; ts: number };

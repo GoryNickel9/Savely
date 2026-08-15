@@ -6,7 +6,7 @@ import { LEGAL_OWNER, LEGAL_APP, privacyMailtoHref } from '@/lib/legalContents';
 export default function Termini() {
   const { t } = useTranslation();
   return (
-    <LegalLayout title={t('Termini di servizio')} subtitle={t("Condizioni d'uso della piattaforma Spendy")}>
+    <LegalLayout title={t('Termini di servizio')} subtitle={t("Condizioni d'uso della piattaforma Savely")}>
       <p>
         {t("L'accesso e l'utilizzo della piattaforma {{app}} (il", { app: LEGAL_APP.name })}{' '}
         <strong>{t('"Servizio"')}</strong>

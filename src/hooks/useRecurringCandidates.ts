@@ -7,7 +7,7 @@ import {
   type RecurringCandidate,
 } from '@/lib/recurringDetection';
 
-const IGNORE_KEY = 'spendy:ignored-recurring-candidates';
+const IGNORE_KEY = 'savely:ignored-recurring-candidates';
 
 /** Load the set of candidate keys the user has dismissed (localStorage, per-user). */
 function loadIgnored(userId: string | undefined): Set<string> {

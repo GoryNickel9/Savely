@@ -10,7 +10,7 @@ export const SUPPORTED_LANGUAGES = [
 
 export type LanguageCode = (typeof SUPPORTED_LANGUAGES)[number]["code"];
 
-const STORAGE_KEY = "spendy-language";
+const STORAGE_KEY = "savely-language";
 
 /**
  * Italiano resta italiano, qualunque altra lingua del browser degrada in inglese.

@@ -17,7 +17,7 @@ export default function Cookies() {
         </p>
       </LegalSection>
 
-      <LegalSection number={2} title={t('Cookie utilizzati da Spendy')}>
+      <LegalSection number={2} title={t('Cookie utilizzati da Savely')}>
         <p>
           {LEGAL_APP.name} {t('utilizza')} <strong>{t('esclusivamente cookie tecnici strettamente necessari')}</strong> {t('al funzionamento e alla sicurezza del Servizio.')} <strong>{t('Non utilizza')}</strong> {t('cookie di profilazione, analytics di terze parti, cookie pubblicitari o di tracciamento marketing.')}
         </p>
@@ -27,7 +27,7 @@ export default function Cookies() {
             <strong>{t('Token di sessione Supabase')}</strong> (<code>sb-*</code>, {t('salvato nel')} <em>localStorage</em>){t(": conserva le credenziali di accesso dopo il login per mantenerti autenticato tra una visita e l'altra, senza dover reinserire email e password a ogni pagina. Durata: sessione/rinnovo automatico (max ~7 giorni). Tipo: strettamente necessario.")}
           </li>
           <li>
-            <strong>{t('Consenso cookie')}</strong> (<code>spendy_cookie_consent</code>, <em>localStorage</em>){t(': registra che hai visualizzato e chiuso il banner di informativa cookie. Durata: 12 mesi. Tipo: strettamente necessario (funzionale).')}
+            <strong>{t('Consenso cookie')}</strong> (<code>savely_cookie_consent</code>, <em>localStorage</em>){t(': registra che hai visualizzato e chiuso il banner di informativa cookie. Durata: 12 mesi. Tipo: strettamente necessario (funzionale).')}
           </li>
           <li>
             <strong>{t('Dati delle preferenze')}</strong> {t("(es. valuta predefinita, salvataggio dei moduli in corso): memorizzati localmente o nel tuo profilo per personalizzare l'esperienza. Tipo: funzionali/preferenziali.")}

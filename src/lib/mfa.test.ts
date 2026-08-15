@@ -27,17 +27,17 @@ describe('validateTotpCode', () => {
 
 describe('extractSecretFromUri', () => {
   it('estrae il secret da un otpauth URI valido', () => {
-    const uri = 'otpauth://totp/Spendy:user@example.com?secret=JBSWY3DPEHPK3PXP&issuer=Spendy';
+    const uri = 'otpauth://totp/Savely:user@example.com?secret=JBSWY3DPEHPK3PXP&issuer=Savely';
     expect(extractSecretFromUri(uri)).toBe('JBSWY3DPEHPK3PXP');
   });
 
   it('estrae il secret anche quando non è il primo parametro', () => {
-    const uri = 'otpauth://totp/Spendy:user?issuer=Spendy&secret=ABCDEFG12345';
+    const uri = 'otpauth://totp/Savely:user?issuer=Savely&secret=ABCDEFG12345';
     expect(extractSecretFromUri(uri)).toBe('ABCDEFG12345');
   });
 
   it('ritorna null se manca il secret', () => {
-    expect(extractSecretFromUri('otpauth://totp/Spendy?issuer=Spendy')).toBeNull();
+    expect(extractSecretFromUri('otpauth://totp/Savely?issuer=Savely')).toBeNull();
   });
 
   it('ritorna null per input non stringa', () => {
@@ -47,8 +47,8 @@ describe('extractSecretFromUri', () => {
 
 describe('extractLabelFromUri', () => {
   it('estrae il label dal path', () => {
-    const uri = 'otpauth://totp/Spendy:user@example.com?secret=X';
-    expect(extractLabelFromUri(uri)).toBe('Spendy:user@example.com');
+    const uri = 'otpauth://totp/Savely:user@example.com?secret=X';
+    expect(extractLabelFromUri(uri)).toBe('Savely:user@example.com');
   });
 
   it('ritorna null per URI malformato', () => {

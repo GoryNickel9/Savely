@@ -1,4 +1,4 @@
-# Audit del Debito Tecnico — Spendy Cloud
+# Audit del Debito Tecnico — Savely Cloud
 
 **Data audit:** 5 agosto 2026
 **Branch analizzato:** `main` (commit `b5c3a32`)
@@ -454,7 +454,7 @@ possibili su payload malformati.
 **Problema.** `usePermissions` inizializza lo state da `localStorage` (`PERMISSIONS_STORAGE_KEY`)
 e `PermissionRoute` usa quello stato per decidere se renderizzare la pagina protetta o redirectare
 a `/`. Fino a che la query DB non risolve, il routing si basa sul dato in localStorage — che è
-modificabile dal client. Se un utente manipola `localStorage.spendy_permissions` impostando
+modificabile dal client. Se un utente manipola `localStorage.savely_permissions` impostando
 `admin: true`, vedrà temporaneamente la rotta `/admin` renderizzata (le chiamate API vere
 falliranno per RLS, ma la UI/caricamento dei componenti avviene).
 

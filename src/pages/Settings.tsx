@@ -123,7 +123,7 @@ export default function Settings() {
         return;
       }
 
-      const filename = `spendy_export_${new Date().toISOString().split('T')[0]}.csv`;
+      const filename = `savely_export_${new Date().toISOString().split('T')[0]}.csv`;
       const csvContent = serializeCsvRows(rows);
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
       downloadBlob(blob, filename);

@@ -1,6 +1,6 @@
 -- ============================================================================
 -- E2E test user — ALREADY CREATED on this project via the Supabase Admin API.
---   email: e2e-spendy@example.com  (→ GitHub secret E2E_USER_EMAIL)
+--   email: e2e-savely@example.com  (→ GitHub secret E2E_USER_EMAIL)
 --   password: stored in GitHub secret E2E_USER_PASSWORD
 --   user_id: 9daffd41-39bf-4b1e-be68-abf12549c4a7
 --
@@ -32,7 +32,7 @@ insert into auth.users (
   gen_random_uuid(),
   'authenticated',
   'authenticated',
-  'e2e-spendy@example.com',                       -- → E2E_USER_EMAIL
+  'e2e-savely@example.com',                       -- → E2E_USER_EMAIL
   crypt('REPLACE_WITH_E2E_PASSWORD', gen_salt('bf')), -- → E2E_USER_PASSWORD
   now(),
   now(),
@@ -47,7 +47,7 @@ on conflict (email) do nothing;
 insert into public.profiles (user_id, full_name, permissions)
 select id, 'E2E Test User', '{}'::jsonb
 from auth.users
-where email = 'e2e-spendy@example.com'
+where email = 'e2e-savely@example.com'
 on conflict (user_id) do update
   set permissions = excluded.permissions;
 
@@ -55,4 +55,4 @@ on conflict (user_id) do update
 --    Uncomment to enable the /fire E2E spec.
 -- update public.profiles
 -- set permissions = permissions || '{"fire": true}'::jsonb
--- where user_id = (select id from auth.users where email = 'e2e-spendy@example.com');
+-- where user_id = (select id from auth.users where email = 'e2e-savely@example.com');

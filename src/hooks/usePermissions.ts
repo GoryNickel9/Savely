@@ -3,7 +3,7 @@ import { useAuth } from './useAuth';
 import { getUserPermissions, clearPermissionsCache } from '@/lib/permissions';
 import { Permissions } from '@/lib/types';
 
-const PERMISSIONS_STORAGE_KEY = 'spendy_permissions';
+const PERMISSIONS_STORAGE_KEY = 'savely_permissions';
 
 /**
  * Type guard per validare che i dati siano un oggetto Permissions valido

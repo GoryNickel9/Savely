@@ -1,7 +1,7 @@
 import { defineConfig, devices } from '@playwright/test';
 
 /**
- * Playwright configuration for Spendy Cloud.
+ * Playwright configuration for Savely Cloud.
  *
  * E2E tests authenticate against the real Supabase project using a seeded
  * dedicated test user. Credentials are provided via env vars:

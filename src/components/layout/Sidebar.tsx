@@ -49,7 +49,7 @@ export default function Sidebar() {
   const NavContent = () => (
     <div className="flex flex-col h-full">
       <div className="p-6 flex-shrink-0">
-        <h1 className="text-2xl font-display font-bold">{t('Spendy')}</h1>
+        <h1 className="text-2xl font-display font-bold">{t('Savely')}</h1>
         <p className="text-sm text-muted-foreground mt-1">{t('La tua finanza personale semplificata')}</p>
       </div>
 

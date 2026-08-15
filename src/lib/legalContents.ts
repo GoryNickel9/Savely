@@ -10,12 +10,12 @@ export const LEGAL_OWNER = {
 } as const;
 
 export const LEGAL_APP = {
-  name: 'Spendy',
-  url: 'https://spendy.app',
+  name: 'Savely',
+  url: 'https://savely.app',
   lastUpdated: '2 luglio 2026',
 } as const;
 
-// Subprocessori (hosting/database). Spendy utilizza Supabase come BaaS.
+// Subprocessori (hosting/database). Savely utilizza Supabase come BaaS.
 export const LEGAL_SUBPROCESSORS = [
   {
     name: 'Supabase Inc.',

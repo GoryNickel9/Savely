@@ -1,4 +1,4 @@
-# 💰 Spendy Cloud
+# 💰 Savely Cloud
 
 > La tua finanza personale semplificata.
 
@@ -29,7 +29,7 @@ Web application completa per la gestione delle finanze personali: transazioni, b
 
 ## Panoramica
 
-Spendy è un'applicazione multi-modulo orientata alla finanza personale. Ogni utente autenticato ha accesso a un set di funzionalità base (dashboard, transazioni, budget, portfolio, patrimonio, insights, grafici) e può ottenere accesso a moduli specializzati tramite un **sistema di permessi granulari** gestito a livello di profilo.
+Savely è un'applicazione multi-modulo orientata alla finanza personale. Ogni utente autenticato ha accesso a un set di funzionalità base (dashboard, transazioni, budget, portfolio, patrimonio, insights, grafici) e può ottenere accesso a moduli specializzati tramite un **sistema di permessi granulari** gestito a livello di profilo.
 
 L'app è una **single-page application** con autenticazione Supabase, stato server-side gestito con TanStack Query, UI in Tailwind + shadcn/ui, grafici con Recharts e persistenza su database PostgreSQL (Supabase) con Row Level Security.
 
@@ -356,7 +356,7 @@ La logica lato client vive in `src/lib/permissions.ts` e `src/hooks/usePermissio
 
 ### Importazione
 - **Manuale** — file Excel/CSV con fogli `Transazioni`, `Categorie`, `Obiettivi`, `Portfolio`, `Investimenti`.
-- **Da piattaforme esterne** — Revolut, BBVA, TradeRepublic, Spendy (legacy).
+- **Da piattaforme esterne** — Revolut, BBVA, TradeRepublic.
 
 > I file importati passano per controlli di sicurezza (vedi `src/lib/importFileSecurity.ts`).
 
@@ -420,7 +420,7 @@ Test end-to-end che guidano l'app reale in browser Chromium. Sono divisi in due 
 - **public** (`*.public.spec.ts`): rotte pubbliche (`/auth`, `/privacy`, `/cookies`, `/terms`, NotFound, redirect guard) — non richiedono auth.
 - **authenticated** (`*.auth.spec.ts`): login, CRUD transazioni, route guard sui permessi, FIRE — richiedono credenziali.
 
-I test autenticati si collegano al progetto Supabase reale usando un **utente seedato dedicato** (`e2e-spendy@example.com`, senza permessi di modulo). Le credenziali vengono fornite via variabili d'ambiente:
+I test autenticati si collegano al progetto Supabase reale usando un **utente seedato dedicato** (`e2e-savely@example.com`, senza permessi di modulo). Le credenziali vengono fornite via variabili d'ambiente:
 
 | Variabile | Descrizione |
 |-----------|-------------|
@@ -431,7 +431,7 @@ Se le variabili non sono impostate, i test autenticati vengono saltati (gli pubb
 
 ```bash
 # Setup locale
-export E2E_USER_EMAIL=e2e-spendy@example.com
+export E2E_USER_EMAIL=e2e-savely@example.com
 export E2E_USER_PASSWORD=<password>
 npm run e2e            # run headless
 npm run e2e:ui         # modalità interattiva con UI

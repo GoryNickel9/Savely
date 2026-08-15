@@ -171,7 +171,7 @@ export default function Auth() {
     } else {
       toast({
         title: t('Registrazione completata!'),
-        description: t('Benvenuto in Spendy'),
+        description: t('Benvenuto in Savely'),
       });
     }
   };
@@ -206,7 +206,7 @@ export default function Auth() {
       {/* Left side - Branding */}
       <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-primary/20 via-background to-accent/20 p-12 flex-col justify-between">
         <div>
-          <h1 className="text-4xl font-display font-bold">{t('Spendy')}</h1>
+          <h1 className="text-4xl font-display font-bold">{t('Savely')}</h1>
           <p className="text-muted-foreground mt-2">{t('La tua finanza personale, semplificata')}</p>
         </div>
         
@@ -254,7 +254,7 @@ export default function Auth() {
               {t('Termini')}
             </a>
           </div>
-          <p className="text-sm text-muted-foreground">{t('© {{year}} Spendy. Tutti i diritti riservati.', { year: new Date().getFullYear() })}</p>
+          <p className="text-sm text-muted-foreground">{t('© {{year}} Savely. Tutti i diritti riservati.', { year: new Date().getFullYear() })}</p>
         </div>
       </div>
 
@@ -263,7 +263,7 @@ export default function Auth() {
         <Card className="w-full max-w-md glass border-border/50">
           <CardHeader className="space-y-1 text-center">
             <div className="lg:hidden mb-4">
-              <h1 className="text-3xl font-display font-bold text-gradient">{t('Spendy')}</h1>
+              <h1 className="text-3xl font-display font-bold text-gradient">{t('Savely')}</h1>
               <p className="text-muted-foreground mt-1">{t('La tua finanza personale semplificata')}</p>
             </div>
             <CardTitle className="text-2xl font-display">{t('Benvenuto')}</CardTitle>
