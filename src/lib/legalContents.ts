@@ -11,7 +11,7 @@ export const LEGAL_OWNER = {
 
 export const LEGAL_APP = {
   name: 'Savely',
-  url: 'https://savely.app',
+  url: 'https://savely.cc',
   lastUpdated: '2 luglio 2026',
 } as const;
 

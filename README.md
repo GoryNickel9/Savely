@@ -467,7 +467,7 @@ Environment variable richieste su **Vercel** (solo server-side, mai con prefisso
 |-----------|-------------|
 | `RESEND_API_KEY` | API key di Resend |
 | `SUPABASE_SERVICE_ROLE_KEY` | Service key di Supabase (bypassa RLS — non deve mai finire nel bundle client) |
-| `RESEND_FROM` | Mittente, es. `Savely <noreply@savely.app>` (default di test: `onboarding@resend.dev`) |
+| `RESEND_FROM` | Mittente, es. `Savely <noreply@savely.cc>` (default di test: `onboarding@resend.dev`) |
 
 In locale la SPA non serve `/api`: usare `vercel dev` per provare il flusso completo. Nuove email transazionali: aggiungere una route in `api/` riutilizzando il pattern di `reset-password.ts`.
 

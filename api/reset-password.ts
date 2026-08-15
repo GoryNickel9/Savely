@@ -23,20 +23,27 @@ const RESEND_FROM =
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 async function generateRecoveryLink(email: string, redirectTo: string): Promise<string> {
-  const res = await fetch(`${SUPABASE_URL}/auth/v1/admin/users/generate_link`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      apikey: SUPABASE_SERVICE_ROLE_KEY!,
-      Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+  // GoTrue legge redirect_to dalla query string e lo onora solo se il dominio
+  // è nella allow-list (Authentication → URL Configuration su Supabase);
+  // altrimenti fa fallback al Site URL configurato.
+  const res = await fetch(
+    `${SUPABASE_URL}/auth/v1/admin/generate_link?redirect_to=${encodeURIComponent(redirectTo)}`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        apikey: SUPABASE_SERVICE_ROLE_KEY!,
+        Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+      },
+      body: JSON.stringify({ type: 'recovery', email }),
     },
-    body: JSON.stringify({ type: 'recovery', email, redirect_to: redirectTo }),
-  });
+  );
   if (!res.ok) {
     throw new Error(`generate_link ${res.status}: ${await res.text()}`);
   }
-  const data = (await res.json()) as { properties: { action_link: string } };
-  return data.properties.action_link;
+  // action_link è al livello root della risposta (non annidato).
+  const data = (await res.json()) as { action_link: string };
+  return data.action_link;
 }
 
 async function sendEmailWithResend(to: string, subject: string, html: string): Promise<void> {
