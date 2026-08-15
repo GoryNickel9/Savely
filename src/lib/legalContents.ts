@@ -3,7 +3,7 @@
 
 export const LEGAL_OWNER = {
   name: 'Luca Baldino',
-  email: '[EMAIL RIMOSSA]',
+  email: 'lucabaldino10@proton.me',
   // Campi opzionali: sostituire con i valori reali quando disponibili.
   vatId: '[P.IVA / C.F. da compilare]',
   address: '[Indirizzo della sede da compilare]',

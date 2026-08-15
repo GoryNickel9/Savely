@@ -495,7 +495,7 @@ export default function Settings() {
                       {t('Importa transazioni dalla tua banca.')}{' '}
                       {t('Non hai file CSV?')}{' '}
                       <a
-                        href="https://bank.baldeddu.cc"
+                        href="https://bank.savely.cc"
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-primary hover:underline"
@@ -791,8 +791,8 @@ export default function Settings() {
             </div>
             <p className="text-xs text-muted-foreground">
               {t('Per richieste relative ai tuoi dati scrivi a')}{' '}
-              <a href="mailto:[EMAIL RIMOSSA]" className="text-primary hover:underline">
-                [EMAIL RIMOSSA]
+              <a href="mailto:lucabaldino10@proton.me" className="text-primary hover:underline">
+                lucabaldino10@proton.me
               </a>
               {t('. Per cancellare definitivamente il tuo account, vedi la sezione "Zona Pericolo" sottostante.')}
             </p>
