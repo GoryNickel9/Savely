@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Shield, User as UserIcon, RefreshCw } from 'lucide-react';
 import { Permissions } from '@/lib/types';
-import { updateUserPermissions, getAllUsersWithPermissions } from '@/lib/permissions';
+import { updateUserPermissions, getAllUsersWithPermissions, parsePermissions } from '@/lib/permissions';
 
 interface UserProfile {
   id: string;
@@ -31,7 +31,10 @@ export default function PermissionsManager({ currentUserId }: PermissionsManager
     try {
       const { data, error } = await getAllUsersWithPermissions(currentUserId);
       if (error) throw error;
-      setUsers(data || []);
+      setUsers((data ?? []).map(({ permissions, ...rest }) => ({
+        ...rest,
+        permissions: parsePermissions(permissions),
+      })));
     } catch (error) {
       console.error('Errore nel caricamento degli utenti:', error);
       toast({

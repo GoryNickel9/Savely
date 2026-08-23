@@ -1,4 +1,5 @@
 import FumoCrudPage from '@/components/fumo/FumoCrudPage';
+import { readArrivo } from '@/lib/fumoCrud';
 
 // Liquido Sigaretta: quantita' in millilitri, tabella filtrata per anno corrente.
 // Le colonne extra della tabella annuale sono Millilitri Totali e Media Giornaliera.
@@ -26,10 +27,7 @@ export default function FumoLiquidoSigaretta() {
           // Media giornaliera = ml totali / somma dei giorni di durata dei record dell'anno.
           render: (stat, entries) => {
             const totalGiorni = entries
-              .filter((r) => {
-                const d = (r as Record<string, unknown>).data_arrivo as string | undefined;
-                return new Date(d ?? '').getFullYear() === stat.anno;
-              })
+              .filter((r) => new Date(readArrivo(r, 'data_arrivo')).getFullYear() === stat.anno)
               .reduce((sum, r) => sum + (r.giorni_durata || 0), 0);
             return `${totalGiorni > 0 ? (stat.extraTotal / totalGiorni).toFixed(2) : '0.00'}ml/d`;
           },

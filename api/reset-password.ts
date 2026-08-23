@@ -41,6 +41,28 @@ function resolveRedirectTo(origin: string | undefined): string {
   return `${ALLOWED_ORIGINS[0]}/reset-password`;
 }
 
+// Rate limit in-memory per istanza: protegge dall'email bombing naive.
+// Le Vercel Function possono girare su più istanze (limite non globale);
+// per un limite distribuito usare Vercel WAF o un contatore in KV
+// (v. TECH_DEBT_REPORT_2026-08-23.md, TD-004).
+const RATE_LIMIT_MAX = 3;
+const RATE_LIMIT_WINDOW_MS = 10 * 60 * 1000; // 10 minuti
+const rateLimitHits = new Map<string, number[]>();
+
+function isRateLimited(key: string): boolean {
+  const now = Date.now();
+  const recent = (rateLimitHits.get(key) ?? []).filter(
+    (ts) => now - ts < RATE_LIMIT_WINDOW_MS,
+  );
+  if (recent.length >= RATE_LIMIT_MAX) {
+    rateLimitHits.set(key, recent);
+    return true;
+  }
+  recent.push(now);
+  rateLimitHits.set(key, recent);
+  return false;
+}
+
 async function generateRecoveryLink(email: string, redirectTo: string): Promise<string> {
   // GoTrue legge redirect_to dalla query string e lo onora solo se il dominio
   // è nella allow-list (Authentication → URL Configuration su Supabase);
@@ -114,6 +136,15 @@ export default async function handler(
 
   if (!SUPABASE_SERVICE_ROLE_KEY || !RESEND_API_KEY) {
     res.status(500).json({ error: 'Invio email non configurato' });
+    return;
+  }
+
+  // Rate limit per IP (spray su molti indirizzi) e per email (bombing).
+  const ip = String(req.headers['x-forwarded-for'] ?? req.headers['x-real-ip'] ?? '')
+    .split(',')[0]
+    .trim();
+  if (isRateLimited(`ip:${ip || 'unknown'}`) || isRateLimited(`email:${email}`)) {
+    res.status(429).json({ error: 'Troppe richieste. Riprova più tardi.' });
     return;
   }
 

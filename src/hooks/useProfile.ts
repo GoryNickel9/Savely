@@ -34,8 +34,8 @@ export function useProfile() {
     mutationFn: async (currency: CurrencyCode) => {
       const { error } = await supabase
         .from('profiles')
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        .update({ default_currency: currency } as any)
+         
+        .update({ default_currency: currency })
         .eq('user_id', user!.id);
       if (error) throw error;
     },

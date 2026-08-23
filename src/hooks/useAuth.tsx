@@ -70,7 +70,7 @@ function recordLoginEvent(event: string, userId: string | undefined, session: Se
       user_agent: typeof navigator !== 'undefined' ? navigator.userAgent : null,
       session_id: getSessionId(session),
     })
-    .then(() => undefined, () => undefined);
+    .then((): undefined => undefined, (): undefined => undefined);
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {

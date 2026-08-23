@@ -36,8 +36,8 @@ export function useCoupleBudgets(
   const { data: budgets = [], isLoading } = useQuery({
     queryKey: ['couple_budgets', connectionId],
     queryFn: async (): Promise<CoupleBudget[]> => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data, error } = await (supabase as any)
+       
+      const { data, error } = await supabase
         .from('couple_budgets')
         .select('*')
         .eq('connection_id', connectionId!);
@@ -66,8 +66,8 @@ export function useCoupleBudgets(
   // ------------------------------------------------------------------
   const createBudget = useMutation({
     mutationFn: async (params: { couple_category_name: string; amount: number }) => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { error } = await (supabase as any).from('couple_budgets').insert({
+       
+      const { error } = await supabase.from('couple_budgets').insert({
         connection_id:        connectionId!,
         couple_category_name: params.couple_category_name,
         amount:               params.amount,
@@ -85,8 +85,8 @@ export function useCoupleBudgets(
   // ------------------------------------------------------------------
   const updateBudget = useMutation({
     mutationFn: async ({ id, amount }: { id: string; amount: number }) => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { error } = await (supabase as any)
+       
+      const { error } = await supabase
         .from('couple_budgets')
         .update({ amount })
         .eq('id', id)
@@ -101,8 +101,8 @@ export function useCoupleBudgets(
   // ------------------------------------------------------------------
   const deleteBudget = useMutation({
     mutationFn: async (id: string) => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { error } = await (supabase as any)
+       
+      const { error } = await supabase
         .from('couple_budgets')
         .delete()
         .eq('id', id)

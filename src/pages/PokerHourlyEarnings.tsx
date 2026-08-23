@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- Supabase generated types do not include poker_hourly_earnings and poker_next_cut tables */
+ 
 import MainLayout from '@/components/layout/MainLayout';
 import { useAuth } from '@/hooks/useAuth';
 import { useState, useEffect, useMemo } from 'react';
@@ -69,7 +69,7 @@ export default function PokerHourlyEarnings() {
       
       try {
         const { data: dealData, error: dealError } = await supabase
-          .from('poker_next_cut' as any)
+          .from('poker_next_cut')
           .select('deal')
           .eq('user_id', user.id)
           .maybeSingle();
@@ -147,7 +147,7 @@ export default function PokerHourlyEarnings() {
     try {
       // Verifica se esiste già un record per questo mese
       const { data: existingData, error: checkError } = await supabase
-        .from('poker_hourly_earnings' as any)
+        .from('poker_hourly_earnings')
         .select('id')
         .eq('user_id', user!.id)
         .eq('date', date)
@@ -167,7 +167,7 @@ export default function PokerHourlyEarnings() {
       }
       
       const { error } = await supabase
-        .from('poker_hourly_earnings' as any)
+        .from('poker_hourly_earnings')
         .insert({
           user_id: user!.id,
           date: date,
@@ -196,7 +196,7 @@ export default function PokerHourlyEarnings() {
   const deleteEarning = async (id: string) => {
     try {
       const { error } = await supabase
-        .from('poker_hourly_earnings' as any)
+        .from('poker_hourly_earnings')
         .delete()
         .eq('id', id);
       if (error) throw error;
@@ -242,7 +242,7 @@ export default function PokerHourlyEarnings() {
     
     try {
       const { error } = await supabase
-        .from('poker_hourly_earnings' as any)
+        .from('poker_hourly_earnings')
         .update({
           hours_played: hours,
           profit_loss: profitLoss,

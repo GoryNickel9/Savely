@@ -1,50 +1,21 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from './useAuth';
-import { getUserPermissions, clearPermissionsCache } from '@/lib/permissions';
+import { getUserPermissions, clearPermissionsCache, parsePermissions } from '@/lib/permissions';
 import { Permissions } from '@/lib/types';
 
 const PERMISSIONS_STORAGE_KEY = 'savely_permissions';
 
-/**
- * Type guard per validare che i dati siano un oggetto Permissions valido
- */
-const validatePermissions = (data: unknown): data is Permissions => {
-  if (!data || typeof data !== 'object') {
-    return false;
-  }
-
-  const perm = data as Partial<Permissions>;
-  
-  // Verifica che almeno un campo di permesso esista
-  const hasAnyPermission =
-    'admin' in perm ||
-    'poker' in perm ||
-    'fumo' in perm ||
-    'fire' in perm ||
-    'tcg' in perm ||
-    'libreria' in perm;
-  
-  return hasAnyPermission;
-};
-
 export function usePermissions() {
   const { user } = useAuth();
   const [permissions, setPermissions] = useState<Permissions | null>(() => {
-    // Carica i permessi dal localStorage all'inizializzazione
+    // Cache iniziale dal localStorage: parsePermissions valida che ogni campo
+    // sia effettivamente booleano (valori manipolati/non validi → false).
     if (typeof window !== 'undefined') {
       const stored = localStorage.getItem(PERMISSIONS_STORAGE_KEY);
       if (stored) {
         try {
-          const parsed = JSON.parse(stored);
-          // Valida i dati prima di usarli
-          if (validatePermissions(parsed)) {
-            return parsed;
-          } else {
-            console.warn('Dati permessi non validi nel localStorage, verranno ricaricati');
-            localStorage.removeItem(PERMISSIONS_STORAGE_KEY);
-          }
-        } catch (e) {
-          console.error('Errore nel parsing dei permessi dal localStorage:', e);
+          return parsePermissions(JSON.parse(stored));
+        } catch {
           localStorage.removeItem(PERMISSIONS_STORAGE_KEY);
         }
       }

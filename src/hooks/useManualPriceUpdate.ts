@@ -23,8 +23,8 @@ export function useManualPriceUpdate() {
       if (!user) return null;
 
       const { data, error } = await supabase
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        .from('manual_price_updates' as any)
+         
+        .from('manual_price_updates')
         .select('*')
         .eq('user_id', user.id)
         .order('updated_at', { ascending: false })
@@ -82,8 +82,8 @@ export function useManualPriceUpdate() {
       if (error) throw error;
 
       // Log the manual update
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await supabase.from('manual_price_updates' as any).insert({
+       
+      await supabase.from('manual_price_updates').insert({
         user_id: user.id,
         assets_updated: data?.updated || 0,
         assets_checked: data?.checked || 0,

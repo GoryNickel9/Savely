@@ -23,8 +23,8 @@ export function useNetWorthHistory() {
   return useQuery({
     queryKey: ['net-worth-history', user?.id] as const,
     queryFn: async (): Promise<NetWorthSnapshot[]> => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data, error } = await (supabase as any)
+       
+      const { data, error } = await supabase
         .from('net_worth_snapshots')
         .select('id, date, net_worth, components, created_at')
         .eq('user_id', user!.id)

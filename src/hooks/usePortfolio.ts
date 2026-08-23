@@ -4,6 +4,19 @@ import { PortfolioAsset, AssetType, CurrencyCode } from '@/lib/types';
 import { useAuth } from './useAuth';
 import { useState, useMemo } from 'react';
 
+/** Input della creazione asset (vedi createAsset). */
+export interface PortfolioAssetInput {
+  name: string;
+  symbol?: string | null;
+  type: AssetType;
+  quantity: number;
+  purchase_price: number;
+  current_price?: number;
+  currency?: CurrencyCode;
+  purchase_date?: string;
+  notes?: string;
+}
+
 export function usePortfolio() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -25,17 +38,7 @@ export function usePortfolio() {
   });
 
   const createAsset = useMutation({
-    mutationFn: async (asset: {
-      name: string;
-      symbol?: string;
-      type: AssetType;
-      quantity: number;
-      purchase_price: number;
-      current_price?: number;
-      currency?: CurrencyCode;
-      purchase_date?: string;
-      notes?: string;
-    }) => {
+    mutationFn: async (asset: PortfolioAssetInput) => {
       if (!user) throw new Error('Not authenticated');
 
       const normalizedSymbol = asset.symbol?.trim().toUpperCase();

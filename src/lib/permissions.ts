@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import type { Json } from '@/integrations/supabase/types';
 import { Permissions, UserPermissions } from './types';
 
 /**
@@ -33,16 +34,7 @@ export async function getUserPermissions(userId: string): Promise<Permissions> {
       return defaultPermissions;
     }
 
-    const dbPermissions = (data as { permissions?: unknown }).permissions as Permissions | null;
-    const permissions: Permissions = {
-      admin: dbPermissions?.admin || false,
-      poker: dbPermissions?.poker || false,
-      fumo: dbPermissions?.fumo || false,
-      fire: dbPermissions?.fire || false,
-      tcg: dbPermissions?.tcg || false,
-      libreria: dbPermissions?.libreria || false,
-      couple_expenses: dbPermissions?.couple_expenses || false,
-    };
+    const permissions = parsePermissions((data as { permissions?: unknown }).permissions);
 
     // Salva in cache
     permissionsCache.set(userId, { data: permissions, timestamp: Date.now() });
@@ -88,6 +80,25 @@ export function getDefaultPermissions(): Permissions {
 }
 
 /**
+ * Converte un valore JSON arbitrario (campo `permissions` del profilo o
+ * localStorage) in Permissions tipizzate, verificando che ogni campo sia
+ * effettivamente booleano. Campi mancanti o non booleani assumono false.
+ */
+export function parsePermissions(value: unknown): Permissions {
+  const result = getDefaultPermissions();
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return result;
+  }
+  const raw = value as Record<string, unknown>;
+  for (const key of Object.keys(result) as Array<keyof Permissions>) {
+    if (typeof raw[key] === 'boolean') {
+      result[key] = raw[key];
+    }
+  }
+  return result;
+}
+
+/**
  * Aggiorna i permessi di un utente
  * @param userId ID dell'utente
  * @param permissions Permessi da aggiornare (parziali)
@@ -119,8 +130,9 @@ export async function updateUserPermissions(
     // Aggiorna i permessi nel database
     const { error } = await supabase
       .from('profiles')
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .update({ permissions: updatedPermissions } as any)
+      // Json richiede un'index signature: Permissions è un'interfaccia,
+      // il cast a Record la rende strutturalmente compatibile.
+      .update({ permissions: updatedPermissions as unknown as Record<string, boolean> })
       .eq('user_id', userId);
 
     // Pulisci la cache per questo utente
@@ -156,12 +168,25 @@ export function isAdmin(permissions: Permissions): boolean {
   return permissions.admin === true;
 }
 
+/** Risultato di getAllUsersWithPermissions. */
+export interface AllUsersPermissionsResult {
+  data: Array<{
+    id: string;
+    user_id: string;
+    full_name: string | null;
+    permissions: Json | null;
+  }> | null;
+  error: Error | null;
+}
+
 /**
  * Recupera tutti gli utenti con i loro permessi (solo per admin)
  * @param requestUserId ID dell'utente che effettua la richiesta
  * @returns Oggetto con dati o errore
  */
-export async function getAllUsersWithPermissions(requestUserId: string) {
+export async function getAllUsersWithPermissions(
+  requestUserId: string
+): Promise<AllUsersPermissionsResult> {
   try {
     // Verifica che l'utente sia admin
     const permissions = await getUserPermissions(requestUserId);

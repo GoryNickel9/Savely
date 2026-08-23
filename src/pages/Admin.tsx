@@ -27,14 +27,15 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { usePermissions } from '@/hooks/usePermissions';
-import { getAllUsersWithPermissions, updateUserPermissions } from '@/lib/permissions';
+import { getAllUsersWithPermissions, updateUserPermissions, parsePermissions } from '@/lib/permissions';
+import type { Permissions } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 
 interface UserProfile {
   id: string;
   user_id: string;
   full_name: string | null;
-  permissions: Record<string, boolean>;
+  permissions: Permissions;
 }
 
 interface AdminUser {
@@ -74,7 +75,10 @@ export default function Admin() {
     try {
       const { data, error } = await getAllUsersWithPermissions(user.id);
       if (error) throw error;
-      setUsers(data || []);
+      setUsers((data ?? []).map(({ permissions, ...rest }) => ({
+        ...rest,
+        permissions: parsePermissions(permissions),
+      })));
     } catch (error) {
       console.error('Errore nel caricamento degli utenti:', error);
       toast({
@@ -250,7 +254,7 @@ export default function Admin() {
         body: JSON.stringify({ action: 'delete-user', userId: deleteTarget.user_id }),
       });
       if (!res.ok) {
-        const body = (await res.json().catch(() => null)) as { error?: string } | null;
+        const body = (await res.json().catch((): null => null)) as { error?: string } | null;
         throw new Error(body?.error || `Richiesta fallita (${res.status})`);
       }
 

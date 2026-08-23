@@ -41,8 +41,8 @@ export function useSharedExpenses(connectionId: string | null) {
   const { data: sharedExpenses = [], isLoading } = useQuery({
     queryKey: ['shared_expenses', connectionId, user?.id],
     queryFn: async (): Promise<SharedExpenseViewRow[]> => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data, error } = await (supabase as any)
+       
+      const { data, error } = await supabase
         .from('shared_expenses_view')
         .select('*')
         .eq('connection_id', connectionId!);
@@ -86,8 +86,8 @@ export function useSharedExpenses(connectionId: string | null) {
       split_mode?: 'equal' | 'custom';
       partner_amount?: number | null;
     }) => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { error } = await (supabase as any).from('shared_expenses').insert({
+       
+      const { error } = await supabase.from('shared_expenses').insert({
         connection_id: params.connection_id,
         original_tx_id: params.original_tx_id,
         couple_category_name: params.couple_category_name,
@@ -105,8 +105,8 @@ export function useSharedExpenses(connectionId: string | null) {
   // ------------------------------------------------------------------
   const removeMySharedExpense = useMutation({
     mutationFn: async (sharedExpenseId: string) => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { error } = await (supabase as any)
+       
+      const { error } = await supabase
         .from('shared_expenses')
         .delete()
         .eq('id', sharedExpenseId)
@@ -122,8 +122,8 @@ export function useSharedExpenses(connectionId: string | null) {
   const removePartnerSharedExpense = useMutation({
     mutationFn: async (sharedExpenseId: string) => {
       const { error } = await supabase.rpc(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        'delete_shared_expense_by_partner' as any,
+         
+        'delete_shared_expense_by_partner',
         { p_id: sharedExpenseId }
       );
       if (error) throw error;

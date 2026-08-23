@@ -90,19 +90,25 @@ export default function Settings() {
 
     try {
       // Fetch all data — include every user-scoped table for GDPR portability (art. 20).
-      // Tabelle non presenti nei tipi generati vengono interrogate con cast `any`.
-      // Lista centralizzata in `USER_TABLES` (@/lib/constants) per evitare drift.
+      // La lista è centralizzata in `USER_TABLES` (@/lib/constants) ed è garantita
+      // valida a compile-time dal tipo UserTableName.
       const tables = USER_TABLES;
 
       const results = await Promise.all(
-        tables.map((t) =>
-          (supabase.from(t as unknown as keyof typeof supabase) as unknown as { select: (q: string) => Promise<{ data: unknown[] | null; error: { message: string } | null }> })
-            .select('*')
-            .then((res) => ({ table: t, ...res }))
+        tables.map(async (t) => {
+          try {
+            const res = await supabase.from(t).select('*');
+            return {
+              table: t,
+              data: res.data as unknown[] | null,
+              error: res.error ? { message: res.error.message } : null,
+            };
+          } catch (err) {
             // Tabelle non ancora create nel DB o senza RLS tornerebbero errore:
             // le ignoriamo per non bloccare l'export delle altre.
-            .catch((err) => ({ table: t, data: null, error: { message: String(err) } }))
-        )
+            return { table: t, data: null, error: { message: String(err) } };
+          }
+        })
       );
 
       const rows: Array<Record<string, unknown>> = [];

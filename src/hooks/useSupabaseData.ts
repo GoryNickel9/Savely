@@ -3,20 +3,12 @@ import { useTranslation } from 'react-i18next';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
-import { USER_TABLES } from '@/lib/constants';
-
-/**
- * Whitelist delle tabelle valide per prevenire SQL injection.
- *
- * Unica fonte di verita: `USER_TABLES` in `@/lib/constants`. Le tabelle devono
- * inoltre essere presenti nei tipi generati di Supabase.
- */
-const VALID_TABLES = USER_TABLES;
+import { UserTableName } from '@/lib/constants';
 
 const EMPTY_FILTER: { column: string; value: unknown }[] = [];
 
 interface UseSupabaseDataOptions {
-  tableName: string;
+  tableName: UserTableName;
   orderBy?: string;
   ascending?: boolean;
   filter?: { column: string; value: unknown }[];
@@ -28,7 +20,7 @@ interface UseSupabaseDataReturn<T> {
   reload: () => Promise<void>;
 }
 
-export function useSupabaseData<T extends Record<string, unknown>>(
+export function useSupabaseData<T extends object>(
   options: UseSupabaseDataOptions
 ): UseSupabaseDataReturn<T> {
   const { tableName, orderBy, ascending = false, filter = EMPTY_FILTER } = options;
@@ -49,25 +41,16 @@ export function useSupabaseData<T extends Record<string, unknown>>(
       return;
     }
 
-    // Valida il nome della tabella
-    if (!VALID_TABLES.includes(tableName as (typeof VALID_TABLES)[number])) {
-      console.error(`[useSupabaseData] Tabella non valida: ${tableName}`);
-      toast({
-        title: t('Errore'),
-        description: t('Tabella non valida'),
-        variant: 'destructive',
-      });
-      setLoading(false);
-      return;
-    }
-
     isLoadingRef.current = true;
     setLoading(true);
 
     try {
+      // Il nome tabella è garantito valido dal tipo UserTableName
+      // (whitelist compile-time in @/lib/constants, anti-SQL-injection).
+      // Cast puntuale: l'unione di 25 tabelle fa esplodere l'inferenza di
+      // supabase-js (TS2589); a runtime la query è identica.
       let query = supabase
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        .from(tableName as any)
+        .from(tableName as 'transactions')
         .select('*')
         .eq('user_id', user.id);
 
@@ -77,7 +60,9 @@ export function useSupabaseData<T extends Record<string, unknown>>(
 
       if (filter.length > 0) {
         filter.forEach(f => {
-          query = query.eq(f.column, f.value);
+          // Colonna dinamica: `never` è assegnabile a qualunque literal di
+          // colonna e evita l'esplosione dell'inferenza (TS2589).
+          query = query.eq(f.column as never, f.value as never);
         });
       }
 

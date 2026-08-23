@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- Supabase generated types do not include the poker_rakeback table */
+ 
 import MainLayout from '@/components/layout/MainLayout';
 import { useAuth } from '@/hooks/useAuth';
 import { useState, useEffect, useMemo } from 'react';
@@ -104,7 +104,7 @@ export default function PokerRakeback() {
     try {
       // Verifica se esiste già un record per questo mese
       const { data: existingData, error: checkError } = await supabase
-        .from('poker_rakeback' as any)
+        .from('poker_rakeback')
         .select('id')
         .eq('user_id', user!.id)
         .eq('date', date)
@@ -124,7 +124,7 @@ export default function PokerRakeback() {
       }
       
       const { error } = await supabase
-        .from('poker_rakeback' as any)
+        .from('poker_rakeback')
         .insert({
           user_id: user!.id,
           date: date,
@@ -149,7 +149,7 @@ export default function PokerRakeback() {
   const deleteEntry = async (id: string) => {
     try {
       const { error } = await supabase
-        .from('poker_rakeback' as any)
+        .from('poker_rakeback')
         .delete()
         .eq('id', id);
       if (error) throw error;
@@ -182,7 +182,7 @@ export default function PokerRakeback() {
     
     try {
       const { error } = await supabase
-        .from('poker_rakeback' as any)
+        .from('poker_rakeback')
         .update({
           rake_generated: rakeGenerated,
           rakeback_received: rakebackReceived,

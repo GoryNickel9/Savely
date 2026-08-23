@@ -189,7 +189,7 @@ export default function TcgCollectionPage({
     return matchText && matchSet;
   });
 
-  const renderSetLine = (setCode: string | null, collectorNumber: number | null) => {
+  const renderSetLine = (setCode: string | null, collectorNumber: string | null) => {
     if (!setCode) return null;
     const ns = normalizeSet(setCode);
     if (!showCollectorNumber) return <p className="text-xs text-muted-foreground">{ns}</p>;

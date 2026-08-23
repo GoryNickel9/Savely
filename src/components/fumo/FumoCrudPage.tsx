@@ -1,8 +1,8 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- Supabase generated types do not include the cbd/thc/liquido_sigaretta tables */
 import MainLayout from '@/components/layout/MainLayout';
 import { useAuth } from '@/hooks/useAuth';
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import type { Database } from '@/integrations/supabase/types';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -24,9 +24,20 @@ import type {
 import { computeDerived, computeYearlyStats, readArrivo } from '@/lib/fumoCrud';
 import { useTranslation } from 'react-i18next';
 
+/** Tabelle fumo gestite da questa pagina CRUD parametrica. */
+type FumoTableName = 'cbd' | 'thc' | 'liquido_sigaretta';
+/**
+ * Le tre tabelle condividono lo schema base ma cambiano le colonne quantita'
+ * e data (grammi|millilitri, data_acquisto|data_arrivo): i payload con chiavi
+ * calcolate non sono esprimibili in un singolo tipo Insert/Update generato,
+ * quindi usano un cast puntuale verso l'unione dei tipi delle tre tabelle.
+ */
+type FumoInsert = Database['public']['Tables'][FumoTableName]['Insert'];
+type FumoUpdate = Database['public']['Tables'][FumoTableName]['Update'];
+
 export interface FumoCrudConfig<T extends FumoBaseEntry> {
   /** Nome tabella Supabase ('cbd' | 'thc' | 'liquido_sigaretta'). */
-  tableName: string;
+  tableName: FumoTableName;
   /** Titolo pagina (es. "CBD"). */
   title: string;
   /** Sottotitolo pagina. */
@@ -144,7 +155,7 @@ export default function FumoCrudPage<T extends FumoBaseEntry>({
         parseAmount(newCosto)
       );
       const { error } = await supabase
-        .from(tableName as any)
+        .from(tableName)
         .insert({
           user_id: user!.id,
           costo: parseAmount(newCosto),
@@ -155,7 +166,7 @@ export default function FumoCrudPage<T extends FumoBaseEntry>({
           [quantitaPerDayKey]: campi.quantita_al_giorno,
           euro_al_giorno: campi.euro_al_giorno,
           costo_mensile: campi.costo_mensile,
-        });
+        } as unknown as FumoInsert);
       if (error) throw error;
       toast({ title: t('Nuova riga aggiunta') });
       closeCreate();
@@ -169,7 +180,7 @@ export default function FumoCrudPage<T extends FumoBaseEntry>({
 
   const deleteEntry = async (id: string) => {
     try {
-      const { error } = await supabase.from(tableName as any).delete().eq('id', id);
+      const { error } = await supabase.from(tableName).delete().eq('id', id);
       if (error) throw error;
       toast({ title: t(deleteToast) });
       await reload();
@@ -190,7 +201,7 @@ export default function FumoCrudPage<T extends FumoBaseEntry>({
         parseAmount(editCosto)
       );
       const { error } = await supabase
-        .from(tableName as any)
+        .from(tableName)
         .update({
           costo: parseAmount(editCosto),
           [quantityColumnKey]: parseAmount(editQuantita),
@@ -200,7 +211,7 @@ export default function FumoCrudPage<T extends FumoBaseEntry>({
           [quantitaPerDayKey]: campi.quantita_al_giorno,
           euro_al_giorno: campi.euro_al_giorno,
           costo_mensile: campi.costo_mensile,
-        })
+        } as unknown as FumoUpdate)
         .eq('id', editingItem.id);
       if (error) throw error;
       toast({ title: t('Record aggiornato') });

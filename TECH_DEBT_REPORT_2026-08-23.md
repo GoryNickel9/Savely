@@ -38,6 +38,7 @@ Nessun finding di severity **Critical**: sicurezza server-side (RLS, verifica ad
 | `npm audit` | **0 vulnerabilità** |
 | `npm run lint` | 0 errori, 1 warning |
 | `npm run typecheck` (pre-Fase 0) | **no-op: 0 file controllati** (v. TD-011) |
+| Stato post-Fase 1 | 0 errori typecheck (2 progetti), 0 `any` in src/api, `noImplicitAny` attivo, 186 test verdi |
 | Tabelle con RLS | 32/32 create nelle migrazioni ✅ |
 
 ---
@@ -321,11 +322,11 @@ Per evitare falsi positivi, questi aspetti sono stati verificati e sono **sani**
 | TD-011 | Includere `api/` nel typecheck CI | ✅ gate reale su `tsconfig.node.json` (strict); scoperto che il gate era un no-op completo (v. finding) |
 | TD-017 | Headers di servizio lazy in `api/admin.ts` | ✅ `getServiceHeaders()` + 500 esplicito "non configurato" |
 
-### Fase 1 — Type safety (1–2 sprint)
-1. **TD-001**: rigenerare i tipi Supabase e rimuovere i 35 cast `as any` (il compiler guida il lavoro).
-2. **TD-002/TD-011 residuo**: risolvere i 45 errori nascosti in `tsconfig.app.json` (`npm run typecheck:app` per vederli), poi portare il progetto app nel gate CI e attivare `noImplicitAny` → `strictNullChecks` → `strict` in PR separate.
-3. **TD-008**: irrigidire la validazione dei permessi in localStorage.
-4. **TD-004**: rate limiting su reset-password.
+### Fase 1 — Type safety (1–2 sprint) — ✅ completata il 23/08/2026
+1. **TD-001**: ✅ tipi rigenerati dal DB remoto con la CLI (`supabase gen types --linked`, 672→1.653 righe); tutti i 35 cast `as any` rimossi (0 in src/api). Cast puntuali documentati rimasti solo dove genuinamente dinamici: payload FumoCrudPage (chiavi calcolate su 3 schemi), `useSupabaseData` (unione 25 tabelle → TS2589), `parsePermissions`/`permissions` (Json). Durante lo sweep sono emersi e stati corretti 2 bug latenti: `renderSetLine` tipizzava `collector_number` come `number` (nel DB è `string`) e l'export GDPR usava una cast-chain non verificata.
+2. **TD-002/TD-011 residuo**: ✅ i 45 errori nascosti risolti (la sola rigenerazione dei tipi ne ha eliminati 32); `tsconfig.app.json` e `tsconfig.node.json` entrambi nel gate CI (`typecheck` ora esegue i due progetti). **`noImplicitAny: true` attivato con 0 errori.** Prossimo step (Fase 2+): `strictNullChecks` — stimati 21 errori, da affrontare in PR dedicata.
+3. **TD-008**: ✅ nuovo `parsePermissions()` condiviso in `lib/permissions.ts` con verifica `typeof === 'boolean'` per ogni campo; usato dal profilo DB, dai caller admin e dalla cache localStorage di `usePermissions` (sostituisce il guard debole che accettava `{admin: "ciao"}`).
+4. **TD-004**: ✅ rate limiting in-memory su `/api/reset-password` (3 richieste/10 min per IP e per email, risposta 429). Nota: per-istanza sulle Vercel Function — per un limite globale servirebbe Vercel WAF o un contatore KV.
 
 ### Fase 2 — Struttura e performance (2–4 sprint)
 1. **TD-015**: prima i test degli hook critici (rete di sicurezza).
@@ -334,6 +335,7 @@ Per evitare falsi positivi, questi aspetti sono stati verificati e sono **sani**
 4. **TD-007**: lazy loading delle rotte + vendor chunk.
 5. **TD-009**: convergere gli hook manuali su React Query (uno per PR).
 6. **TD-016**: unificare il sistema toast.
+7. **TD-002 (follow-up)**: attivare `strictNullChecks` (21 errori stimati, fix in PR dedicata).
 
 ### Fase 3 — Lungo termine (oltre 4 sprint)
 - **TD-013**: upgrade major graduali (prima date-fns 4 e zod 4; tailwind 4 e recharts 3 solo con sprint dedicato e verifica visiva e2e).

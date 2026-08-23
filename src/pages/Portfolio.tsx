@@ -1,6 +1,7 @@
 import MainLayout from '@/components/layout/MainLayout';
 import { useTranslation } from 'react-i18next';
 import { usePortfolio } from '@/hooks/usePortfolio';
+import type { PortfolioAssetInput } from '@/hooks/usePortfolio';
 import { useTcgCards } from '@/hooks/useTcgCards';
 import { usePriceHistory } from '@/hooks/usePriceHistory';
 import { useLastPriceUpdate } from '@/hooks/useLastPriceUpdate';
@@ -92,9 +93,12 @@ export default function Portfolio() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const assetData: Record<string, unknown> = {
+      const assetData: PortfolioAssetInput = {
         name,
         type,
+        symbol: null,
+        quantity: 0,
+        purchase_price: 0,
       };
 
       if (type === 'cash' || type === 'real_estate' || type === 'other') {

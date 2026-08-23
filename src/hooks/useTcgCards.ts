@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { TcgCard, TcgGame, CardCondition } from '@/lib/types';
 import { useAuth } from './useAuth';
 
-/* eslint-disable @typescript-eslint/no-explicit-any -- Supabase generated types do not include tgc_cards table */
+ 
 
 export function useTcgCards(game?: TcgGame) {
   const { user } = useAuth();
@@ -12,7 +12,7 @@ export function useTcgCards(game?: TcgGame) {
   const { data: cards = [], isLoading } = useQuery({
     queryKey: ['tcg-cards', user?.id, game],
     queryFn: async () => {
-      let query = (supabase as any)
+      let query = supabase
         .from('tgc_cards')
         .select('*')
         .eq('user_id', user!.id)
@@ -46,7 +46,7 @@ export function useTcgCards(game?: TcgGame) {
       notes?: string;
     }) => {
       if (!user) throw new Error('Not authenticated');
-      const { error } = await (supabase as any).from('tgc_cards').insert({
+      const { error } = await supabase.from('tgc_cards').insert({
         ...card,
         user_id: user.id,
       });
@@ -59,7 +59,7 @@ export function useTcgCards(game?: TcgGame) {
 
   const updateCard = useMutation({
     mutationFn: async ({ id, ...updates }: Partial<TcgCard> & { id: string }) => {
-      const { error } = await (supabase as any)
+      const { error } = await supabase
         .from('tgc_cards')
         .update(updates)
         .eq('id', id)
@@ -73,7 +73,7 @@ export function useTcgCards(game?: TcgGame) {
 
   const deleteCard = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await (supabase as any)
+      const { error } = await supabase
         .from('tgc_cards')
         .delete()
         .eq('id', id)

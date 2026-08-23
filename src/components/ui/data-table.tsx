@@ -17,7 +17,24 @@ interface DataTableProps<T> {
   hover?: boolean;
 }
 
-export function DataTable<T extends Record<string, unknown>>({
+/**
+ * Chiave di riga: usa `id` se presente (string/number), altrimenti l'indice.
+ */
+function rowKey(item: unknown, index: number): React.Key {
+  const id = (item as Record<string, unknown>).id;
+  return typeof id === 'string' || typeof id === 'number' ? id : index;
+}
+
+/**
+ * Valore di cella per le colonne senza `render`: accesso dinamico alla
+ * proprietà (la chiave non è esprimibile nel vincolo generico).
+ */
+function cellText(item: unknown, key: string): ReactNode {
+  const value = (item as Record<string, unknown>)[key];
+  return value == null ? null : (value as ReactNode);
+}
+
+export function DataTable<T extends object>({
   columns,
   data,
   loading = false,
@@ -59,7 +76,7 @@ export function DataTable<T extends Record<string, unknown>>({
         <tbody>
           {data.map((item, index) => (
             <tr
-              key={item.id || index}
+              key={rowKey(item, index)}
               className={`border-t ${striped && index % 2 === 0 ? 'bg-background' : 'bg-muted/20'} ${hover ? 'hover:bg-muted/30' : ''}`}
             >
               {columns.map((column) => (
@@ -67,7 +84,7 @@ export function DataTable<T extends Record<string, unknown>>({
                   key={column.key}
                   className={`py-3 px-4 ${column.className || ''}`}
                 >
-                  {column.render ? column.render(item, index) : item[column.key]}
+                  {column.render ? column.render(item, index) : cellText(item, column.key)}
                 </td>
               ))}
             </tr>

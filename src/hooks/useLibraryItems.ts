@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { LibraryItem, LibraryCategory } from '@/lib/types';
 import { useAuth } from './useAuth';
 
-/* eslint-disable @typescript-eslint/no-explicit-any -- Supabase generated types do not include library_items table */
+ 
 
 export function useLibraryItems(category?: LibraryCategory) {
   const { user } = useAuth();
@@ -12,7 +12,7 @@ export function useLibraryItems(category?: LibraryCategory) {
   const { data: items = [], isLoading } = useQuery({
     queryKey: ['library-items', user?.id, category],
     queryFn: async () => {
-      let query = (supabase as any)
+      let query = supabase
         .from('library_items')
         .select('*')
         .eq('user_id', user!.id)
@@ -44,7 +44,7 @@ export function useLibraryItems(category?: LibraryCategory) {
       notes?: string;
     }) => {
       if (!user) throw new Error('Not authenticated');
-      const { error } = await (supabase as any).from('library_items').insert({
+      const { error } = await supabase.from('library_items').insert({
         ...item,
         user_id: user.id,
         quantity: item.quantity ?? 1,
@@ -58,7 +58,7 @@ export function useLibraryItems(category?: LibraryCategory) {
 
   const updateItem = useMutation({
     mutationFn: async ({ id, ...updates }: Partial<LibraryItem> & { id: string }) => {
-      const { error } = await (supabase as any)
+      const { error } = await supabase
         .from('library_items')
         .update({ ...updates, updated_at: new Date().toISOString() })
         .eq('id', id)
@@ -72,7 +72,7 @@ export function useLibraryItems(category?: LibraryCategory) {
 
   const deleteItem = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await (supabase as any)
+      const { error } = await supabase
         .from('library_items')
         .delete()
         .eq('id', id)
