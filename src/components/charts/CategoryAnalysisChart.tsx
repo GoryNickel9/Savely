@@ -309,7 +309,7 @@ export default function CategoryAnalysisChart({
                   }}
                   labelStyle={{ color: 'white' }}
                   itemStyle={{ color: 'white' }}
-                  formatter={(value: number) => `${CURRENCY_SYMBOLS.EUR}${value.toFixed(2)}`}
+                  formatter={(value) => `${CURRENCY_SYMBOLS.EUR}${Number(value).toFixed(2)}`}
                 />
                 <Bar dataKey="value" name={t('Importo')}>
                   {categoryData.map((entry, index) => (
@@ -337,7 +337,7 @@ export default function CategoryAnalysisChart({
                   }}
                   labelStyle={{ color: 'white' }}
                   itemStyle={{ color: 'white' }}
-                  formatter={(value: number) => `${CURRENCY_SYMBOLS.EUR}${value.toFixed(2)}`}
+                  formatter={(value) => `${CURRENCY_SYMBOLS.EUR}${Number(value).toFixed(2)}`}
                 />
                 <Legend />
                 {categories.map(cat => (
@@ -359,7 +359,7 @@ export default function CategoryAnalysisChart({
                   cx="50%"
                   cy="50%"
                   labelLine={false}
-                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                  label={({ name, percent }) => `${name} ${((percent ?? 0) * 100).toFixed(0)}%`}
                   outerRadius={120}
                   fill="#8884d8"
                   dataKey="value"
@@ -377,7 +377,7 @@ export default function CategoryAnalysisChart({
                   }}
                   labelStyle={{ color: 'white' }}
                   itemStyle={{ color: 'white' }}
-                  formatter={(value: number) => `${CURRENCY_SYMBOLS.EUR}${value.toFixed(2)}`}
+                  formatter={(value) => `${CURRENCY_SYMBOLS.EUR}${Number(value).toFixed(2)}`}
                 />
               </PieChart>
             )}

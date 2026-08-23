@@ -1,4 +1,4 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
+import type { VercelRequest, VercelResponse } from './vercel';
 
 /**
  * POST /api/admin  { action, ... }
@@ -154,7 +154,7 @@ export default async function handler(
     }
 
     if (action === 'delete-user') {
-      const userId = typeof req.body.userId === 'string' ? req.body.userId : '';
+      const userId = typeof req.body?.userId === 'string' ? req.body.userId : '';
       if (!/^[0-9a-f-]{36}$/i.test(userId)) {
         res.status(400).json({ error: 'userId non valido' });
         return;

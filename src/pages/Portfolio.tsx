@@ -475,7 +475,7 @@ export default function Portfolio() {
                   <Pie data={liquidityPercentage} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80}>
                     {liquidityPercentage.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
                   </Pie>
-                  <Tooltip formatter={(v: number) => `${v.toFixed(1)}%`} />
+                  <Tooltip formatter={(v) => `${Number(v).toFixed(1)}%`} />
                 </PieChart>
               </ResponsiveContainer>
             ) : <p className="text-muted-foreground text-center py-8">{t('Aggiungi asset per vedere la distribuzione liquido/illiquido')}</p>}
@@ -488,7 +488,7 @@ export default function Portfolio() {
               <ResponsiveContainer width="100%" height={250}>
                 <PieChart><Pie data={chartDataPercentage} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80}>
                   {chartDataPercentage.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
-                </Pie><Tooltip formatter={(v: number) => `${v.toFixed(1)}%`} /></PieChart>
+                </Pie><Tooltip formatter={(v) => `${Number(v).toFixed(1)}%`} /></PieChart>
               </ResponsiveContainer>
             ) : <p className="text-muted-foreground text-center py-8">{t('Aggiungi asset per vedere l\'allocazione')}</p>}
           </div>
@@ -509,8 +509,8 @@ export default function Portfolio() {
                   <Tooltip
                     contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px' }}
                     labelStyle={{ color: 'hsl(var(--foreground))' }}
-                    formatter={(value: number, name: string) => [
-                      `${CURRENCY_SYMBOLS.EUR}${value.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+                    formatter={(value, name) => [
+                      `${CURRENCY_SYMBOLS.EUR}${Number(value).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
                       name === 'invested' ? t('Investito') : name === 'current' ? t('Valore') : t('Profitto'),
                     ]}
                   />

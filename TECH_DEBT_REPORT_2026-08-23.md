@@ -40,6 +40,7 @@ Nessun finding di severity **Critical**: sicurezza server-side (RLS, verifica ad
 | `npm run typecheck` (pre-Fase 0) | **no-op: 0 file controllati** (v. TD-011) |
 | Stato post-Fase 1 | 0 errori typecheck (2 progetti), 0 `any` in src/api, `noImplicitAny` attivo, 186 test verdi |
 | Stato post-Fase 2 (parziale) | `strict: true` completo, bundle principale 627 KB raw / ~190 KB gzip (era 1,81 MB), 193 test verdi |
+| Stato post-Fase 3 | 6 major upgrade (date-fns 4, zod 4, lucide 1, sonner 2, tailwind-merge 3, recharts 3), 4 dipendenze rimosse, audit 0 vulnerabilità, 193 test verdi |
 | Tabelle con RLS | 32/32 create nelle migrazioni ✅ |
 
 ---
@@ -338,8 +339,15 @@ Per evitare falsi positivi, questi aspetti sono stati verificati e sono **sani**
 6. **TD-016**: ⬜ unificare il sistema toast.
 7. **TD-002 (follow-up)**: ✅ **`strict: true` completo attivo su `tsconfig.app.json` con 0 errori** (non solo `strictNullChecks`: l'intero set). Risolti 19 errori null-safety legittimi (user nullable in hook con `enabled`, `aal`/`factorsData` MFA nullable, widening `collector_number`/`couple_category_name` nullable). Rimosso il vecchio `TECH_DEBT_REPORT.md` del 15/08.
 
-### Fase 3 — Lungo termine (oltre 4 sprint)
-- **TD-013**: upgrade major graduali (prima date-fns 4 e zod 4; tailwind 4 e recharts 3 solo con sprint dedicato e verifica visiva e2e).
+### Fase 3 — Lungo termine (oltre 4 sprint) — ✅ completata il 23/08/2026 (Tailwind 4 differito con motivazione)
+- **TD-013**: ✅ upgrade major completati con verifica typecheck+lint+test+build a ogni passo:
+  - `date-fns` 3→4, `zod` 3→4 (fix `error.errors`→`error.issues` in Auth/ResetPassword/Settings), `lucide-react` 0.462→1, `sonner` 1→2, `tailwind-merge` 2→3, `recharts` 2→3 (9 formatter adattati ai tipi `Formatter<ValueType, NameType>`; chunk grafici 340K→300K; wrapper shadcn `ui/chart.ts` rimosso, era inutilizzato e incompatibile).
+  - **Rimosse 4 dipendenze morte invece di aggiornarle**: `@hookform/resolvers` (mai importato), `react-day-picker` + `ui/calendar.tsx` (mai usati), `react-resizable-panels` + `ui/resizable.tsx` (mai usati, v4 rinominava l'intera API), `@vercel/node` (solo tipi: sostituito da `api/vercel.ts` locale — v7 introduceva advisories transitive ajv/path-to-regexp/undici che avrebbero rotto il gate audit CI).
+  - **Audit npm: 0 vulnerabilità** mantenuto su tutto il percorso.
+- **Differiti con motivazione**:
+  - `tailwindcss` 3→4: la migrazione riscrive config→CSS (`@theme`), plugin `tailwindcss-animate` e il pattern `hsl(var(--…))` diffuso su tutte le pagine; richiede verifica visiva pagina-per-pagina (screenshot/e2e visivi) non automatizzabile in questa sessione. Prelude: snapshot visivi delle rotte principali.
+  - `typescript` 7 (Go-based) e `eslint` 10: attendere il supporto di `typescript-eslint`; si resta su TS 5.9 / eslint 9.
+- Out of scope rimanenti dalla Fase 2: TD-005, TD-006, TD-009, TD-016 (v. sopra).
 
 ---
 

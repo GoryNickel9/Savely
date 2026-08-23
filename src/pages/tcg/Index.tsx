@@ -87,8 +87,8 @@ export default function TcgIndex() {
                     ))}
                   </Pie>
                   <Tooltip
-                    formatter={(value: number, name: string) => {
-                      const percent = totalGameCards > 0 ? ((value / totalGameCards) * 100).toFixed(1) : '0.0';
+                    formatter={(value, name) => {
+                      const percent = totalGameCards > 0 ? ((Number(value) / totalGameCards) * 100).toFixed(1) : '0.0';
                       return [`${percent}%`, name];
                     }}
                   />

@@ -104,7 +104,7 @@ export default function NetWorth() {
                 <XAxis dataKey="dateLabel" stroke="hsl(var(--muted-foreground))" fontSize={12} minTickGap={30} />
                 <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
                 <Tooltip
-                  formatter={(v: number) => [eur(v), t('Patrimonio')]}
+                  formatter={(v) => [eur(Number(v)), t('Patrimonio')]}
                   contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8 }}
                 />
                 <ReferenceLine y={0} stroke="hsl(var(--destructive))" strokeDasharray="4 4" />

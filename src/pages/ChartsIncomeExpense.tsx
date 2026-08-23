@@ -285,7 +285,7 @@ export default function ChartsIncomeExpense() {
                   contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px' }}
                   labelStyle={{ color: 'white' }}
                   itemStyle={{ color: 'white' }}
-                  formatter={(value: number) => `${CURRENCY_SYMBOLS.EUR}${value.toFixed(2)}`}
+                  formatter={(value) => `${CURRENCY_SYMBOLS.EUR}${Number(value).toFixed(2)}`}
                 />
                 <Area 
                   type="monotone" 

@@ -184,7 +184,7 @@ export default function Settings() {
         try {
           passwordSchema.parse(newPassword);
         } catch (error: unknown) {
-          throw new Error((error as { errors?: Array<{ message: string }> }).errors?.[0]?.message || t('La password non soddisfa i requisiti di sicurezza'));
+          throw new Error((error as { issues?: Array<{ message: string }> }).issues?.[0]?.message || t('La password non soddisfa i requisiti di sicurezza'));
         }
 
         if (newPassword !== confirmPassword) {
