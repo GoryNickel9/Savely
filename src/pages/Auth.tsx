@@ -107,9 +107,9 @@ export default function Auth() {
     // TOTP factor. If so and the session is only aal1, require the MFA code.
     try {
       const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
-      if (aal.currentLevel === 'aal1' && aal.nextLevel === 'aal2') {
+      if (aal?.currentLevel === 'aal1' && aal.nextLevel === 'aal2') {
         const { data: factorsData } = await supabase.auth.mfa.listFactors();
-        const totpFactor = (factorsData.totp ?? [])[0];
+        const totpFactor = (factorsData?.totp ?? [])[0];
         if (totpFactor) {
           setMfaFactorId(totpFactor.id);
           setMfaCode('');

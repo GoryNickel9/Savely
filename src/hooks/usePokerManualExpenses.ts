@@ -21,7 +21,7 @@ export function usePokerManualExpenses() {
       const { data, error } = await supabase
         .from('poker_manual_expenses')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('user_id', user!.id)
         .order('created_at', { ascending: true });
 
       if (error) throw error;

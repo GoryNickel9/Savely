@@ -82,7 +82,7 @@ export function useSharedExpenses(connectionId: string | null) {
     mutationFn: async (params: {
       connection_id: string;
       original_tx_id: string;
-      couple_category_name: string;
+      couple_category_name: string | null;
       split_mode?: 'equal' | 'custom';
       partner_amount?: number | null;
     }) => {

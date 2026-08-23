@@ -35,7 +35,7 @@ export function useTcgCards(game?: TcgGame) {
       category: TcgGame;
       card_id?: string;
       set_code?: string;
-      collector_number?: string;
+      collector_number?: string | null;
       condition: CardCondition;
       language: string;
       quantity: number;

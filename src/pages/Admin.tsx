@@ -347,7 +347,7 @@ export default function Admin() {
                         <div className="flex-1 space-y-1">
                           <div className="flex items-center gap-2">
                             <span className="font-medium">{userProfile.full_name || t('Utente senza nome')}</span>
-                            {userProfile.user_id === user.id && (
+                            {userProfile.user_id === user?.id && (
                               <span className="px-2 py-0.5 bg-emerald-500/20 text-emerald-400 text-xs rounded-md">
                                 {t('Tu')}
                               </span>
@@ -487,7 +487,7 @@ export default function Admin() {
                                 <span className="font-medium truncate">
                                   {adminUser.full_name || t('Utente senza nome')}
                                 </span>
-                                {adminUser.user_id === user.id && (
+                                {adminUser.user_id === user?.id && (
                                   <span className="px-2 py-0.5 bg-emerald-500/20 text-emerald-400 text-xs rounded-md flex-shrink-0">
                                     {t('Tu')}
                                   </span>
@@ -517,7 +517,7 @@ export default function Admin() {
                               variant="destructive"
                               size="sm"
                               className="flex items-center gap-2"
-                              disabled={adminUser.user_id === user.id || deletingUserId === adminUser.user_id}
+                              disabled={adminUser.user_id === user?.id || deletingUserId === adminUser.user_id}
                               onClick={() => setDeleteTarget(adminUser)}
                             >
                               <Trash2 className="w-4 h-4" />

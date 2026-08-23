@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -5,47 +6,50 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { usePermissions } from "@/hooks/usePermissions";
-import Auth from "./pages/Auth";
-import AuthCallback from "./pages/AuthCallback";
-import ResetPassword from "./pages/ResetPassword";
-import Dashboard from "./pages/Dashboard";
-import Transactions from "./pages/Transactions";
-import RecurringExpenses from "./pages/RecurringExpenses";
-import Budget from "./pages/Budget";
-import Categories from "./pages/Categories";
-import ChartsIndex from "./pages/ChartsIndex";
-import ChartsIncomeExpense from "./pages/ChartsIncomeExpense";
-import ChartsExpense from "./pages/ChartsExpense";
-import ChartsIncome from "./pages/ChartsIncome";
-import Portfolio from "./pages/Portfolio";
-import NetWorth from "./pages/NetWorth";
-import Insights from "./pages/Insights";
-import Settings from "./pages/Settings";
-import Admin from "./pages/Admin";
-import Poker from "./pages/Poker";
-import PokerNextCut from "./pages/PokerNextCut";
-import PokerHourlyEarnings from "./pages/PokerHourlyEarnings";
-import PokerRakeback from "./pages/PokerRakeback";
-import Fumo from "./pages/Fumo";
-import FumoLiquidoSigaretta from "./pages/FumoLiquidoSigaretta";
-import FumoCBD from "./pages/FumoCBD";
-import FumoTHC from "./pages/FumoTHC";
-import FIREIndex from "./pages/fire/Index";
-import StandardFIRE from "./pages/fire/StandardFIRE";
-import BaristaFIRE from "./pages/fire/BaristaFIRE";
-import TcgIndex from "./pages/tcg/Index";
-import TcgMagic from "./pages/tcg/Magic";
-import TcgPokemon from "./pages/tcg/Pokemon";
-import TcgYugioh from "./pages/tcg/Yugioh";
-import LibreriaIndex from "./pages/libreria/Index";
-import LibreriaLibri from "./pages/libreria/Libri";
-import LibreriaFumetti from "./pages/libreria/Fumetti";
-import LibreriaManga from "./pages/libreria/Manga";
-import CoupleBudget from "./pages/CoupleBudget";
-import NotFound from "./pages/NotFound";
-import Privacy from "./pages/Privacy";
-import Cookies from "./pages/Cookies";
-import Termini from "./pages/Termini";
+// Code splitting per rotta (TD-007): ogni pagina è un chunk separato, così il
+// bundle iniziale non include moduli pesanti (recharts, CRUD poker/fumo/tcg…)
+// usati solo da chi accede a quelle sezioni.
+const Auth = lazy(() => import("./pages/Auth"));
+const AuthCallback = lazy(() => import("./pages/AuthCallback"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const Transactions = lazy(() => import("./pages/Transactions"));
+const RecurringExpenses = lazy(() => import("./pages/RecurringExpenses"));
+const Budget = lazy(() => import("./pages/Budget"));
+const Categories = lazy(() => import("./pages/Categories"));
+const ChartsIndex = lazy(() => import("./pages/ChartsIndex"));
+const ChartsIncomeExpense = lazy(() => import("./pages/ChartsIncomeExpense"));
+const ChartsExpense = lazy(() => import("./pages/ChartsExpense"));
+const ChartsIncome = lazy(() => import("./pages/ChartsIncome"));
+const Portfolio = lazy(() => import("./pages/Portfolio"));
+const NetWorth = lazy(() => import("./pages/NetWorth"));
+const Insights = lazy(() => import("./pages/Insights"));
+const Settings = lazy(() => import("./pages/Settings"));
+const Admin = lazy(() => import("./pages/Admin"));
+const Poker = lazy(() => import("./pages/Poker"));
+const PokerNextCut = lazy(() => import("./pages/PokerNextCut"));
+const PokerHourlyEarnings = lazy(() => import("./pages/PokerHourlyEarnings"));
+const PokerRakeback = lazy(() => import("./pages/PokerRakeback"));
+const Fumo = lazy(() => import("./pages/Fumo"));
+const FumoLiquidoSigaretta = lazy(() => import("./pages/FumoLiquidoSigaretta"));
+const FumoCBD = lazy(() => import("./pages/FumoCBD"));
+const FumoTHC = lazy(() => import("./pages/FumoTHC"));
+const FIREIndex = lazy(() => import("./pages/fire/Index"));
+const StandardFIRE = lazy(() => import("./pages/fire/StandardFIRE"));
+const BaristaFIRE = lazy(() => import("./pages/fire/BaristaFIRE"));
+const TcgIndex = lazy(() => import("./pages/tcg/Index"));
+const TcgMagic = lazy(() => import("./pages/tcg/Magic"));
+const TcgPokemon = lazy(() => import("./pages/tcg/Pokemon"));
+const TcgYugioh = lazy(() => import("./pages/tcg/Yugioh"));
+const LibreriaIndex = lazy(() => import("./pages/libreria/Index"));
+const LibreriaLibri = lazy(() => import("./pages/libreria/Libri"));
+const LibreriaFumetti = lazy(() => import("./pages/libreria/Fumetti"));
+const LibreriaManga = lazy(() => import("./pages/libreria/Manga"));
+const CoupleBudget = lazy(() => import("./pages/CoupleBudget"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+const Privacy = lazy(() => import("./pages/Privacy"));
+const Cookies = lazy(() => import("./pages/Cookies"));
+const Termini = lazy(() => import("./pages/Termini"));
 import CookieBanner from "@/components/CookieBanner";
 import type { Permissions } from "@/lib/types";
 
@@ -97,7 +101,8 @@ function PermissionRoute({
 
 function AppRoutes() {
   return (
-    <Routes>
+    <Suspense fallback={<LoadingScreen />}>
+      <Routes>
       <Route path="/auth" element={<Auth />} />
       <Route path="/auth/callback" element={<AuthCallback />} />
       <Route path="/reset-password" element={<ResetPassword />} />
@@ -139,7 +144,8 @@ function AppRoutes() {
       <Route path="/admin" element={<PermissionRoute perm="admin"><Admin /></PermissionRoute>} />
       <Route path="/couple-budget" element={<PermissionRoute perm="couple_expenses"><CoupleBudget /></PermissionRoute>} />
       <Route path="*" element={<NotFound />} />
-    </Routes>
+      </Routes>
+    </Suspense>
   );
 }
 

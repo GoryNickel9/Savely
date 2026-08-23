@@ -13,7 +13,7 @@ export function useTransactions() {
       const { data, error } = await supabase
         .from('transactions')
         .select('*, category:categories(*)')
-        .eq('user_id', user.id)
+        .eq('user_id', user!.id)
         .is('deleted_at', null)
         .order('date', { ascending: false });
       

@@ -160,7 +160,7 @@ export default function Transactions() {
         if (isShared && connection?.id) {
           try {
             const customPartner = splitMode === 'custom' ? parseAmount(partnerAmount) : null;
-            if (splitMode === 'custom' && (!Number.isFinite(customPartner) || customPartner <= 0 || customPartner >= parsedAmount)) {
+            if (splitMode === 'custom' && (customPartner == null || !Number.isFinite(customPartner) || customPartner <= 0 || customPartner >= parsedAmount)) {
               throw new Error(t('La quota del partner deve essere maggiore di zero e minore del totale.'));
             }
             await createSharedExpense.mutateAsync({

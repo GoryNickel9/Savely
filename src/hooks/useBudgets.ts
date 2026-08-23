@@ -13,7 +13,7 @@ export function useBudgets() {
       const { data, error } = await supabase
         .from('budgets')
         .select('*, category:categories(*)')
-        .eq('user_id', user.id);
+        .eq('user_id', user!.id);
       
       if (error) throw error;
       return data as Budget[];

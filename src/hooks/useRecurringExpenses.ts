@@ -39,7 +39,7 @@ export function useRecurringExpenses() {
       const { data, error } = await supabase
         .from('recurring_expenses')
         .select('*, category:categories(*)')
-        .eq('user_id', user.id)
+        .eq('user_id', user!.id)
         .is('deleted_at', null)
         .order('next_due_date', { ascending: true });
       
@@ -177,7 +177,7 @@ export function useRecurringExpenses() {
         }
 
         // Calculate next due date
-        const nextDate = calculateNextDueDate(expense.next_due_date, expense.frequency as RecurringFrequency, expense.week_interval);
+        const nextDate = calculateNextDueDate(expense.next_due_date, expense.frequency as RecurringFrequency, expense.week_interval ?? undefined);
         
         await supabase
           .from('recurring_expenses')

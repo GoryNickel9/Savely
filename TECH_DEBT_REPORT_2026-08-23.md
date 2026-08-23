@@ -39,6 +39,7 @@ Nessun finding di severity **Critical**: sicurezza server-side (RLS, verifica ad
 | `npm run lint` | 0 errori, 1 warning |
 | `npm run typecheck` (pre-Fase 0) | **no-op: 0 file controllati** (v. TD-011) |
 | Stato post-Fase 1 | 0 errori typecheck (2 progetti), 0 `any` in src/api, `noImplicitAny` attivo, 186 test verdi |
+| Stato post-Fase 2 (parziale) | `strict: true` completo, bundle principale 627 KB raw / ~190 KB gzip (era 1,81 MB), 193 test verdi |
 | Tabelle con RLS | 32/32 create nelle migrazioni ✅ |
 
 ---
@@ -328,14 +329,14 @@ Per evitare falsi positivi, questi aspetti sono stati verificati e sono **sani**
 3. **TD-008**: ✅ nuovo `parsePermissions()` condiviso in `lib/permissions.ts` con verifica `typeof === 'boolean'` per ogni campo; usato dal profilo DB, dai caller admin e dalla cache localStorage di `usePermissions` (sostituisce il guard debole che accettava `{admin: "ciao"}`).
 4. **TD-004**: ✅ rate limiting in-memory su `/api/reset-password` (3 richieste/10 min per IP e per email, risposta 429). Nota: per-istanza sulle Vercel Function — per un limite globale servirebbe Vercel WAF o un contatore KV.
 
-### Fase 2 — Struttura e performance (2–4 sprint)
-1. **TD-015**: prima i test degli hook critici (rete di sicurezza).
-2. **TD-005**: pagina generica per libreria e poker (−~2.000 LOC attese).
-3. **TD-006**: spezzare `Settings.tsx` in sezioni.
-4. **TD-007**: lazy loading delle rotte + vendor chunk.
-5. **TD-009**: convergere gli hook manuali su React Query (uno per PR).
-6. **TD-016**: unificare il sistema toast.
-7. **TD-002 (follow-up)**: attivare `strictNullChecks` (21 errori stimati, fix in PR dedicata).
+### Fase 2 — Struttura e performance (2–4 sprint) — 🔶 in corso (aggiornamento 23/08/2026 sera)
+1. **TD-015**: 🟡 parziale — aggiunti 7 test unit per `parsePermissions` (guard permessi irrobustito). Restano: test per gli hook critici (`usePermissions`, `useSupabaseData`) con Testing Library, **prerequisito** per TD-005/TD-006.
+2. **TD-005**: ⬜ pagina generica per libreria e poker (−~2.000 LOC attese).
+3. **TD-006**: ⬜ spezzare `Settings.tsx` in sezioni (differito: da fare dopo la rete di test UI, è il refactor più invasivo della fase).
+4. **TD-007**: ✅ lazy loading di tutte le 41 rotte con `React.lazy` + `Suspense`. Bundle principale: **1,81 MB → 627 KB raw (−65%), ~190 KB gzip**; recharts isolato in chunk separato (340 KB raw) caricato solo dalle pagine con grafici; 115 chunk totali.
+5. **TD-009**: ⬜ convergere gli hook manuali su React Query (uno per PR).
+6. **TD-016**: ⬜ unificare il sistema toast.
+7. **TD-002 (follow-up)**: ✅ **`strict: true` completo attivo su `tsconfig.app.json` con 0 errori** (non solo `strictNullChecks`: l'intero set). Risolti 19 errori null-safety legittimi (user nullable in hook con `enabled`, `aal`/`factorsData` MFA nullable, widening `collector_number`/`couple_category_name` nullable). Rimosso il vecchio `TECH_DEBT_REPORT.md` del 15/08.
 
 ### Fase 3 — Lungo termine (oltre 4 sprint)
 - **TD-013**: upgrade major graduali (prima date-fns 4 e zod 4; tailwind 4 e recharts 3 solo con sprint dedicato e verifica visiva e2e).

@@ -23,7 +23,7 @@ export function usePokerNextCut() {
       const { data, error } = await supabase
         .from('poker_next_cut')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('user_id', user!.id)
         .order('created_at', { ascending: true })
         .limit(1);
 
@@ -34,7 +34,7 @@ export function usePokerNextCut() {
         const { data: newRecord, error: insertError } = await supabase
           .from('poker_next_cut')
           .insert({
-            user_id: user.id,
+            user_id: user!.id,
             name: 'Next Cut',
             amount: 0,
             deal: 0.55,

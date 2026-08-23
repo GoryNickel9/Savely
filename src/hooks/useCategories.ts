@@ -13,7 +13,7 @@ export function useCategories() {
       const { data, error } = await supabase
         .from('categories')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('user_id', user!.id)
         .is('deleted_at', null)
         .order('name');
       
@@ -49,7 +49,7 @@ export function useCategories() {
         .from('categories')
         .update(category)
         .eq('id', id)
-        .eq('user_id', user.id);
+        .eq('user_id', user!.id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -67,7 +67,7 @@ export function useCategories() {
         .from('transactions')
         .update({ category_id: null })
         .eq('category_id', id)
-        .eq('user_id', user.id);
+        .eq('user_id', user!.id);
       
       if (transactionsError) {
         console.error('Errore aggiornamento transazioni:', transactionsError);
@@ -83,7 +83,7 @@ export function useCategories() {
         .from('categories')
         .update(updateData)
         .eq('id', id)
-        .eq('user_id', user.id);
+        .eq('user_id', user!.id);
       
       if (error) {
         console.error('Errore soft delete categoria:', error);
