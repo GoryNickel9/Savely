@@ -163,9 +163,9 @@ export default function AccountSection() {
                         return (
                           <div key={req.key} className="flex items-center gap-2 text-sm">
                             {isMet ? (
-                              <Check className="w-4 h-4 text-green-500 flex-shrink-0" />
+                              <Check className="w-4 h-4 text-green-500 shrink-0" />
                             ) : (
-                              <X className="w-4 h-4 text-red-500 flex-shrink-0" />
+                              <X className="w-4 h-4 text-red-500 shrink-0" />
                             )}
                             <span className={isMet ? 'text-green-600' : 'text-muted-foreground'}>
                               {t(req.label)}

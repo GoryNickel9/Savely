@@ -48,7 +48,7 @@ export default function Sidebar() {
 
   const NavContent = () => (
     <div className="flex flex-col h-full">
-      <div className="p-6 flex-shrink-0">
+      <div className="p-6 shrink-0">
         <h1 className="text-2xl font-display font-bold">{t('Savely')}</h1>
         <p className="text-sm text-muted-foreground mt-1">{t('La tua finanza personale semplificata')}</p>
       </div>
@@ -177,7 +177,7 @@ export default function Sidebar() {
 
       </nav>
 
-      <div className="p-4 border-t border-border flex-shrink-0">
+      <div className="p-4 border-t border-border shrink-0">
         {/* Sezione Admin - visibile solo agli admin */}
         {permissions?.admin && (
           <Link
@@ -242,7 +242,7 @@ export default function Sidebar() {
       {/* Mobile sidebar overlay */}
       {mobileOpen && (
         <div
-          className="lg:hidden fixed inset-0 bg-background/80 backdrop-blur-sm z-40"
+          className="lg:hidden fixed inset-0 bg-background/80 backdrop-blur-xs z-40"
           onClick={() => setMobileOpen(false)}
         />
       )}

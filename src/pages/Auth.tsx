@@ -191,7 +191,7 @@ export default function Auth() {
   return (
     <div className="min-h-screen flex dark">
       {/* Left side - Branding */}
-      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-primary/20 via-background to-accent/20 p-12 flex-col justify-between">
+      <div className="hidden lg:flex lg:w-1/2 bg-linear-to-br from-primary/20 via-background to-accent/20 p-12 flex-col justify-between">
         <div>
           <h1 className="text-4xl font-display font-bold">{t('Savely')}</h1>
           <p className="text-muted-foreground mt-2">{t('La tua finanza personale, semplificata')}</p>
@@ -426,9 +426,9 @@ export default function Auth() {
                           return (
                             <div key={req.key} className="flex items-center gap-2 text-sm">
                               {isMet ? (
-                                <Check className="w-4 h-4 text-green-500 flex-shrink-0" />
+                                <Check className="w-4 h-4 text-green-500 shrink-0" />
                               ) : (
-                                <X className="w-4 h-4 text-red-500 flex-shrink-0" />
+                                <X className="w-4 h-4 text-red-500 shrink-0" />
                               )}
                               <span className={isMet ? 'text-green-600' : 'text-muted-foreground'}>
                                 {req.label}

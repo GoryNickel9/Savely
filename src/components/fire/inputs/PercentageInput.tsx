@@ -73,7 +73,7 @@ export default function PercentageInput({
       </label>
       
       <div className="flex items-center gap-3">
-        <div className="relative flex-shrink-0 w-24">
+        <div className="relative shrink-0 w-24">
           <input
             id={id}
             type="number"

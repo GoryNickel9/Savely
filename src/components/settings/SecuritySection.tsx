@@ -213,12 +213,12 @@ export default function SecuritySection() {
                   key={session.id}
                   className={`flex items-center gap-3 text-sm py-1.5 ${isCurrent ? 'rounded-md bg-primary/5 p-3' : 'border-b border-border/50 last:border-0'}`}
                 >
-                  <Icon className={`w-4 h-4 flex-shrink-0 ${isCurrent ? 'text-primary' : 'text-muted-foreground'}`} />
+                  <Icon className={`w-4 h-4 shrink-0 ${isCurrent ? 'text-primary' : 'text-muted-foreground'}`} />
                   <div className="flex-1 min-w-0">
                     <span className="font-medium">{ua.browser} su {ua.os}</span>
                     {isCurrent && <span className="text-muted-foreground"> · {t('Questo dispositivo')}</span>}
                   </div>
-                  <div className="flex items-center gap-2 flex-shrink-0">
+                  <div className="flex items-center gap-2 shrink-0">
                     {isCurrent && <Badge variant="secondary" className="text-xs">{t('Attuale')}</Badge>}
                     {!isCurrent && session.session_id && (
                       <Button
@@ -265,7 +265,7 @@ export default function SecuritySection() {
                 </code>
               </div>
               <div className="rounded-lg border border-yellow-500/40 bg-yellow-500/10 p-3 flex gap-2">
-                <AlertTriangle className="w-4 h-4 text-yellow-500 flex-shrink-0 mt-0.5" />
+                <AlertTriangle className="w-4 h-4 text-yellow-500 shrink-0 mt-0.5" />
                 <p className="text-xs text-muted-foreground">
                   {t('Salva questa chiave in un posto sicuro: è l\'unico backup se perdi il telefono. Senza di essa potresti non riuscire più ad accedere al tuo account.')}
                 </p>

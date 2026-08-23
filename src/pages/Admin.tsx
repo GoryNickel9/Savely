@@ -300,7 +300,7 @@ export default function Admin() {
                       {/* Spazio ridotto tra nome e pulsanti */}
                       <div className="flex items-start gap-3">
                         {/* Avatar */}
-                        <div className="w-10 h-10 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center flex-shrink-0">
+                        <div className="w-10 h-10 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center shrink-0">
                           <span className="text-sm font-medium text-emerald-400">
                             {userProfile.full_name?.charAt(0) || userProfile.user_id.charAt(0)}
                           </span>
@@ -440,7 +440,7 @@ export default function Admin() {
                       <div key={adminUser.user_id} className="p-6 hover:bg-muted/30 transition-colors">
                         <div className="flex items-center justify-between gap-4">
                           <div className="flex items-center gap-3 min-w-0">
-                            <div className="w-10 h-10 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center flex-shrink-0">
+                            <div className="w-10 h-10 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center shrink-0">
                               <span className="text-sm font-medium text-emerald-400">
                                 {adminUser.full_name?.charAt(0) || adminUser.email?.charAt(0) || '?'}
                               </span>
@@ -451,7 +451,7 @@ export default function Admin() {
                                   {adminUser.full_name || t('Utente senza nome')}
                                 </span>
                                 {adminUser.user_id === user?.id && (
-                                  <span className="px-2 py-0.5 bg-emerald-500/20 text-emerald-400 text-xs rounded-md flex-shrink-0">
+                                  <span className="px-2 py-0.5 bg-emerald-500/20 text-emerald-400 text-xs rounded-md shrink-0">
                                     {t('Tu')}
                                   </span>
                                 )}
@@ -465,7 +465,7 @@ export default function Admin() {
                             </div>
                           </div>
 
-                          <div className="flex items-center gap-2 flex-shrink-0">
+                          <div className="flex items-center gap-2 shrink-0">
                             <Button
                               variant="outline"
                               size="sm"

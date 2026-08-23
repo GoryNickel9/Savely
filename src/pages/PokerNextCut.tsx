@@ -150,7 +150,7 @@ export default function PokerNextCut() {
 
   if (nextCutLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-6">
+      <div className="min-h-screen bg-linear-to-br from-slate-900 via-slate-800 to-slate-900 p-6">
         <div className="flex items-center justify-center py-8">
           <RefreshCw className="w-8 h-8 animate-spin text-slate-400" />
         </div>
@@ -317,7 +317,7 @@ export default function PokerNextCut() {
                               step="0.01"
                               value={editingDealValue}
                               onChange={(e) => setEditingDealValue(e.target.value)}
-                              className="w-24 px-3 py-2 bg-slate-900/50 border border-slate-600 rounded text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              className="w-24 px-3 py-2 bg-slate-900/50 border border-slate-600 rounded text-white focus:outline-hidden focus:ring-2 focus:ring-blue-500"
                               autoFocus
                               onKeyDown={(e) => {
                                 if (e.key === 'Enter') handleUpdateDeal();
@@ -368,7 +368,7 @@ export default function PokerNextCut() {
                               step="0.01"
                               value={editingProfitLossValue}
                               onChange={(e) => setEditingProfitLossValue(e.target.value)}
-                              className="w-28 px-3 py-2 bg-slate-900/50 border border-slate-600 rounded text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              className="w-28 px-3 py-2 bg-slate-900/50 border border-slate-600 rounded text-white focus:outline-hidden focus:ring-2 focus:ring-blue-500"
                               autoFocus
                               onKeyDown={(e) => {
                                 if (e.key === 'Enter') handleUpdateProfitLoss();

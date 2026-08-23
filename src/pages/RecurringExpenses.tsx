@@ -272,7 +272,7 @@ export default function RecurringExpenses() {
                       {c.confidence === 'high' && t(' · alta affidabilità')}
                     </p>
                   </div>
-                  <div className="flex items-center gap-2 flex-shrink-0">
+                  <div className="flex items-center gap-2 shrink-0">
                     <Button size="sm" onClick={() => acceptCandidate(c)}>
                       <Check className="w-4 h-4 mr-1" />
                       {t('Aggiungi')}

@@ -164,7 +164,7 @@ export default function BaristaFIRE() {
         {/* Results */}
         <div className="lg:col-span-2 space-y-6">
           {/* Comparison Banner */}
-          <div className="bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 border border-amber-200 dark:border-amber-800 rounded-xl p-4">
+          <div className="bg-linear-to-r from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 border border-amber-200 dark:border-amber-800 rounded-xl p-4">
             <div className="flex items-center justify-between flex-wrap gap-4">
               <div>
                 <p className="text-sm text-amber-700 dark:text-amber-300">{t('Barista Fire vs Standard FIRE')}</p>

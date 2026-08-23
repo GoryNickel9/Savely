@@ -339,15 +339,21 @@ Per evitare falsi positivi, questi aspetti sono stati verificati e sono **sani**
 6. **TD-016**: ✅ chiuso il 23/08/2026 (V). Sistema toast unificato su `sonner`: le 183 chiamate `toast({title, description, variant})` convertite in `toast(title, {description})` / `toast.error(...)` via codemod Node (`scripts/`, rimosso dopo l'uso) con guardie anti-falso-positivo (catture bloccate su `toast(`/`;`, chiusura ancorata a `;)` per non mangiare le `})` delle interpolazioni i18n). Un caso con `variant` dinamica (RevolutImportDialog) gestito a mano con if/else. Rimossi `use-toast.ts` (192 righe) e `toaster.tsx`; il wrapper `ui/sonner.tsx` ora stila gli errori con la palette `destructive` (parità visiva col vecchio variant). Mock del test `useSupabaseData` aggiornato a `toast.error`.
 7. **TD-002 (follow-up)**: ✅ **`strict: true` completo attivo su `tsconfig.app.json` con 0 errori** (non solo `strictNullChecks`: l'intero set). Risolti 19 errori null-safety legittimi (user nullable in hook con `enabled`, `aal`/`factorsData` MFA nullable, widening `collector_number`/`couple_category_name` nullable). Rimosso il vecchio `TECH_DEBT_REPORT.md` del 15/08.
 
-### Fase 3 — Lungo termine (oltre 4 sprint) — ✅ completata il 23/08/2026 (Tailwind 4 differito con motivazione)
+### Fase 3 — Lungo termine (oltre 4 sprint) — ✅ completata il 23/08/2026 (Tailwind 4 incluso)
 - **TD-013**: ✅ upgrade major completati con verifica typecheck+lint+test+build a ogni passo:
   - `date-fns` 3→4, `zod` 3→4 (fix `error.errors`→`error.issues` in Auth/ResetPassword/Settings), `lucide-react` 0.462→1, `sonner` 1→2, `tailwind-merge` 2→3, `recharts` 2→3 (9 formatter adattati ai tipi `Formatter<ValueType, NameType>`; chunk grafici 340K→300K; wrapper shadcn `ui/chart.ts` rimosso, era inutilizzato e incompatibile).
   - **Rimosse 4 dipendenze morte invece di aggiornarle**: `@hookform/resolvers` (mai importato), `react-day-picker` + `ui/calendar.tsx` (mai usati), `react-resizable-panels` + `ui/resizable.tsx` (mai usati, v4 rinominava l'intera API), `@vercel/node` (solo tipi: sostituito da `api/vercel.ts` locale — v7 introduceva advisories transitive ajv/path-to-regexp/undici che avrebbero rotto il gate audit CI).
   - **Audit npm: 0 vulnerabilità** mantenuto su tutto il percorso.
+- **✅ Tailwind 3→4 completato il 23/08/2026 (VI)** — con la verifica visuale che il report richiedeva:
+  - baseline screenshot delle 5 pagine pubbliche (auth/privacy/cookies/terms/reset-password) via script `scripts/visual-check.mjs` (Playwright chromium), migrazione con `@tailwindcss/upgrade` (config → `@theme` in `index.css`, keyframes, `@utility` per glass/gradients, PostCSS → `@tailwindcss/postcss`, autoprefixer rimosso), poi confronto screenshot: delta 0–2%, layout e palette invariati (verifica visiva anche via analisi immagini su auth e terms).
+  - `tailwindcss-animate` **funziona** in v4 via `@plugin` (verificato: `.animate-in`/`.fade-in-0` nel CSS prodotto) — non serve `tw-animate-css`.
+  - Fix manuale: il tool aveva applicato la rename CSS `outline`→`outline-solid` anche ai **valori della prop `variant`** di Button/Pagination (5 occorrenze) — revertate.
+  - Rimossi `tailwind.config.ts` (135 righe), `ui/toast.tsx` (orfano da TD-016) e `@tailwindcss/typography` (mai cablato nella config v3 — **nota**: le classi `prose` in `LegalLayout`/`StandardFIRE` erano e restano inerte; cablarle in v4 con `@plugin` è un follow-up volontario se si vuole la tipografia documentale).
+  - CSS bundle: 104 KB raw / ~16 KB gzip (v3: 82/14 KB — delta minore).
+  - Limitazione dichiarata: verifica visuale coperta sulle pagine pubbliche; le pagine autenticate condividono lo stesso design system e sono coperte da typecheck/test/build — un passaggio manuale rapido sulle rotte principali resta consigliato al primo deploy post-migrazione.
 - **Differiti con motivazione**:
-  - `tailwindcss` 3→4: la migrazione riscrive config→CSS (`@theme`), plugin `tailwindcss-animate` e il pattern `hsl(var(--…))` diffuso su tutte le pagine; richiede verifica visiva pagina-per-pagina (screenshot/e2e visivi) non automatizzabile in questa sessione. Prelude: snapshot visivi delle rotte principali.
   - `typescript` 7 (Go-based) e `eslint` 10: attendere il supporto di `typescript-eslint`; si resta su TS 5.9 / eslint 9.
-- Out of scope rimanenti dalla Fase 2: TD-005, TD-006, TD-009, TD-016 (v. sopra).
+- Out of scope rimanenti dalla Fase 2: TD-005, TD-006, TD-009, TD-016 — tutti chiusi (v. sopra).
 
 ---
 

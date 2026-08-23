@@ -81,7 +81,7 @@ export default function ProgressToFIRE({
           aria-label={t('{{progress}}% progress to FIRE goal', { progress: displayProgress })}
         >
           <div 
-            className="h-full bg-gradient-to-r from-fire-400 via-fire-500 to-fire-600 rounded-full transition-all duration-500 ease-out"
+            className="h-full bg-linear-to-r from-fire-400 via-fire-500 to-fire-600 rounded-full transition-all duration-500 ease-out"
             style={{ width: `${progress}%` }}
           />
         </div>

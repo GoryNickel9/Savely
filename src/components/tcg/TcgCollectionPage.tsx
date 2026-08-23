@@ -250,7 +250,7 @@ export default function TcgCollectionPage({
                         </Select>
                       </div>
                     )}
-                    <div className="grid grid-cols-3 gap-3 max-h-[28rem] overflow-y-auto pr-1">
+                    <div className="grid grid-cols-3 gap-3 max-h-112 overflow-y-auto pr-1">
                       {filteredSearchResults.map((r) => (
                         <button
                           key={r.id}
@@ -259,8 +259,8 @@ export default function TcgCollectionPage({
                           className="flex flex-col items-center gap-2 p-2 rounded-lg border border-border hover:bg-secondary text-left"
                         >
                           {r.image
-                            ? <img src={r.image} alt={r.name} className="w-full aspect-[63/88] object-contain rounded" />
-                            : <div className="w-full aspect-[63/88] bg-muted rounded" />
+                            ? <img src={r.image} alt={r.name} className="w-full aspect-63/88 object-contain rounded" />
+                            : <div className="w-full aspect-63/88 bg-muted rounded" />
                           }
                           <div className="w-full min-w-0">
                             <p className="text-xs font-medium truncate">{r.name}</p>
@@ -371,7 +371,7 @@ export default function TcgCollectionPage({
             <span className="text-right">{t('Qta')}</span>
             <span className="text-right">{t('Acquisto')}</span>
             <span className="text-right">{t('Attuale')}</span>
-            <span className="w-[4.5rem] block"></span>
+            <span className="w-18 block"></span>
           </div>
           {isLoading ? (
             <p className="text-center py-8 text-muted-foreground">{t('Caricamento...')}</p>

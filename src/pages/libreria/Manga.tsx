@@ -366,21 +366,21 @@ export default function LibreriaManga() {
             {filteredItems.map((item) => (
               <div key={item.id} className="glass rounded-xl p-4 flex items-center gap-4">
                 {item.cover_image ? (
-                  <img src={item.cover_image} alt={item.title} className="w-12 h-16 object-cover rounded flex-shrink-0" />
+                  <img src={item.cover_image} alt={item.title} className="w-12 h-16 object-cover rounded shrink-0" />
                 ) : (
-                  <div className="w-12 h-16 bg-muted rounded flex-shrink-0" />
+                  <div className="w-12 h-16 bg-muted rounded shrink-0" />
                 )}
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold truncate">{item.title}</p>
                   <p className="text-sm text-muted-foreground">{item.author ?? '—'}</p>
                   <p className="text-xs text-muted-foreground">{item.publisher ?? '—'}{item.year ? ` · ${item.year}` : ''}</p>
                 </div>
-                <div className="text-right flex-shrink-0 space-y-1">
+                <div className="text-right shrink-0 space-y-1">
                   <p className="text-sm"><span className="text-muted-foreground">{t('Acquistato: ')}</span>{item.purchase_price != null ? `€${item.purchase_price.toLocaleString('it-IT', { minimumFractionDigits: 2 })}` : '—'}</p>
                   <p className="text-sm"><span className="text-muted-foreground">{t('Reselling: ')}</span>{item.reselling_value != null ? `€${item.reselling_value.toLocaleString('it-IT', { minimumFractionDigits: 2 })}` : '—'}</p>
                   {item.quantity > 1 && <p className="text-xs text-muted-foreground">x{item.quantity}</p>}
                 </div>
-                <div className="flex gap-1 flex-shrink-0">
+                <div className="flex gap-1 shrink-0">
                   <Button size="icon" variant="ghost" onClick={() => openEdit(item)}><Pencil className="w-4 h-4" /></Button>
                   <Button size="icon" variant="ghost" className="text-destructive hover:text-destructive" onClick={() => handleDelete(item.id)}><Trash2 className="w-4 h-4" /></Button>
                 </div>
