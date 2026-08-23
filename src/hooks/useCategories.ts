@@ -26,7 +26,6 @@ export function useCategories() {
   const createCategory = useMutation({
     mutationFn: async (category: { name: string; icon: string; color: string; type: TransactionType }) => {
       if (!user) throw new Error('Not authenticated');
-      console.log('Creazione categoria:', { ...category, user_id: user.id });
       const { error, data } = await supabase.from('categories').insert({
         ...category,
         user_id: user.id,
@@ -35,7 +34,6 @@ export function useCategories() {
         console.error('Errore creazione categoria:', error);
         throw error;
       }
-      console.log('Categoria creata con successo:', data);
       return data;
     },
     onSuccess: () => {
@@ -63,9 +61,7 @@ export function useCategories() {
   const deleteCategory = useMutation({
     mutationFn: async (id: string) => {
       if (!user) throw new Error('Not authenticated');
-      
-      console.log('Eliminazione categoria:', id);
-      
+
       // Prima aggiorna le transazioni associate per impostare category_id a NULL
       const { error: transactionsError } = await supabase
         .from('transactions')
@@ -93,8 +89,7 @@ export function useCategories() {
         console.error('Errore soft delete categoria:', error);
         throw error;
       }
-      
-      console.log('Categoria eliminata con successo:', data);
+
       return data;
     },
     onSuccess: () => {

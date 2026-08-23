@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { Link } from 'react-router';
 import MainLayout from '@/components/layout/MainLayout';
 import { useTcgCards } from '@/hooks/useTcgCards';
@@ -81,14 +81,17 @@ export default function TcgCollectionPage({
   const [editPurchasePrice, setEditPurchasePrice] = useState('');
   const [editPurchaseDate, setEditPurchaseDate] = useState('');
 
-  const normalizeSet = (code: string | null | undefined) =>
-    normalizeSetCodeToUpper ? code?.toUpperCase() : code;
+  const normalizeSet = useCallback(
+    (code: string | null | undefined) =>
+      normalizeSetCodeToUpper ? code?.toUpperCase() : code,
+    [normalizeSetCodeToUpper]
+  );
 
   const uniqueSets = useMemo(() => {
     const sets = new Set<string>();
     cards.forEach(c => { if (c.set_code) sets.add(normalizeSet(c.set_code) as string); });
     return Array.from(sets).sort();
-  }, [cards, normalizeSetCodeToUpper]);
+  }, [cards, normalizeSet]);
 
   const searchResultSets = useMemo(() => {
     const sets = new Set<string>();

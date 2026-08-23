@@ -22,6 +22,25 @@ const RESEND_FROM =
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+// L'header Origin è controllato dal chiamante: lo accettiamo come redirect solo
+// se in questa allow-list (defense-in-depth rispetto alla allow-list dei
+// redirect URL configurata su Supabase, che resta l'ultimo filtro).
+const ALLOWED_ORIGINS = (
+  process.env.ALLOWED_ORIGINS ??
+  'https://savely.cc,https://bank.savely.cc,http://localhost:8080'
+)
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
+function resolveRedirectTo(origin: string | undefined): string {
+  if (origin && ALLOWED_ORIGINS.includes(origin)) {
+    return `${origin}/reset-password`;
+  }
+  // Origin assente o non riconosciuto: fallback sul dominio di produzione.
+  return `${ALLOWED_ORIGINS[0]}/reset-password`;
+}
+
 async function generateRecoveryLink(email: string, redirectTo: string): Promise<string> {
   // GoTrue legge redirect_to dalla query string e lo onora solo se il dominio
   // è nella allow-list (Authentication → URL Configuration su Supabase);
@@ -99,9 +118,7 @@ export default async function handler(
   }
 
   try {
-    const origin = req.headers.origin;
-    const redirectTo =
-      typeof origin === 'string' ? `${origin}/reset-password` : `${SUPABASE_URL}/reset-password`;
+    const redirectTo = resolveRedirectTo(req.headers.origin);
     const link = await generateRecoveryLink(email, redirectTo);
     await sendEmailWithResend(
       email,

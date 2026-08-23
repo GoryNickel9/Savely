@@ -17,24 +17,29 @@ const SUPABASE_URL =
   process.env.SUPABASE_URL ?? 'https://crqnfbahytzenisospcx.supabase.co';
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-const serviceHeaders: Record<string, string> = {
-  'Content-Type': 'application/json',
-  apikey: SUPABASE_SERVICE_ROLE_KEY!,
-  Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
-};
+/** Header di servizio; null se la env non è configurata. */
+function getServiceHeaders(): Record<string, string> | null {
+  if (!SUPABASE_SERVICE_ROLE_KEY) return null;
+  return {
+    'Content-Type': 'application/json',
+    apikey: SUPABASE_SERVICE_ROLE_KEY,
+    Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+  };
+}
 
 /** Verifica il token del chiamante e che sia admin. Ritorna l'id del chiamante. */
 async function requireAdmin(
   req: VercelRequest,
+  serviceHeaders: Record<string, string>,
 ): Promise<{ id: string } | null> {
   const authHeader = req.headers.authorization;
-  if (!authHeader?.startsWith('Bearer ') || !SUPABASE_SERVICE_ROLE_KEY) {
+  if (!authHeader?.startsWith('Bearer ')) {
     return null;
   }
   const token = authHeader.slice('Bearer '.length);
 
   const userRes = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
-    headers: { apikey: SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${token}` },
+    headers: { apikey: serviceHeaders.apikey, Authorization: `Bearer ${token}` },
   });
   if (!userRes.ok) return null;
   const caller = (await userRes.json()) as { id?: string };
@@ -58,7 +63,7 @@ interface AuthUser {
   last_sign_in_at: string | null;
 }
 
-async function listAuthUsers(): Promise<AuthUser[]> {
+async function listAuthUsers(serviceHeaders: Record<string, string>): Promise<AuthUser[]> {
   const all: AuthUser[] = [];
   const perPage = 1000;
   for (let page = 1; page <= 10; page++) {
@@ -76,9 +81,9 @@ async function listAuthUsers(): Promise<AuthUser[]> {
   return all;
 }
 
-async function getUsers() {
+async function getUsers(serviceHeaders: Record<string, string>) {
   const [authUsers, profilesRes] = await Promise.all([
-    listAuthUsers(),
+    listAuthUsers(serviceHeaders),
     fetch(`${SUPABASE_URL}/rest/v1/profiles?select=user_id,full_name,permissions`, {
       headers: serviceHeaders,
     }),
@@ -106,7 +111,7 @@ async function getUsers() {
   });
 }
 
-async function deleteUser(userId: string) {
+async function deleteUser(userId: string, serviceHeaders: Record<string, string>) {
   const res = await fetch(
     `${SUPABASE_URL}/auth/v1/admin/users/${encodeURIComponent(userId)}`,
     { method: 'DELETE', headers: serviceHeaders },
@@ -127,7 +132,15 @@ export default async function handler(
   }
 
   try {
-    const caller = await requireAdmin(req);
+    const serviceHeaders = getServiceHeaders();
+    if (!serviceHeaders) {
+      // Distinto dal 403: qui è un problema di configurazione del deploy,
+      // non di permessi del chiamante.
+      res.status(500).json({ error: 'Funzione non configurata' });
+      return;
+    }
+
+    const caller = await requireAdmin(req, serviceHeaders);
     if (!caller) {
       res.status(403).json({ error: 'Non autorizzato' });
       return;
@@ -136,7 +149,7 @@ export default async function handler(
     const action = req.body?.action;
 
     if (action === 'get-users') {
-      res.status(200).json({ users: await getUsers() });
+      res.status(200).json({ users: await getUsers(serviceHeaders) });
       return;
     }
 
@@ -150,7 +163,7 @@ export default async function handler(
         res.status(400).json({ error: 'Non puoi eliminare il tuo account' });
         return;
       }
-      await deleteUser(userId);
+      await deleteUser(userId, serviceHeaders);
       res.status(200).json({ ok: true });
       return;
     }
