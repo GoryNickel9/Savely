@@ -330,10 +330,10 @@ Per evitare falsi positivi, questi aspetti sono stati verificati e sono **sani**
 3. **TD-008**: ✅ nuovo `parsePermissions()` condiviso in `lib/permissions.ts` con verifica `typeof === 'boolean'` per ogni campo; usato dal profilo DB, dai caller admin e dalla cache localStorage di `usePermissions` (sostituisce il guard debole che accettava `{admin: "ciao"}`).
 4. **TD-004**: ✅ rate limiting in-memory su `/api/reset-password` (3 richieste/10 min per IP e per email, risposta 429). Nota: per-istanza sulle Vercel Function — per un limite globale servirebbe Vercel WAF o un contatore KV.
 
-### Fase 2 — Struttura e performance (2–4 sprint) — 🔶 in corso (aggiornamento 23/08/2026 sera)
-1. **TD-015**: 🟡 parziale — aggiunti 7 test unit per `parsePermissions` (guard permessi irrobustito). Restano: test per gli hook critici (`usePermissions`, `useSupabaseData`) con Testing Library, **prerequisito** per TD-005/TD-006.
+### Fase 2 — Struttura e performance (2–4 sprint) — 🔶 in corso (aggiornamento 23/08/2026 sera, II)
+1. **TD-015**: ✅ completata la rete di test: aggiunti Testing Library + jsdom e 7 test per gli hook critici — `usePermissions` (4: cache localStorage normalizzata, fetch+cache DB, reset senza utente, gestione errore con invalidazione cache) e `useSupabaseData` (3: caricamento con filtro/ordine, toast d'errore, nessuna query senza utente). Totale suite: 200 test / 19 file.
 2. **TD-005**: ⬜ pagina generica per libreria e poker (−~2.000 LOC attese).
-3. **TD-006**: ⬜ spezzare `Settings.tsx` in sezioni (differito: da fare dopo la rete di test UI, è il refactor più invasivo della fase).
+3. **TD-006**: ✅ `Settings.tsx` 893→189 righe: estratti `AccountSection`, `CurrencySection`, `LanguageSection`, `ImportExportSection` (dialog controllato, aperto anche dal bottone Privacy) e `CategoriesSection` in `src/components/settings/`, seguendo il pattern di `CoupleSettingsSection`/`SecuritySection`. In pagina restano solo Privacy e Zona Pericolo.
 4. **TD-007**: ✅ lazy loading di tutte le 41 rotte con `React.lazy` + `Suspense`. Bundle principale: **1,81 MB → 627 KB raw (−65%), ~190 KB gzip**; recharts isolato in chunk separato (340 KB raw) caricato solo dalle pagine con grafici; 115 chunk totali.
 5. **TD-009**: ⬜ convergere gli hook manuali su React Query (uno per PR).
 6. **TD-016**: ⬜ unificare il sistema toast.
