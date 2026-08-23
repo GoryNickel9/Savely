@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { Edit2, Trash2, Save, X } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
@@ -44,7 +44,6 @@ const ASSET_TYPES = [
 ];
 
 export default function ISINMappingsDialog({ open, onOpenChange, userId }: ISINMappingsDialogProps) {
-  const { toast } = useToast();
   const { t } = useTranslation();
   const [mappings, setMappings] = useState<ISINMapping[]>([]);
   const [loading, setLoading] = useState(true);
@@ -68,11 +67,7 @@ export default function ISINMappingsDialog({ open, onOpenChange, userId }: ISINM
 
     if (error) {
       console.error('Error fetching ISIN mappings:', error);
-      toast({
-        title: t('Errore'),
-        description: t('Impossibile caricare i mapping ISIN.'),
-        variant: 'destructive',
-      });
+      toast.error(t('Errore'), { description: t('Impossibile caricare i mapping ISIN.') });
     } else {
       setMappings(data || []);
     }
@@ -104,16 +99,9 @@ export default function ISINMappingsDialog({ open, onOpenChange, userId }: ISINM
       .eq('id', id);
 
     if (error) {
-      toast({
-        title: t('Errore'),
-        description: t('Impossibile aggiornare il mapping.'),
-        variant: 'destructive',
-      });
+      toast.error(t('Errore'), { description: t('Impossibile aggiornare il mapping.') });
     } else {
-      toast({
-        title: t('Mapping aggiornato'),
-        description: t('Il mapping ISIN è stato aggiornato.'),
-      });
+      toast(t('Mapping aggiornato'), { description: t('Il mapping ISIN è stato aggiornato.') });
       setEditingId(null);
       fetchMappings();
     }
@@ -126,16 +114,9 @@ export default function ISINMappingsDialog({ open, onOpenChange, userId }: ISINM
       .eq('id', id);
 
     if (error) {
-      toast({
-        title: t('Errore'),
-        description: t('Impossibile eliminare il mapping.'),
-        variant: 'destructive',
-      });
+      toast.error(t('Errore'), { description: t('Impossibile eliminare il mapping.') });
     } else {
-      toast({
-        title: t('Mapping eliminato'),
-        description: t('Il mapping ISIN è stato eliminato.'),
-      });
+      toast(t('Mapping eliminato'), { description: t('Il mapping ISIN è stato eliminato.') });
       fetchMappings();
     }
   };

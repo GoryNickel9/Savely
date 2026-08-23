@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { Loader2, Lock, Check, X } from 'lucide-react';
 import { z } from 'zod';
 import { confirmPasswordSchema, checkPasswordRequirements, passwordRequirementsList } from '@/lib/passwordValidation';
@@ -20,7 +20,6 @@ export default function ResetPassword() {
   const [hasAccess, setHasAccess] = useState(false);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { toast } = useToast();
 
   useEffect(() => {
     // Grant immediate access if arriving via recovery email (type param in URL)
@@ -71,16 +70,9 @@ export default function ResetPassword() {
     setLoading(false);
 
     if (error) {
-      toast({
-        title: t('Errore'),
-        description: error.message,
-        variant: 'destructive',
-      });
+      toast.error(t('Errore'), { description: error.message });
     } else {
-      toast({
-        title: t('Password aggiornata!'),
-        description: t('La tua password è stata cambiata con successo.'),
-      });
+      toast(t('Password aggiornata!'), { description: t('La tua password è stata cambiata con successo.') });
       navigate('/');
     }
   };

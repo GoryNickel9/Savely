@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { CURRENCY_SYMBOLS } from '@/lib/constants';
 import MainLayout from '@/components/layout/MainLayout';
 import { getGlobalMedianMonthlySpending, parseAmount } from '@/lib/utils';
@@ -21,7 +21,6 @@ export default function PokerNextCut() {
   const { transactions } = useTransactions();
   const { expenses: manualExpenses, addExpense: addExpenseMutation, updateExpense: updateExpenseMutation, deleteExpense: deleteExpenseMutation } = usePokerManualExpenses();
   const { nextCut, loading: nextCutLoading, updateDeal, updateProfitLoss, updateAmount } = usePokerNextCut();
-  const { toast } = useToast();
   
   const [editingProfitLoss, setEditingProfitLoss] = useState(false);
   const [editingProfitLossValue, setEditingProfitLossValue] = useState('');
@@ -79,15 +78,11 @@ export default function PokerNextCut() {
     
     try {
       await updateProfitLoss(parseAmount(editingProfitLossValue));
-      toast({ title: t('P/L Attuale aggiornato!') });
+      toast(t('P/L Attuale aggiornato!'));
       setEditingProfitLoss(false);
       setEditingProfitLossValue('');
     } catch (error) {
-      toast({
-        title: t('Errore'),
-        description: t('Impossibile aggiornare il P/L Attuale'),
-        variant: 'destructive'
-      });
+      toast.error(t('Errore'), { description: t('Impossibile aggiornare il P/L Attuale') });
     }
   };
 
@@ -97,15 +92,11 @@ export default function PokerNextCut() {
     
     try {
       await updateDeal(parseAmount(editingDealValue));
-      toast({ title: t('Deal aggiornato!') });
+      toast(t('Deal aggiornato!'));
       setEditingDeal(false);
       setEditingDealValue('');
     } catch (error) {
-      toast({
-        title: t('Errore'),
-        description: t('Impossibile aggiornare il deal'),
-        variant: 'destructive'
-      });
+      toast.error(t('Errore'), { description: t('Impossibile aggiornare il deal') });
     }
   };
 
@@ -116,16 +107,12 @@ export default function PokerNextCut() {
     
     try {
       await addExpenseMutation.mutateAsync({ name: newExpenseName, amount: parseAmount(newExpenseAmount) });
-      toast({ title: t('Spesa aggiunta!') });
+      toast(t('Spesa aggiunta!'));
       setCreateOpen(false);
       setNewExpenseName('');
       setNewExpenseAmount('');
     } catch (error) {
-      toast({
-        title: t('Errore'),
-        description: t('Impossibile aggiungere la spesa'),
-        variant: 'destructive'
-      });
+      toast.error(t('Errore'), { description: t('Impossibile aggiungere la spesa') });
     }
   };
 
@@ -136,16 +123,12 @@ export default function PokerNextCut() {
     
     try {
       await updateExpenseMutation.mutateAsync({ id: editingExpense.id, amount: parseAmount(editingExpenseAmount) });
-      toast({ title: t('Spesa aggiornata!') });
+      toast(t('Spesa aggiornata!'));
       setEditOpen(false);
       setEditingExpense(null);
       setEditingExpenseAmount('');
     } catch (error) {
-      toast({
-        title: t('Errore'),
-        description: t('Impossibile aggiornare la spesa'),
-        variant: 'destructive'
-      });
+      toast.error(t('Errore'), { description: t('Impossibile aggiornare la spesa') });
     }
   };
 
@@ -153,13 +136,9 @@ export default function PokerNextCut() {
   const handleDeleteExpense = async (id: string) => {
     try {
       await deleteExpenseMutation.mutateAsync(id);
-      toast({ title: t('Spesa eliminata!') });
+      toast(t('Spesa eliminata!'));
     } catch (error) {
-      toast({
-        title: t('Errore'),
-        description: t('Impossibile eliminare la spesa'),
-        variant: 'destructive'
-      });
+      toast.error(t('Errore'), { description: t('Impossibile eliminare la spesa') });
     }
   };
 

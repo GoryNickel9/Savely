@@ -3,7 +3,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -87,7 +87,6 @@ export default function FumoCrudPage<T extends FumoBaseEntry>({
 }: FumoCrudConfig<T>) {
   const { t } = useTranslation();
   const { user } = useAuth();
-  const { toast } = useToast();
 
   const { data: rawEntries, loading, reload } = useSupabaseData<T>({
     tableName,
@@ -168,13 +167,13 @@ export default function FumoCrudPage<T extends FumoBaseEntry>({
           costo_mensile: campi.costo_mensile,
         } as unknown as FumoInsert);
       if (error) throw error;
-      toast({ title: t('Nuova riga aggiunta') });
+      toast(t('Nuova riga aggiunta'));
       closeCreate();
       resetCreateForm();
       await reload();
     } catch (error) {
       console.error('Errore:', error);
-      toast({ title: t('Errore'), variant: 'destructive' });
+      toast.error(t('Errore'));
     }
   };
 
@@ -182,11 +181,11 @@ export default function FumoCrudPage<T extends FumoBaseEntry>({
     try {
       const { error } = await supabase.from(tableName).delete().eq('id', id);
       if (error) throw error;
-      toast({ title: t(deleteToast) });
+      toast(t(deleteToast));
       await reload();
     } catch (error) {
       console.error('Errore:', error);
-      toast({ title: t('Errore'), variant: 'destructive' });
+      toast.error(t('Errore'));
     }
   };
 
@@ -214,12 +213,12 @@ export default function FumoCrudPage<T extends FumoBaseEntry>({
         } as unknown as FumoUpdate)
         .eq('id', editingItem.id);
       if (error) throw error;
-      toast({ title: t('Record aggiornato') });
+      toast(t('Record aggiornato'));
       closeEdit();
       await reload();
     } catch (error) {
       console.error('Errore:', error);
-      toast({ title: t("Errore nell'aggiornamento"), variant: 'destructive' });
+      toast.error(t("Errore nell'aggiornamento"));
     }
   };
 

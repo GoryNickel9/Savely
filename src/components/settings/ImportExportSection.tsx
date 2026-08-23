@@ -10,7 +10,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { useAuth } from '@/hooks/useAuth';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { USER_TABLES } from '@/lib/constants';
 import { serializeCsvRows } from '@/lib/csv';
@@ -30,7 +30,6 @@ interface ImportExportSectionProps {
  */
 export default function ImportExportSection({ open, onOpenChange }: ImportExportSectionProps) {
   const { user } = useAuth();
-  const { toast } = useToast();
   const { t } = useTranslation();
 
   const [isExporting, setIsExporting] = useState(false);
@@ -86,11 +85,7 @@ export default function ImportExportSection({ open, onOpenChange }: ImportExport
       }
 
       if (rows.length === 0) {
-        toast({
-          title: t('Nessun dato'),
-          description: t('Non ci sono dati da esportare'),
-          variant: 'destructive',
-        });
+        toast.error(t('Nessun dato'), { description: t('Non ci sono dati da esportare') });
         return;
       }
 
@@ -99,17 +94,10 @@ export default function ImportExportSection({ open, onOpenChange }: ImportExport
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
       downloadBlob(blob, filename);
 
-      toast({
-        title: t('Export completato'),
-        description: t('Dati esportati in {{filename}}', { filename }),
-      });
+      toast(t('Export completato'), { description: t('Dati esportati in {{filename}}', { filename }) });
     } catch (error) {
       console.error('Export error:', error);
-      toast({
-        title: t('Errore export'),
-        description: t('Si è verificato un errore durante l\'export'),
-        variant: 'destructive',
-      });
+      toast.error(t('Errore export'), { description: t('Si è verificato un errore durante l\'export') });
     } finally {
       setIsExporting(false);
     }

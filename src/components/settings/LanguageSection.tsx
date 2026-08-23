@@ -8,7 +8,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useProfile } from '@/hooks/useProfile';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { SUPPORTED_LANGUAGES, changeLanguage, type LanguageCode } from '@/i18n';
 
 /**
@@ -16,7 +16,6 @@ import { SUPPORTED_LANGUAGES, changeLanguage, type LanguageCode } from '@/i18n';
  */
 export default function LanguageSection() {
   const { updateLanguage } = useProfile();
-  const { toast } = useToast();
   const { t, i18n } = useTranslation();
 
   return (
@@ -34,9 +33,9 @@ export default function LanguageSection() {
           changeLanguage(v as LanguageCode);
           try {
             await updateLanguage.mutateAsync(v as LanguageCode);
-            toast({ title: t('Lingua aggiornata!') });
+            toast(t('Lingua aggiornata!'));
           } catch {
-            toast({ title: t('Errore'), variant: 'destructive' });
+            toast.error(t('Errore'));
           }
         }}
       >

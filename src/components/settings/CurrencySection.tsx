@@ -8,7 +8,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useProfile } from '@/hooks/useProfile';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { CURRENCY_SYMBOLS } from '@/lib/constants';
 import { CurrencyCode } from '@/lib/types';
 
@@ -17,7 +17,6 @@ import { CurrencyCode } from '@/lib/types';
  */
 export default function CurrencySection() {
   const { defaultCurrency, updateDefaultCurrency } = useProfile();
-  const { toast } = useToast();
   const { t } = useTranslation();
 
   return (
@@ -34,9 +33,9 @@ export default function CurrencySection() {
         onValueChange={async (v) => {
           try {
             await updateDefaultCurrency.mutateAsync(v as CurrencyCode);
-            toast({ title: t('Valuta principale aggiornata!') });
+            toast(t('Valuta principale aggiornata!'));
           } catch {
-            toast({ title: t('Errore'), variant: 'destructive' });
+            toast.error(t('Errore'));
           }
         }}
       >

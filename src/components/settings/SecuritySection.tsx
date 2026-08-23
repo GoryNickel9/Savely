@@ -9,7 +9,7 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from '@/components/ui/dialog';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { useFactors, useEnrollTotp, useVerifyEnrollment, useUnenrollFactor, challengeAndVerify } from '@/hooks/useMfa';
 import { useActiveSessions, useDeleteSession } from '@/hooks/useActiveSessions';
 import { supabase } from '@/integrations/supabase/client';
@@ -21,7 +21,6 @@ import { validateTotpCode, extractSecretFromUri } from '@/lib/mfa';
  * "sign out other sessions". Rendered inside Settings.tsx.
  */
 export default function SecuritySection() {
-  const { toast } = useToast();
   const { t } = useTranslation();
   const { data: factorsData, isLoading: factorsLoading } = useFactors();
   const enroll = useEnrollTotp();
@@ -53,11 +52,7 @@ export default function SecuritySection() {
       setCode('');
       setEnrollOpen(true);
     } catch (err) {
-      toast({
-        title: t('Errore'),
-        description: (err as Error).message || t('Impossibile avviare la configurazione 2FA'),
-        variant: 'destructive',
-      });
+      toast.error(t('Errore'), { description: (err as Error).message || t('Impossibile avviare la configurazione 2FA') });
     }
   };
 
@@ -65,21 +60,17 @@ export default function SecuritySection() {
     if (!pendingEnrollment) return;
     const codeErr = validateTotpCode(code);
     if (codeErr) {
-      toast({ title: t('Codice non valido'), description: codeErr, variant: 'destructive' });
+      toast.error(t('Codice non valido'), { description: codeErr });
       return;
     }
     try {
       await verify.mutateAsync({ factorId: pendingEnrollment.factorId, code });
-      toast({ title: t('2FA attivato!'), description: t('Da ora dovrai inserire il codice dell\'app al login.') });
+      toast(t('2FA attivato!'), { description: t('Da ora dovrai inserire il codice dell\'app al login.') });
       setEnrollOpen(false);
       setPendingEnrollment(null);
       setCode('');
     } catch (err) {
-      toast({
-        title: t('Verifica fallita'),
-        description: (err as Error).message || t('Codice non corretto, riprova'),
-        variant: 'destructive',
-      });
+      toast.error(t('Verifica fallita'), { description: (err as Error).message || t('Codice non corretto, riprova') });
     }
   };
 
@@ -97,18 +88,18 @@ export default function SecuritySection() {
     if (!unenrollTarget) return;
     const codeErr = validateTotpCode(unenrollCode);
     if (codeErr) {
-      toast({ title: t('Codice non valido'), description: codeErr, variant: 'destructive' });
+      toast.error(t('Codice non valido'), { description: codeErr });
       return;
     }
     setUnenrollVerifying(true);
     try {
       await challengeAndVerify(unenrollTarget, unenrollCode);
       await unenroll.mutateAsync(unenrollTarget);
-      toast({ title: t('2FA disattivato') });
+      toast(t('2FA disattivato'));
       setUnenrollTarget(null);
       setUnenrollCode('');
     } catch (err) {
-      toast({ title: t('Errore'), description: (err as Error).message, variant: 'destructive' });
+      toast.error(t('Errore'), { description: (err as Error).message });
     } finally {
       setUnenrollVerifying(false);
     }
@@ -120,9 +111,9 @@ export default function SecuritySection() {
       const { error } = await supabase.auth.signOut({ scope: 'others' });
       if (error) throw error;
       await refetchSessions();
-      toast({ title: t('Altre sessioni chiuse') });
+      toast(t('Altre sessioni chiuse'));
     } catch (err) {
-      toast({ title: t('Errore'), description: (err as Error).message, variant: 'destructive' });
+      toast.error(t('Errore'), { description: (err as Error).message });
     } finally {
       setSigningOutOthers(false);
     }
@@ -132,9 +123,9 @@ export default function SecuritySection() {
     setDisconnectingId(sessionId);
     try {
       await deleteSession.mutateAsync(sessionId);
-      toast({ title: t('Dispositivo disconnesso') });
+      toast(t('Dispositivo disconnesso'));
     } catch (err) {
-      toast({ title: t('Errore'), description: (err as Error).message, variant: 'destructive' });
+      toast.error(t('Errore'), { description: (err as Error).message });
     } finally {
       setDisconnectingId(null);
     }

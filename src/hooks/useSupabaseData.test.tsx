@@ -4,14 +4,15 @@ import type { ReactNode } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { useAuthMock, toastMock, fromMock } = vi.hoisted(() => ({
+const { useAuthMock, toastMock, toastErrorMock, fromMock } = vi.hoisted(() => ({
   useAuthMock: vi.fn(),
   toastMock: vi.fn(),
+  toastErrorMock: vi.fn(),
   fromMock: vi.fn(),
 }));
 
 vi.mock('@/hooks/useAuth', () => ({ useAuth: useAuthMock }));
-vi.mock('@/hooks/use-toast', () => ({ useToast: () => ({ toast: toastMock }) }));
+vi.mock('sonner', () => ({ toast: Object.assign(toastMock, { error: toastErrorMock }) }));
 vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: (key: string) => key }) }));
 
 type MockResult = { data: unknown[] | null; error: { message: string } | null };
@@ -88,9 +89,9 @@ describe('useSupabaseData', () => {
       expect(result.current.loading).toBe(false);
     });
     expect(result.current.data).toEqual([]);
-    expect(toastMock).toHaveBeenCalledWith(
-      expect.objectContaining({ variant: 'destructive' }),
-    );
+    expect(toastErrorMock).toHaveBeenCalledWith('Errore', {
+      description: 'Impossibile caricare i dati',
+    });
   });
 
   it('senza utente non esegue alcuna query', async () => {

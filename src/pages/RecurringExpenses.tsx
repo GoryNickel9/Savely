@@ -36,7 +36,7 @@ import {
 import { Switch } from '@/components/ui/switch';
 import { CURRENCY_SYMBOLS } from '@/lib/constants';
 import { Plus, Edit2, Trash2, RefreshCw, Calendar, Sparkles, X, Check } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { useRecurringCandidates } from '@/hooks/useRecurringCandidates';
 import { Badge } from '@/components/ui/badge';
 
@@ -44,7 +44,6 @@ export default function RecurringExpenses() {
   const { t } = useTranslation();
   const { recurringExpenses, isLoading, createRecurringExpense, updateRecurringExpense, deleteRecurringExpense, processDueExpenses } = useRecurringExpenses();
   const { categories } = useCategories();
-  const { toast } = useToast();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingExpense, setEditingExpense] = useState<string | null>(null);
   
@@ -82,15 +81,15 @@ export default function RecurringExpenses() {
     try {
       if (editingExpense) {
         await updateRecurringExpense.mutateAsync({ id: editingExpense, ...expenseData });
-        toast({ title: t('Uscita ricorrente aggiornata') });
+        toast(t('Uscita ricorrente aggiornata'));
       } else {
         await createRecurringExpense.mutateAsync(expenseData);
-        toast({ title: t('Uscita ricorrente creata') });
+        toast(t('Uscita ricorrente creata'));
       }
       setDialogOpen(false);
       resetForm();
     } catch (error) {
-      toast({ title: t('Errore'), description: t('Operazione fallita'), variant: 'destructive' });
+      toast.error(t('Errore'), { description: t('Operazione fallita') });
     }
   };
 
@@ -124,32 +123,29 @@ export default function RecurringExpenses() {
   const handleDelete = async (id: string) => {
     try {
       await deleteRecurringExpense.mutateAsync(id);
-      toast({ title: t('Uscita ricorrente eliminata') });
+      toast(t('Uscita ricorrente eliminata'));
     } catch (error) {
-      toast({ title: t('Errore'), description: t('Eliminazione fallita'), variant: 'destructive' });
+      toast.error(t('Errore'), { description: t('Eliminazione fallita') });
     }
   };
 
   const handleToggleActive = async (id: string, isActive: boolean) => {
     try {
       await updateRecurringExpense.mutateAsync({ id, is_active: !isActive });
-      toast({ title: isActive ? t('Uscita disattivata') : t('Uscita attivata') });
+      toast(isActive ? t('Uscita disattivata') : t('Uscita attivata'));
     } catch (error) {
-      toast({ title: 'Errore', variant: 'destructive' });
+      toast.error('Errore');
     }
   };
 
   const handleProcessNow = async () => {
     try {
       const result = await processDueExpenses.mutateAsync();
-      toast({
-        title: t('Elaborazione completata'),
-        description: result.processed > 0
+      toast(t('Elaborazione completata'), { description: result.processed > 0
           ? t('{{num}} transazioni create', { num: result.processed })
-          : t('Nessuna uscita da elaborare'),
-      });
+          : t('Nessuna uscita da elaborare') });
     } catch (error) {
-      toast({ title: 'Errore', variant: 'destructive' });
+      toast.error('Errore');
     }
   };
 

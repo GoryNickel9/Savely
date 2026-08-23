@@ -16,7 +16,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { useCouplePairStatus } from '@/hooks/useCouplePairStatus';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { validateCoupleCode } from '@/lib/coupleExpenses';
 
 export default function CoupleSettingsSection() {
@@ -33,7 +33,6 @@ export default function CoupleSettingsSection() {
     revokeConnection,
   } = useCouplePairStatus();
 
-  const { toast } = useToast();
   const { t } = useTranslation();
   const [partnerCode, setPartnerCode] = useState('');
   const [copied, setCopied] = useState(false);
@@ -50,25 +49,21 @@ export default function CoupleSettingsSection() {
     await navigator.clipboard.writeText(myCode);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
-    toast({ title: t('Codice copiato negli appunti') });
+    toast(t('Codice copiato negli appunti'));
   };
 
   const handleSend = async () => {
     const validationError = validateCoupleCode(partnerCode);
     if (validationError) {
-      toast({ title: t('Codice non valido'), description: validationError, variant: 'destructive' });
+      toast.error(t('Codice non valido'), { description: validationError });
       return;
     }
     try {
       await sendRequest.mutateAsync(partnerCode.trim().toUpperCase());
       setPartnerCode('');
-      toast({ title: t('Richiesta inviata'), description: t('Il tuo partner riceverà la tua richiesta.') });
+      toast(t('Richiesta inviata'), { description: t('Il tuo partner riceverà la tua richiesta.') });
     } catch (err: unknown) {
-      toast({
-        title: t('Errore'),
-        description: (err as Error).message ?? t('Impossibile inviare la richiesta.'),
-        variant: 'destructive',
-      });
+      toast.error(t('Errore'), { description: (err as Error).message ?? t('Impossibile inviare la richiesta.') });
     }
   };
 
@@ -76,9 +71,9 @@ export default function CoupleSettingsSection() {
     if (!pendingSent) return;
     try {
       await cancelRequest.mutateAsync(pendingSent.id);
-      toast({ title: t('Richiesta annullata') });
+      toast(t('Richiesta annullata'));
     } catch (err: unknown) {
-      toast({ title: t('Errore'), description: (err as Error).message, variant: 'destructive' });
+      toast.error(t('Errore'), { description: (err as Error).message });
     }
   };
 
@@ -86,9 +81,9 @@ export default function CoupleSettingsSection() {
     if (!pendingReceived) return;
     try {
       await rejectRequest.mutateAsync(pendingReceived.id);
-      toast({ title: t('Richiesta rifiutata') });
+      toast(t('Richiesta rifiutata'));
     } catch (err: unknown) {
-      toast({ title: t('Errore'), description: (err as Error).message, variant: 'destructive' });
+      toast.error(t('Errore'), { description: (err as Error).message });
     }
   };
 
@@ -96,9 +91,9 @@ export default function CoupleSettingsSection() {
     if (!pendingReceived) return;
     try {
       await acceptRequest.mutateAsync(pendingReceived.id);
-      toast({ title: t('Connessione stabilita!'), description: t('Ora sei collegato con il tuo partner.') });
+      toast(t('Connessione stabilita!'), { description: t('Ora sei collegato con il tuo partner.') });
     } catch (err: unknown) {
-      toast({ title: t('Errore'), description: (err as Error).message, variant: 'destructive' });
+      toast.error(t('Errore'), { description: (err as Error).message });
     }
   };
 
@@ -106,9 +101,9 @@ export default function CoupleSettingsSection() {
     if (!connection) return;
     try {
       await revokeConnection.mutateAsync(connection.id);
-      toast({ title: t('Connessione revocata'), description: t('Le spese condivise sono ora archiviate in sola lettura.') });
+      toast(t('Connessione revocata'), { description: t('Le spese condivise sono ora archiviate in sola lettura.') });
     } catch (err: unknown) {
-      toast({ title: t('Errore'), description: (err as Error).message, variant: 'destructive' });
+      toast.error(t('Errore'), { description: (err as Error).message });
     }
   };
 

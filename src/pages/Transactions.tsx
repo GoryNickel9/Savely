@@ -20,7 +20,7 @@ import { CategorySelect } from '@/components/CategorySelect';
 import { CURRENCY_SYMBOLS } from '@/lib/constants';
 import { parseAmount, todayLocalISO } from '@/lib/utils';
 import { Plus, Trash2, Pencil, Search, Calendar, HeartHandshake } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { startOfMonth, endOfMonth, subMonths, startOfYear, endOfYear, subYears, isWithinInterval, parseISO } from 'date-fns';
 
 type FilterPeriod = 'this_month' | 'last_month' | 'last_semester' | 'last_year' | 'this_year' | 'custom';
@@ -33,7 +33,6 @@ export default function Transactions() {
   const { permissions } = usePermissions();
   const { connection } = useCouplePairStatus();
   const { mySharedTransactionIds, mySharedExpenses, partnerSharedExpenses, createSharedExpense, removeMySharedExpense, removePartnerSharedExpense } = useSharedExpenses(connection?.id ?? null);
-  const { toast } = useToast();
 
   // Dialog states
   const [open, setOpen] = useState(false);
@@ -104,11 +103,11 @@ export default function Transactions() {
     if (!transactionToDelete) return;
     try {
       await deleteTransaction.mutateAsync(transactionToDelete.id);
-      toast({ title: t('Transazione eliminata!') });
+      toast(t('Transazione eliminata!'));
       setDeleteConfirmOpen(false);
       setTransactionToDelete(null);
     } catch {
-      toast({ title: t("Errore durante l'eliminazione"), variant: 'destructive' });
+      toast.error(t("Errore durante l'eliminazione"));
     }
   };
 
@@ -128,7 +127,7 @@ export default function Transactions() {
     e.preventDefault();
     const parsedAmount = parseAmount(amount);
     if (!Number.isFinite(parsedAmount) || parsedAmount <= 0) {
-      toast({ title: t('Importo non valido'), description: t('Inserisci un importo maggiore di zero.'), variant: 'destructive' });
+      toast.error(t('Importo non valido'), { description: t('Inserisci un importo maggiore di zero.') });
       return;
     }
     setIsFetchingRate(true);
@@ -145,7 +144,7 @@ export default function Transactions() {
           description: description || undefined,
           date,
         });
-        toast({ title: t('Transazione modificata!') });
+        toast(t('Transazione modificata!'));
       } else {
         const newTx = await createTransaction.mutateAsync({
           type,
@@ -171,19 +170,15 @@ export default function Transactions() {
               partner_amount: customPartner,
             });
           } catch (err) {
-            toast({
-              title: t('Spesa salvata, ma condivisione fallita'),
-              description: (err as Error).message,
-              variant: 'destructive',
-            });
+            toast.error(t('Spesa salvata, ma condivisione fallita'), { description: (err as Error).message });
           }
         }
-        toast({ title: t('Transazione aggiunta!') });
+        toast(t('Transazione aggiunta!'));
       }
       setOpen(false);
       resetForm();
     } catch {
-      toast({ title: t('Errore'), variant: 'destructive' });
+      toast.error(t('Errore'));
     } finally {
       setIsFetchingRate(false);
     }

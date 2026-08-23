@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Plus, Trash2, Search, Loader2, Pencil, ArrowLeft } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { parseAmount } from '@/lib/utils';
 import { useTranslation } from 'react-i18next';
 
@@ -35,7 +35,6 @@ function parseVolumeRange(s: string): number[] | null {
 export default function LibreriaManga() {
   const { t } = useTranslation();
   const { items, isLoading, createItem, updateItem, deleteItem, totalCost, totalReselling, totalGain } = useLibraryItems('manga');
-  const { toast } = useToast();
 
   const [filterText, setFilterText] = useState('');
   const [filterAuthor, setFilterAuthor] = useState('all');
@@ -116,7 +115,7 @@ export default function LibreriaManga() {
             notes: notes.trim() || undefined,
           });
         }
-        toast({ title: volumes.length > 1 ? t('{{count}} volumi aggiunti!', { count: volumes.length }) : t('Volume aggiunto!') });
+        toast(volumes.length > 1 ? t('{{count}} volumi aggiunti!', { count: volumes.length }) : t('Volume aggiunto!'));
       } else {
         await createItem.mutateAsync({
           category: 'manga',
@@ -130,11 +129,11 @@ export default function LibreriaManga() {
           quantity: Number.parseInt(quantity, 10) || 1,
           notes: notes.trim() || undefined,
         });
-        toast({ title: t('Manga aggiunto!') });
+        toast(t('Manga aggiunto!'));
       }
       resetAddDialog();
     } catch {
-      toast({ title: t('Errore'), variant: 'destructive' });
+      toast.error(t('Errore'));
     }
   };
 
@@ -182,19 +181,19 @@ export default function LibreriaManga() {
         quantity: Number.parseInt(editQuantity, 10) || 1,
         notes: editNotes.trim() || undefined,
       });
-      toast({ title: t('Manga aggiornato!') });
+      toast(t('Manga aggiornato!'));
       setEditOpen(false);
     } catch {
-      toast({ title: t('Errore'), variant: 'destructive' });
+      toast.error(t('Errore'));
     }
   };
 
   const handleDelete = async (id: string) => {
     try {
       await deleteItem.mutateAsync(id);
-      toast({ title: t('Manga rimosso') });
+      toast(t('Manga rimosso'));
     } catch {
-      toast({ title: t('Errore'), variant: 'destructive' });
+      toast.error(t('Errore'));
     }
   };
 

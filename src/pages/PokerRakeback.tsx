@@ -3,7 +3,7 @@ import MainLayout from '@/components/layout/MainLayout';
 import { useAuth } from '@/hooks/useAuth';
 import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -36,7 +36,6 @@ interface YearlyData {
 export default function PokerRakeback() {
   const { t } = useTranslation();
   const { user } = useAuth();
-  const { toast } = useToast();
   
   const currentYear = new Date().getFullYear();
   
@@ -86,11 +85,7 @@ export default function PokerRakeback() {
   // Aggiungi entry rakeback
   const addEntry = async () => {
     if (!newMonth || !newRakeGenerated || !newRakebackReceived) {
-      toast({
-        title: t('Attenzione'),
-        description: t('Compila tutti i campi'),
-        variant: 'destructive',
-      });
+      toast.error(t('Attenzione'), { description: t('Compila tutti i campi') });
       return;
     }
     
@@ -115,11 +110,7 @@ export default function PokerRakeback() {
       }
       
       if (existingData) {
-        toast({
-          title: t('Attenzione'),
-          description: t('Esiste già un rakeback per questo mese'),
-          variant: 'destructive',
-        });
+        toast.error(t('Attenzione'), { description: t('Esiste già un rakeback per questo mese') });
         return;
       }
       
@@ -137,11 +128,11 @@ export default function PokerRakeback() {
       setNewMonth('');
       setNewRakeGenerated('');
       setNewRakebackReceived('');
-      toast({ title: t('Rakeback aggiunto') });
+      toast(t('Rakeback aggiunto'));
       await reload();
     } catch (error) {
       console.error('Errore:', error);
-      toast({ title: t('Errore'), variant: 'destructive' });
+      toast.error(t('Errore'));
     }
   };
 
@@ -153,11 +144,11 @@ export default function PokerRakeback() {
         .delete()
         .eq('id', id);
       if (error) throw error;
-      toast({ title: t('Rakeback eliminato') });
+      toast(t('Rakeback eliminato'));
       await reload();
     } catch (error) {
       console.error('Errore:', error);
-      toast({ title: t('Errore'), variant: 'destructive' });
+      toast.error(t('Errore'));
     }
   };
 
@@ -169,11 +160,7 @@ export default function PokerRakeback() {
 
   const saveEdit = async (id: string) => {
     if (!editRakeGenerated || !editRakebackReceived) {
-      toast({
-        title: t('Attenzione'),
-        description: t('Compila tutti i campi obbligatori'),
-        variant: 'destructive',
-      });
+      toast.error(t('Attenzione'), { description: t('Compila tutti i campi obbligatori') });
       return;
     }
     
@@ -191,12 +178,12 @@ export default function PokerRakeback() {
       
       if (error) throw error;
       
-      toast({ title: t('Rakeback aggiornato') });
+      toast(t('Rakeback aggiornato'));
       closeEdit();
       await reload();
     } catch (error) {
       console.error('Errore:', error);
-      toast({ title: t('Errore'), variant: 'destructive' });
+      toast.error(t('Errore'));
     }
   };
 

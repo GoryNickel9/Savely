@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { Loader2, TrendingUp, Shield, PieChart, Check, X, MailCheck, KeyRound } from 'lucide-react';
 import { z } from 'zod';
 import { passwordSchema, checkPasswordRequirements, passwordRequirementsList } from '@/lib/passwordValidation';
@@ -41,7 +41,6 @@ export default function Auth() {
   const [mfaVerifying, setMfaVerifying] = useState(false);
   const { user, signIn, signUp, resetPassword } = useAuth();
   const navigate = useNavigate();
-  const { toast } = useToast();
 
   const authSchema = z.object({
     email: z.string().email(t('Email non valida')),
@@ -93,13 +92,9 @@ export default function Auth() {
 
     if (error) {
       setLoading(false);
-      toast({
-        title: t('Errore di accesso'),
-        description: error.message === 'Invalid login credentials'
+      toast.error(t('Errore di accesso'), { description: error.message === 'Invalid login credentials'
           ? t('Email o password non corretti')
-          : error.message,
-        variant: 'destructive',
-      });
+          : error.message });
       return;
     }
 
@@ -135,11 +130,7 @@ export default function Auth() {
       setMfaCode('');
       // Navigation to "/" is handled by the useEffect on `user`.
     } catch (err) {
-      toast({
-        title: t('Codice 2FA non valido'),
-        description: (err as Error).message || t('Verifica non riuscita, riprova'),
-        variant: 'destructive',
-      });
+      toast.error(t('Codice 2FA non valido'), { description: (err as Error).message || t('Verifica non riuscita, riprova') });
     } finally {
       setMfaVerifying(false);
     }
@@ -157,11 +148,7 @@ export default function Auth() {
     if (!validateForm()) return;
 
     if (!privacyAccepted) {
-      toast({
-        title: t('Consenso obbligatorio'),
-        description: t('Devi accettare la Privacy Policy, la Cookie Policy e i Termini di servizio per registrarti.'),
-        variant: 'destructive',
-      });
+      toast.error(t('Consenso obbligatorio'), { description: t('Devi accettare la Privacy Policy, la Cookie Policy e i Termini di servizio per registrarti.') });
       return;
     }
 
@@ -174,23 +161,16 @@ export default function Auth() {
       if (error.message.includes('already registered')) {
         message = t('Questa email è già registrata. Prova ad accedere.');
       }
-      toast({
-        title: t('Errore di registrazione'),
-        description: message,
-        variant: 'destructive',
-      });
+      toast.error(t('Errore di registrazione'), { description: message });
     } else {
-      toast({
-        title: t('Registrazione completata!'),
-        description: t('Benvenuto in Savely'),
-      });
+      toast(t('Registrazione completata!'), { description: t('Benvenuto in Savely') });
     }
   };
 
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!resetEmail) {
-      toast({ title: t('Inserisci la tua email'), variant: 'destructive' });
+      toast.error(t('Inserisci la tua email'));
       return;
     }
 
@@ -199,11 +179,7 @@ export default function Auth() {
     setResetLoading(false);
 
     if (error) {
-      toast({
-        title: t('Errore'),
-        description: error.message,
-        variant: 'destructive',
-      });
+      toast.error(t('Errore'), { description: error.message });
     } else {
       setSentEmail(resetEmail);
       setResetSent(true);

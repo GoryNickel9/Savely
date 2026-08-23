@@ -3,7 +3,7 @@ import MainLayout from '@/components/layout/MainLayout';
 import { useAuth } from '@/hooks/useAuth';
 import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -40,7 +40,6 @@ interface YearlyData {
 export default function PokerHourlyEarnings() {
   const { t } = useTranslation();
   const { user } = useAuth();
-  const { toast } = useToast();
   
   const currentYear = new Date().getFullYear();
   
@@ -125,11 +124,7 @@ export default function PokerHourlyEarnings() {
   // Aggiungi guadagno orario
   const addEarning = async () => {
     if (!newMonth || !newHours || !newProfitLoss) {
-      toast({
-        title: t('Attenzione'),
-        description: t('Compila tutti i campi'),
-        variant: 'destructive',
-      });
+      toast.error(t('Attenzione'), { description: t('Compila tutti i campi') });
       return;
     }
     
@@ -158,11 +153,7 @@ export default function PokerHourlyEarnings() {
       }
       
       if (existingData) {
-        toast({
-          title: t('Attenzione'),
-          description: t('Esiste già un guadagno orario per questo mese'),
-          variant: 'destructive',
-        });
+        toast.error(t('Attenzione'), { description: t('Esiste già un guadagno orario per questo mese') });
         return;
       }
       
@@ -184,11 +175,11 @@ export default function PokerHourlyEarnings() {
       setNewHours('');
       setNewProfitLoss('');
       setNewNetWonEv('');
-      toast({ title: t('Guadagno orario aggiunto') });
+      toast(t('Guadagno orario aggiunto'));
       await reload();
     } catch (error) {
       console.error('Errore:', error);
-      toast({ title: t('Errore'), variant: 'destructive' });
+      toast.error(t('Errore'));
     }
   };
 
@@ -200,11 +191,11 @@ export default function PokerHourlyEarnings() {
         .delete()
         .eq('id', id);
       if (error) throw error;
-      toast({ title: t('Guadagno orario eliminato') });
+      toast(t('Guadagno orario eliminato'));
       await reload();
     } catch (error) {
       console.error('Errore:', error);
-      toast({ title: t('Errore'), variant: 'destructive' });
+      toast.error(t('Errore'));
     }
   };
 
@@ -225,11 +216,7 @@ export default function PokerHourlyEarnings() {
 
   const saveEdit = async (id: string) => {
     if (!editHours || !editProfitLoss) {
-      toast({
-        title: t('Attenzione'),
-        description: t('Compila tutti i campi obbligatori'),
-        variant: 'destructive',
-      });
+      toast.error(t('Attenzione'), { description: t('Compila tutti i campi obbligatori') });
       return;
     }
     
@@ -254,12 +241,12 @@ export default function PokerHourlyEarnings() {
       
       if (error) throw error;
       
-      toast({ title: t('Guadagno orario aggiornato') });
+      toast(t('Guadagno orario aggiornato'));
       cancelEdit();
       await reload();
     } catch (error) {
       console.error('Errore:', error);
-      toast({ title: t('Errore'), variant: 'destructive' });
+      toast.error(t('Errore'));
     }
   };
 

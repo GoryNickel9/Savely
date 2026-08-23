@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { UserTableName } from '@/lib/constants';
 
 const EMPTY_FILTER: { column: string; value: unknown }[] = [];
@@ -31,7 +31,6 @@ export function useSupabaseData<T extends object>(
 ): UseSupabaseDataReturn<T> {
   const { tableName, orderBy, ascending = false, filter = EMPTY_FILTER } = options;
   const { user } = useAuth();
-  const { toast } = useToast();
   const { t } = useTranslation();
 
   const query = useQuery({
@@ -69,11 +68,7 @@ export function useSupabaseData<T extends object>(
         return (result ?? []) as unknown as T[];
       } catch (error) {
         console.error(`[useSupabaseData] Errore caricamento ${tableName}:`, error);
-        toast({
-          title: t('Errore'),
-          description: t('Impossibile caricare i dati'),
-          variant: 'destructive',
-        });
+        toast.error(t('Errore'), { description: t('Impossibile caricare i dati') });
         throw error;
       }
     },

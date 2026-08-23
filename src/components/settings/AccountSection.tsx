@@ -11,7 +11,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { useAuth } from '@/hooks/useAuth';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import {
   passwordSchema,
   checkPasswordRequirements,
@@ -24,7 +24,6 @@ import {
  */
 export default function AccountSection() {
   const { user, updateEmail, updatePassword } = useAuth();
-  const { toast } = useToast();
   const { t } = useTranslation();
 
   const [accountEditOpen, setAccountEditOpen] = useState(false);
@@ -48,7 +47,7 @@ export default function AccountSection() {
       if (newEmail && newEmail !== user?.email) {
         const { error } = await updateEmail(newEmail);
         if (error) throw error;
-        toast({ title: t('Email aggiornata con successo') });
+        toast(t('Email aggiornata con successo'));
       }
 
       // Update password if provided
@@ -68,7 +67,7 @@ export default function AccountSection() {
         }
         const { error } = await updatePassword(newPassword);
         if (error) throw error;
-        toast({ title: t('Password aggiornata con successo') });
+        toast(t('Password aggiornata con successo'));
       }
 
       setAccountEditOpen(false);
@@ -77,11 +76,7 @@ export default function AccountSection() {
       setNewPassword('');
       setConfirmPassword('');
     } catch (error: unknown) {
-      toast({
-        title: t('Errore'),
-        description: (error as Error).message || t('Impossibile aggiornare le credenziali'),
-        variant: 'destructive'
-      });
+      toast.error(t('Errore'), { description: (error as Error).message || t('Impossibile aggiornare le credenziali') });
     } finally {
       setIsUpdating(false);
     }

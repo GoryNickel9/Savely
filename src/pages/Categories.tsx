@@ -8,13 +8,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { TransactionType, Category } from '@/lib/types';
 import { Plus, Edit2, Trash2, FolderPlus } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { EMOJI_OPTIONS, COLOR_OPTIONS } from '@/lib/constants';
 
 export default function Categories() {
   const { t } = useTranslation();
   const { categories, createCategory, updateCategory, deleteCategory } = useCategories();
-  const { toast } = useToast();
   
   // Create dialog state
   const [createOpen, setCreateOpen] = useState(false);
@@ -36,14 +35,14 @@ export default function Categories() {
     if (!catName.trim()) return;
     try {
       await createCategory.mutateAsync({ name: catName.trim(), icon: catIcon, color: catColor, type: catType });
-      toast({ title: t('Categoria creata!') });
+      toast(t('Categoria creata!'));
       setCreateOpen(false);
       setCatName('');
       setCatIcon('📦');
       setCatColor('#6b7280');
       setCatType('expense');
     } catch {
-      toast({ title: t('Errore'), variant: 'destructive' });
+      toast.error(t('Errore'));
     }
   };
 
@@ -58,7 +57,7 @@ export default function Categories() {
         color: editColor, 
         type: editType 
       });
-      toast({ title: t('Categoria aggiornata!') });
+      toast(t('Categoria aggiornata!'));
       setEditOpen(false);
       setEditingCategory(null);
       setEditName('');
@@ -66,7 +65,7 @@ export default function Categories() {
       setEditColor('#6b7280');
       setEditType('expense');
     } catch {
-      toast({ title: t('Errore'), variant: 'destructive' });
+      toast.error(t('Errore'));
     }
   };
 
@@ -74,9 +73,9 @@ export default function Categories() {
     if (!confirm(t('Sei sicuro di voler eliminare questa categoria?'))) return;
     try {
       await deleteCategory.mutateAsync(id);
-      toast({ title: t('Categoria eliminata!') });
+      toast(t('Categoria eliminata!'));
     } catch {
-      toast({ title: t('Errore'), variant: 'destructive' });
+      toast.error(t('Errore'));
     }
   };
 

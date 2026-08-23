@@ -17,7 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useCategories } from '@/hooks/useCategories';
 import { useQueryClient } from '@tanstack/react-query';
@@ -52,7 +52,6 @@ interface PendingTransaction {
 }
 
 export default function RevolutImportDialog({ open, onOpenChange, userId }: RevolutImportDialogProps) {
-  const { toast } = useToast();
   const { t } = useTranslation();
   const { categories, isLoading: categoriesLoading } = useCategories();
   const queryClient = useQueryClient();
@@ -89,22 +88,14 @@ export default function RevolutImportDialog({ open, onOpenChange, userId }: Revo
     if (fileInputRef.current) fileInputRef.current.value = '';
 
     if (categoriesLoading || expenseCategories.length === 0) {
-      toast({
-        title: t('Categorie mancanti'),
-        description: t('Crea almeno una categoria di uscita prima di importare da Revolut.'),
-        variant: 'destructive',
-      });
+      toast.error(t('Categorie mancanti'), { description: t('Crea almeno una categoria di uscita prima di importare da Revolut.') });
       return;
     }
 
     try {
       validateImportFile(file);
     } catch (error) {
-      toast({
-        title: t('File non valido'),
-        description: error instanceof Error ? error.message : t('Il file selezionato non e valido.'),
-        variant: 'destructive',
-      });
+      toast.error(t('File non valido'), { description: error instanceof Error ? error.message : t('Il file selezionato non e valido.') });
       return;
     }
 
@@ -119,11 +110,7 @@ export default function RevolutImportDialog({ open, onOpenChange, userId }: Revo
       );
 
       if (cardPayments.length === 0) {
-        toast({
-          title: t('Nessuna transazione'),
-          description: t('Nessun pagamento con carta trovato nel file'),
-          variant: 'destructive',
-        });
+        toast.error(t('Nessuna transazione'), { description: t('Nessun pagamento con carta trovato nel file') });
         setIsProcessing(false);
         return;
       }
@@ -188,16 +175,10 @@ export default function RevolutImportDialog({ open, onOpenChange, userId }: Revo
       setPendingTransactions(pending);
       setCategoryMappings(mappingsMap);
 
-      toast({
-        title: t('File Revolut letto'),
-        description: t('{{cardPayments}} Card Payment • {{newCount}} nuove • {{duplicates}} duplicate', { cardPayments: cardPayments.length, newCount: pending.length, duplicates: skipped }),
-      });
+      toast(t('File Revolut letto'), { description: t('{{cardPayments}} Card Payment • {{newCount}} nuove • {{duplicates}} duplicate', { cardPayments: cardPayments.length, newCount: pending.length, duplicates: skipped }) });
 
       if (pending.length === 0) {
-        toast({
-          title: t('Nessuna nuova transazione'),
-          description: t('{{count}} transazioni già presenti sono state saltate', { count: skipped }),
-        });
+        toast(t('Nessuna nuova transazione'), { description: t('{{count}} transazioni già presenti sono state saltate', { count: skipped }) });
         setIsProcessing(false);
         return;
       }
@@ -213,11 +194,7 @@ export default function RevolutImportDialog({ open, onOpenChange, userId }: Revo
       }
     } catch (error) {
       console.error('Import error:', error);
-      toast({
-        title: t('Errore'),
-        description: t('Errore durante la lettura del file'),
-        variant: 'destructive',
-      });
+      toast.error(t('Errore'), { description: t('Errore durante la lettura del file') });
     }
 
     setIsProcessing(false);
@@ -304,15 +281,17 @@ export default function RevolutImportDialog({ open, onOpenChange, userId }: Revo
     setIsProcessing(false);
     queryClient.invalidateQueries({ queryKey: ['transactions'] });
 
-    toast({
-      title: t('Import completato'),
-      description: t('{{count}} importate{{failed}}{{skipped}}', {
-        count: imported,
-        failed: failed > 0 ? t(', {{count}} fallite', { count: failed }) : '',
-        skipped: skippedCount > 0 ? t(', {{count}} duplicate saltate', { count: skippedCount }) : '',
-      }),
-      variant: imported === 0 ? 'destructive' : 'default',
+    // La variante era dinamica nella vecchia API (variant: imported === 0 ? 'destructive' : 'default')
+    const summary = t('{{count}} importate{{failed}}{{skipped}}', {
+      count: imported,
+      failed: failed > 0 ? t(', {{count}} fallite', { count: failed }) : '',
+      skipped: skippedCount > 0 ? t(', {{count}} duplicate saltate', { count: skippedCount }) : '',
     });
+    if (imported === 0) {
+      toast.error(t('Import completato'), { description: summary });
+    } else {
+      toast(t('Import completato'), { description: summary });
+    }
   };
 
   const currentTransaction = pendingTransactions[currentIndex];

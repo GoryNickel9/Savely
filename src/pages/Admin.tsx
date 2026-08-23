@@ -29,7 +29,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { usePermissions } from '@/hooks/usePermissions';
 import { getAllUsersWithPermissions, updateUserPermissions, parsePermissions } from '@/lib/permissions';
 import type { Permissions } from '@/lib/types';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 interface UserProfile {
   id: string;
@@ -50,7 +50,6 @@ interface AdminUser {
 export default function Admin() {
   const { user } = useAuth();
   const { permissions } = usePermissions();
-  const { toast } = useToast();
   const { t } = useTranslation();
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
@@ -81,15 +80,11 @@ export default function Admin() {
       })));
     } catch (error) {
       console.error('Errore nel caricamento degli utenti:', error);
-      toast({
-        title: t('Errore'),
-        description: t('Impossibile caricare gli utenti'),
-        variant: 'destructive',
-      });
+      toast.error(t('Errore'), { description: t('Impossibile caricare gli utenti') });
     } finally {
       setLoading(false);
     }
-  }, [toast, t, user?.id]);
+  }, [t, user?.id]);
 
   useEffect(() => {
     // Carica gli utenti solo quando l'utente è autenticato e ha i permessi admin
@@ -118,15 +113,11 @@ export default function Admin() {
       setAdminUsers(data.users || []);
     } catch (error) {
       console.error('Errore nel caricamento degli utenti:', error);
-      toast({
-        title: t('Errore'),
-        description: t('Impossibile caricare gli utenti'),
-        variant: 'destructive',
-      });
+      toast.error(t('Errore'), { description: t('Impossibile caricare gli utenti') });
     } finally {
       setAdminUsersLoading(false);
     }
-  }, [toast, t]);
+  }, [t]);
 
   const loadRegistrationsEnabled = useCallback(async () => {
     const { data, error } = await supabase.rpc('get_registrations_enabled');
@@ -164,20 +155,13 @@ export default function Admin() {
 
       if (error) throw error;
 
-      toast({
-        title: t('Permesso aggiornato'),
-        description: t('Il permesso {{permission}} è stato aggiornato', { permission }),
-      });
+      toast(t('Permesso aggiornato'), { description: t('Il permesso {{permission}} è stato aggiornato', { permission }) });
 
       // Ricarica gli utenti
       await loadUsers();
     } catch (error) {
       console.error('Errore nell\'aggiornamento del permesso:', error);
-      toast({
-        title: t('Errore'),
-        description: t('Impossibile aggiornare il permesso'),
-        variant: 'destructive',
-      });
+      toast.error(t('Errore'), { description: t('Impossibile aggiornare il permesso') });
     } finally {
       setUpdating(null);
     }
@@ -192,19 +176,12 @@ export default function Admin() {
       if (error) throw error;
 
       setRegistrationsEnabled(enabled);
-      toast({
-        title: t('Impostazione aggiornata'),
-        description: enabled
+      toast(t('Impostazione aggiornata'), { description: enabled
           ? t('Le nuove registrazioni sono state abilitate')
-          : t('Le nuove registrazioni sono state disabilitate'),
-      });
+          : t('Le nuove registrazioni sono state disabilitate') });
     } catch (error) {
       console.error('Errore nell\'aggiornamento delle registrazioni:', error);
-      toast({
-        title: t('Errore'),
-        description: t('Impossibile aggiornare l\'impostazione'),
-        variant: 'destructive',
-      });
+      toast.error(t('Errore'), { description: t('Impossibile aggiornare l\'impostazione') });
     } finally {
       setUpdatingRegistrations(false);
     }
@@ -221,18 +198,11 @@ export default function Admin() {
       });
       if (!res.ok) throw new Error(`Richiesta fallita (${res.status})`);
 
-      toast({
-        title: t('Email inviata'),
-        description: t('Email di reset password inviata a {{email}}', { email: resetTarget.email }),
-      });
+      toast(t('Email inviata'), { description: t('Email di reset password inviata a {{email}}', { email: resetTarget.email }) });
       setResetTarget(null);
     } catch (error) {
       console.error('Errore nell\'invio del reset password:', error);
-      toast({
-        title: t('Errore'),
-        description: t('Impossibile inviare l\'email di reset'),
-        variant: 'destructive',
-      });
+      toast.error(t('Errore'), { description: t('Impossibile inviare l\'email di reset') });
     } finally {
       setResettingUserId(null);
     }
@@ -258,23 +228,16 @@ export default function Admin() {
         throw new Error(body?.error || `Richiesta fallita (${res.status})`);
       }
 
-      toast({
-        title: t('Utente eliminato'),
-        description: t("L'utente {{name}} è stato eliminato definitivamente", {
+      toast(t('Utente eliminato'), { description: t("L'utente {{name}} è stato eliminato definitivamente", {
           name: deleteTarget.full_name || deleteTarget.email || deleteTarget.user_id,
-        }),
-      });
+        }) });
       setDeleteTarget(null);
       await Promise.all([loadUsers(), loadAdminUsers()]);
     } catch (error) {
       console.error('Errore nell\'eliminazione dell\'utente:', error);
-      toast({
-        title: t('Errore'),
-        description: error instanceof Error && error.message
+      toast.error(t('Errore'), { description: error instanceof Error && error.message
           ? error.message
-          : t('Impossibile eliminare l\'utente'),
-        variant: 'destructive',
-      });
+          : t('Impossibile eliminare l\'utente') });
     } finally {
       setDeletingUserId(null);
     }

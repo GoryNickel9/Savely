@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Plus, Trash2, Search, Loader2, Pencil, ArrowLeft } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { parseAmount, todayLocalISO } from '@/lib/utils';
 import { useCardTraderSearch, CardTraderCard } from '@/hooks/useCardTraderSearch';
@@ -56,7 +56,6 @@ export default function TcgCollectionPage({
 }: TcgCollectionPageProps) {
   const { t } = useTranslation();
   const { cards, isLoading, totalValue, totalCost, totalGain, totalGainPercent, createCard, updateCard, deleteCard } = useTcgCards(category);
-  const { toast } = useToast();
 
   const { results, loading: searching, search: searchCardTrader, reset: resetResults } = useCardTraderSearch();
   const [open, setOpen] = useState(false);
@@ -129,11 +128,11 @@ export default function TcgCollectionPage({
         current_price: currentPrice ?? undefined,
         image_url: selected.image,
       });
-      toast({ title: t('Carta aggiunta!') });
+      toast(t('Carta aggiunta!'));
       resetDialog();
     } catch {
       setSavingPrice(false);
-      toast({ title: t('Errore'), variant: 'destructive' });
+      toast.error(t('Errore'));
     }
   };
 
@@ -172,11 +171,11 @@ export default function TcgCollectionPage({
         purchase_price: parseAmount(editPurchasePrice),
         purchase_date: editPurchaseDate,
       });
-      toast({ title: t('Carta aggiornata!') });
+      toast(t('Carta aggiornata!'));
       setEditOpen(false);
       setEditingCard(null);
     } catch {
-      toast({ title: t('Errore'), variant: 'destructive' });
+      toast.error(t('Errore'));
     }
   };
 

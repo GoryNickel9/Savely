@@ -28,7 +28,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { useCategories } from '@/hooks/useCategories';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { Category, TransactionType } from '@/lib/types';
 import { EMOJI_OPTIONS, COLOR_OPTIONS } from '@/lib/constants';
 
@@ -39,7 +39,6 @@ import { EMOJI_OPTIONS, COLOR_OPTIONS } from '@/lib/constants';
  */
 export default function CategoriesSection() {
   const { categories, createCategory, updateCategory, deleteCategory } = useCategories();
-  const { toast } = useToast();
   const { t } = useTranslation();
 
   const [categoriesDialogOpen, setCategoriesDialogOpen] = useState(false);
@@ -82,14 +81,14 @@ export default function CategoriesSection() {
         color: newCatColor,
         type: newCatType
       });
-      toast({ title: t('Categoria creata!') });
+      toast(t('Categoria creata!'));
       setNewCatOpen(false);
       setNewCatName('');
       setNewCatIcon('📦');
       setNewCatColor('#6b7280');
       setNewCatType('expense');
     } catch {
-      toast({ title: t('Errore'), variant: 'destructive' });
+      toast.error(t('Errore'));
     }
   };
 
@@ -104,7 +103,7 @@ export default function CategoriesSection() {
         color: editCatColor,
         type: editCatType
       });
-      toast({ title: t('Categoria aggiornata!') });
+      toast(t('Categoria aggiornata!'));
       setCategoryEditOpen(false);
       setEditingCategory(null);
       setEditCatName('');
@@ -112,7 +111,7 @@ export default function CategoriesSection() {
       setEditCatColor('#6b7280');
       setEditCatType('expense');
     } catch {
-      toast({ title: t('Errore'), variant: 'destructive' });
+      toast.error(t('Errore'));
     }
   };
 
@@ -120,11 +119,11 @@ export default function CategoriesSection() {
     if (!deletingCategory) return;
     try {
       await deleteCategory.mutateAsync(deletingCategory);
-      toast({ title: t('Categoria eliminata!') });
+      toast(t('Categoria eliminata!'));
       setCategoryDeleteOpen(false);
       setDeletingCategory(null);
     } catch {
-      toast({ title: t('Errore'), variant: 'destructive' });
+      toast.error(t('Errore'));
     }
   };
 

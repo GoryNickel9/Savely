@@ -16,7 +16,7 @@ import { ASSET_TYPE_LABELS, CURRENCY_SYMBOLS } from '@/lib/constants';
 import { AssetType, CurrencyCode, PortfolioAsset, TCG_GAME_LABELS } from '@/lib/types';
 import { Plus, Trash2, Clock, X, Library } from 'lucide-react';
 import { useState, useMemo } from 'react';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { parseAmount } from '@/lib/utils';
 import {
   PieChart, Pie, Cell, ResponsiveContainer, Tooltip,
@@ -34,7 +34,6 @@ export default function Portfolio() {
   const { canUpdate, isUpdating, updatePrices: manualUpdatePrices, timeUntilNextUpdate } = useManualPriceUpdate();
   const { historyByAsset, priceHistory } = usePriceHistory();
   const { lastUpdate } = useLastPriceUpdate();
-  const { toast } = useToast();
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState('');
@@ -129,11 +128,11 @@ export default function Portfolio() {
       }
 
       await createAsset.mutateAsync(assetData);
-      toast({ title: t('Acquisto aggiunto!') });
+      toast(t('Acquisto aggiunto!'));
       setOpen(false);
       resetForm();
     } catch {
-      toast({ title: t('Errore'), variant: 'destructive' });
+      toast.error(t('Errore'));
     }
   };
 
@@ -166,12 +165,12 @@ export default function Portfolio() {
         ? { id: editingAsset.id, quantity: parseAmount(editValue) }
         : { id: editingAsset.id, purchase_price: parseAmount(editValue), current_price: parseAmount(editValue) };
       await updateAsset.mutateAsync(updates);
-      toast({ title: t('Liquidità aggiornata!') });
+      toast(t('Liquidità aggiornata!'));
       setEditDialogOpen(false);
       setEditingAsset(null);
       setEditValue('');
     } catch {
-      toast({ title: t('Errore'), variant: 'destructive' });
+      toast.error(t('Errore'));
     }
   };
 
@@ -623,7 +622,7 @@ export default function Portfolio() {
                       size="icon"
                       onClick={() => {
                         Promise.all(group.map(a => deleteAsset.mutateAsync(a.id))).catch(() => {
-                          toast({ title: t('Errore durante l\'eliminazione'), variant: 'destructive' });
+                          toast.error(t('Errore durante l\'eliminazione'));
                         });
                       }}
                     >
@@ -725,7 +724,7 @@ export default function Portfolio() {
                         size="icon"
                         onClick={() => {
                           Promise.all(group.map(a => deleteAsset.mutateAsync(a.id))).catch(() => {
-                            toast({ title: t('Errore durante l\'eliminazione'), variant: 'destructive' });
+                            toast.error(t('Errore durante l\'eliminazione'));
                           });
                         }}
                       >
@@ -757,10 +756,10 @@ export default function Portfolio() {
                   sold_price: soldPrice,
                 });
               }
-              toast({ title: t('Posizione chiusa!') });
+              toast(t('Posizione chiusa!'));
               setClosingGroup(null);
             } catch {
-              toast({ title: t('Errore'), variant: 'destructive' });
+              toast.error(t('Errore'));
             }
           }}
         />

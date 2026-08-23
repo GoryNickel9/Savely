@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Shield, User as UserIcon, RefreshCw } from 'lucide-react';
@@ -20,7 +20,6 @@ interface PermissionsManagerProps {
 }
 
 export default function PermissionsManager({ currentUserId }: PermissionsManagerProps) {
-  const { toast } = useToast();
   const { t } = useTranslation();
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
@@ -37,11 +36,7 @@ export default function PermissionsManager({ currentUserId }: PermissionsManager
       })));
     } catch (error) {
       console.error('Errore nel caricamento degli utenti:', error);
-      toast({
-        title: t('Errore'),
-        description: t('Impossibile caricare gli utenti'),
-        variant: 'destructive',
-      });
+      toast.error(t('Errore'), { description: t('Impossibile caricare gli utenti') });
     } finally {
       setLoading(false);
     }
@@ -65,20 +60,13 @@ export default function PermissionsManager({ currentUserId }: PermissionsManager
 
       if (error) throw error;
 
-      toast({
-        title: t('Permesso aggiornato'),
-        description: t('Il permesso {{permission}} è stato aggiornato', { permission }),
-      });
+      toast(t('Permesso aggiornato'), { description: t('Il permesso {{permission}} è stato aggiornato', { permission }) });
 
       // Ricarica gli utenti
       await loadUsers();
     } catch (error) {
       console.error('Errore nell\'aggiornamento del permesso:', error);
-      toast({
-        title: t('Errore'),
-        description: t('Impossibile aggiornare il permesso'),
-        variant: 'destructive',
-      });
+      toast.error(t('Errore'), { description: t('Impossibile aggiornare il permesso') });
     } finally {
       setUpdating(null);
     }

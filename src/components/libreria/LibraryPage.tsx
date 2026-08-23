@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Plus, Trash2, Search, Loader2, Pencil, ArrowLeft } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { parseAmount } from '@/lib/utils';
 import { useTranslation } from 'react-i18next';
 import { getBookYear, type GoogleBook } from '@/lib/googleBooks';
@@ -43,7 +43,6 @@ interface LibraryPageProps {
 export default function LibraryPage({ category, searchBooks, labels }: LibraryPageProps) {
   const { t } = useTranslation();
   const { items, isLoading, createItem, updateItem, deleteItem, totalCost, totalReselling, totalGain } = useLibraryItems(category);
-  const { toast } = useToast();
 
   // Search / filter state
   const [filterText, setFilterText] = useState('');
@@ -106,7 +105,7 @@ export default function LibraryPage({ category, searchBooks, labels }: LibraryPa
       const docs = await searchBooks(apiQuery);
       setApiResults(docs);
     } catch {
-      toast({ title: t('Errore nella ricerca'), variant: 'destructive' });
+      toast.error(t('Errore nella ricerca'));
     } finally {
       setSearching(false);
     }
@@ -129,10 +128,10 @@ export default function LibraryPage({ category, searchBooks, labels }: LibraryPa
         quantity: parseInt(quantity) || 1,
         notes: notes || undefined,
       });
-      toast({ title: t(labels.addedToast) });
+      toast(t(labels.addedToast));
       resetAddDialog();
     } catch {
-      toast({ title: t('Errore'), variant: 'destructive' });
+      toast.error(t('Errore'));
     }
   };
 
@@ -167,19 +166,19 @@ export default function LibraryPage({ category, searchBooks, labels }: LibraryPa
         quantity: parseInt(editQuantity) || 1,
         notes: editNotes || undefined,
       });
-      toast({ title: t(labels.updatedToast) });
+      toast(t(labels.updatedToast));
       setEditOpen(false);
     } catch {
-      toast({ title: t('Errore'), variant: 'destructive' });
+      toast.error(t('Errore'));
     }
   };
 
   const handleDelete = async (id: string) => {
     try {
       await deleteItem.mutateAsync(id);
-      toast({ title: t(labels.removedToast) });
+      toast(t(labels.removedToast));
     } catch {
-      toast({ title: t('Errore'), variant: 'destructive' });
+      toast.error(t('Errore'));
     }
   };
 

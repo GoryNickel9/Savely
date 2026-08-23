@@ -18,7 +18,7 @@ import {
 import MainLayout from '@/components/layout/MainLayout';
 import { useAuth } from '@/hooks/useAuth';
 import { usePermissions } from '@/hooks/usePermissions';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import AccountSection from '@/components/settings/AccountSection';
 import CurrencySection from '@/components/settings/CurrencySection';
@@ -36,7 +36,6 @@ import SecuritySection from '@/components/settings/SecuritySection';
 export default function Settings() {
   const { signOut } = useAuth();
   const { permissions } = usePermissions();
-  const { toast } = useToast();
   const { t } = useTranslation();
   const navigate = useNavigate();
 
@@ -143,7 +142,7 @@ export default function Settings() {
                         try {
                           const { data: { session } } = await supabase.auth.getSession();
                           if (!session) {
-                            toast({ title: t('Errore'), description: t('Sessione non valida'), variant: 'destructive' });
+                            toast.error(t('Errore'), { description: t('Sessione non valida') });
                             return;
                           }
 
@@ -162,12 +161,12 @@ export default function Settings() {
                             throw new Error(response.data.error);
                           }
 
-                          toast({ title: t('Account eliminato'), description: t('Il tuo account è stato eliminato con successo') });
+                          toast(t('Account eliminato'), { description: t('Il tuo account è stato eliminato con successo') });
                           await signOut();
                           navigate('/auth');
                         } catch (error) {
                           console.error('Delete account error:', error);
-                          toast({ title: t('Errore'), description: t('Impossibile eliminare l\'account'), variant: 'destructive' });
+                          toast.error(t('Errore'), { description: t('Impossibile eliminare l\'account') });
                         } finally {
                           setIsDeleting(false);
                         }

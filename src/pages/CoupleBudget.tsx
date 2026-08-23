@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Progress } from '@/components/ui/progress';
 import { CURRENCY_SYMBOLS } from '@/lib/constants';
 import { Plus, Edit2, Trash2, HeartHandshake } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { getMedianMonthlySpendingShared } from '@/lib/coupleExpenses';
 import { parseAmount } from '@/lib/utils';
 
@@ -22,7 +22,6 @@ export default function CoupleBudget() {
   const { sharedExpenses, isLoading: expensesLoading } = useSharedExpenses(connection?.id ?? null);
   const { budgets, availableCategories, isLoading: budgetsLoading, createBudget, updateBudget, deleteBudget } =
     useCoupleBudgets(connection?.id ?? null, sharedExpenses);
-  const { toast } = useToast();
 
   const [open, setOpen] = useState(false);
   const [categoryName, setCategoryName] = useState('');
@@ -62,12 +61,12 @@ export default function CoupleBudget() {
     e.preventDefault();
     try {
       await createBudget.mutateAsync({ couple_category_name: categoryName, amount: parseAmount(amount) });
-      toast({ title: t('Budget familiare creato!') });
+      toast(t('Budget familiare creato!'));
       setOpen(false);
       setCategoryName('');
       setAmount('');
     } catch {
-      toast({ title: t('Errore'), variant: 'destructive' });
+      toast.error(t('Errore'));
     }
   };
 
@@ -75,19 +74,19 @@ export default function CoupleBudget() {
     e.preventDefault();
     try {
       await updateBudget.mutateAsync({ id: editBudgetId, amount: parseAmount(editAmount) });
-      toast({ title: t('Budget aggiornato!') });
+      toast(t('Budget aggiornato!'));
       setEditOpen(false);
     } catch {
-      toast({ title: t('Errore'), variant: 'destructive' });
+      toast.error(t('Errore'));
     }
   };
 
   const handleDelete = async (id: string) => {
     try {
       await deleteBudget.mutateAsync(id);
-      toast({ title: t('Budget eliminato!') });
+      toast(t('Budget eliminato!'));
     } catch {
-      toast({ title: t('Errore'), variant: 'destructive' });
+      toast.error(t('Errore'));
     }
   };
 

@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Progress } from '@/components/ui/progress';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { useCategories } from '@/hooks/useCategories';
 import { usePortfolio } from '@/hooks/usePortfolio';
 import { Check, X, FileSpreadsheet, TrendingUp, Plus } from 'lucide-react';
@@ -52,7 +52,6 @@ const DEFAULT_COLORS = [
 ];
 
 export default function BankImportDialog({ open, onOpenChange, userId }: BankImportDialogProps) {
-  const { toast } = useToast();
   const { t } = useTranslation();
   const { categories, refetch: refetchCategories, isLoading } = useCategories();
   const { assets, createAsset } = usePortfolio();
@@ -235,7 +234,7 @@ export default function BankImportDialog({ open, onOpenChange, userId }: BankImp
       );
 
       if (headerRowIndex === -1) {
-        toast({ title: t('Formato non valido'), description: t('Impossibile rilevare le intestazioni del file.'), variant: 'destructive' });
+        toast.error(t('Formato non valido'), { description: t('Impossibile rilevare le intestazioni del file.') });
         return;
       }
 
@@ -317,7 +316,7 @@ export default function BankImportDialog({ open, onOpenChange, userId }: BankImp
       }
 
       if (parsed.length === 0 && autoImported.length === 0) {
-        toast({ title: t('Nessuna transazione'), description: t('Non ho trovato transazioni valide nel file.'), variant: 'destructive' });
+        toast.error(t('Nessuna transazione'), { description: t('Non ho trovato transazioni valide nel file.') });
         return;
       }
 
@@ -356,10 +355,10 @@ export default function BankImportDialog({ open, onOpenChange, userId }: BankImp
       }
 
       const autoMsg = autoImported.length > 0 ? t(', {{count}} automatiche', { count: autoImported.length }) : '';
-      toast({ title: t('File caricato'), description: t('{{count}} transazioni trovate{{auto}}.', { count: parsed.length + autoImported.length, auto: autoMsg }) });
+      toast(t('File caricato'), { description: t('{{count}} transazioni trovate{{auto}}.', { count: parsed.length + autoImported.length, auto: autoMsg }) });
     } catch (error) {
       console.error('Bank import error:', error);
-      toast({ title: t('Errore'), description: t('Impossibile leggere il file.'), variant: 'destructive' });
+      toast.error(t('Errore'), { description: t('Impossibile leggere il file.') });
     }
 
     if (fileInputRef.current) fileInputRef.current.value = '';
@@ -377,7 +376,7 @@ export default function BankImportDialog({ open, onOpenChange, userId }: BankImp
       mapping = { isin: current.isin, symbol: asset.symbol || '', name: asset.name, assetType: asset.type };
     } else {
       if (!newSymbol || !newAssetName) {
-        toast({ title: t('Dati mancanti'), description: t('Inserisci simbolo e nome dell\'asset.'), variant: 'destructive' });
+        toast.error(t('Dati mancanti'), { description: t('Inserisci simbolo e nome dell\'asset.') });
         return;
       }
       mapping = { isin: current.isin, symbol: newSymbol.toUpperCase(), name: newAssetName, assetType: 'etf' };
@@ -389,11 +388,7 @@ export default function BankImportDialog({ open, onOpenChange, userId }: BankImp
 
     if (isinError) {
       console.error('ISIN mapping upsert error:', isinError);
-      toast({
-        title: t('Errore'),
-        description: t('Impossibile salvare la mappatura ISIN. Riprova.'),
-        variant: 'destructive',
-      });
+      toast.error(t('Errore'), { description: t('Impossibile salvare la mappatura ISIN. Riprova.') });
       return;
     }
 
@@ -418,7 +413,7 @@ export default function BankImportDialog({ open, onOpenChange, userId }: BankImp
 
   const handleCreateCategory = async () => {
     if (!newCategoryName.trim()) {
-      toast({ title: t('Nome categoria richiesto'), description: t('Inserisci un nome per la nuova categoria.'), variant: 'destructive' });
+      toast.error(t('Nome categoria richiesto'), { description: t('Inserisci un nome per la nuova categoria.') });
       return;
     }
     const { data, error } = await supabase
@@ -434,21 +429,21 @@ export default function BankImportDialog({ open, onOpenChange, userId }: BankImp
       .single();
 
     if (error) {
-      toast({ title: t('Errore creazione categoria'), description: t('Impossibile creare la categoria.'), variant: 'destructive' });
+      toast.error(t('Errore creazione categoria'), { description: t('Impossibile creare la categoria.') });
       return;
     }
     refetchCategories();
     setSelectedCategory(data.id);
     setShowNewCategoryForm(false);
     setNewCategoryName('');
-    toast({ title: t('Categoria creata'), description: t('Categoria "{{name}}" creata con successo.', { name: newCategoryName }) });
+    toast(t('Categoria creata'), { description: t('Categoria "{{name}}" creata con successo.', { name: newCategoryName }) });
   };
 
   // ── review actions ────────────────────────────────────────────────────────
 
   const handleAccept = () => {
     if (!selectedCategory) {
-      toast({ title: t('Seleziona una categoria'), description: t('Devi selezionare una categoria per accettare la transazione.'), variant: 'destructive' });
+      toast.error(t('Seleziona una categoria'), { description: t('Devi selezionare una categoria per accettare la transazione.') });
       return;
     }
     const keyword = editedDescrizione.toLowerCase().trim();
@@ -569,11 +564,7 @@ export default function BankImportDialog({ open, onOpenChange, userId }: BankImp
       setStep('complete');
     } catch (error) {
       console.error('Import error:', error);
-      toast({
-        title: t('Errore di importazione'),
-        description: t('Si è verificato un errore durante l\'importazione. Riprova.'),
-        variant: 'destructive',
-      });
+      toast.error(t('Errore di importazione'), { description: t('Si è verificato un errore durante l\'importazione. Riprova.') });
       setStep('review');
     }
   };
