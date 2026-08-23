@@ -361,9 +361,9 @@ export default function TcgCollectionPage({
           )}
         </div>
 
-        {/* Card list */}
-        <div className="glass rounded-xl divide-y divide-border">
-          <div className="grid grid-cols-[auto_1fr_auto_auto_auto_auto_auto_auto] gap-4 px-4 py-2 text-xs text-muted-foreground font-medium">
+        {/* Card list: scroll orizzontale su mobile (griglia a 8 colonne, v. DataTable) */}
+        <div className="glass rounded-xl divide-y divide-border overflow-x-auto">
+          <div className="grid grid-cols-[auto_1fr_auto_auto_auto_auto_auto_auto] gap-4 px-4 py-2 text-xs text-muted-foreground font-medium min-w-[600px]">
             <span className="w-8 block"></span>
             <span>{t('Carta')}</span>
             <span>{t('Cond.')}</span>
@@ -382,7 +382,7 @@ export default function TcgCollectionPage({
               const currentPrice = card.current_price ?? card.purchase_price;
               const pl = (currentPrice - card.purchase_price) * card.quantity;
               return (
-                <div key={card.id} className="grid grid-cols-[auto_1fr_auto_auto_auto_auto_auto_auto] gap-4 items-center px-4 py-3">
+                <div key={card.id} className="grid grid-cols-[auto_1fr_auto_auto_auto_auto_auto_auto] gap-4 items-center px-4 py-3 min-w-[600px]">
                   {card.image_url ? (
                     <img src={card.image_url} alt={card.name} className="w-8 h-11 object-cover rounded" />
                   ) : (

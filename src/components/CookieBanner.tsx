@@ -59,7 +59,7 @@ export default function CookieBanner() {
       role="dialog"
       aria-label={t('Informativa cookie')}
       aria-live="polite"
-      className="fixed inset-x-0 bottom-0 z-50 p-3 sm:p-4"
+      className="fixed inset-x-0 bottom-0 z-50 p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] sm:p-4 sm:pb-[calc(1rem+env(safe-area-inset-bottom))]"
     >
       <div className="max-w-3xl mx-auto glass rounded-xl border-border shadow-2xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center gap-4">
         <div className="flex items-start gap-3 flex-1 min-w-0">
