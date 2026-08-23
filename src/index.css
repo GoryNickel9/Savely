@@ -4,6 +4,9 @@ layer(base);
 @import 'tailwindcss';
 
 @plugin 'tailwindcss-animate';
+/* Tipografia documentale per le classi prose (usate in StandardFIRE);
+   le pagine legali usano il @utility custom prose-legal, non questo plugin. */
+@plugin '@tailwindcss/typography';
 
 @custom-variant dark (&:is(.dark *));
 
