@@ -23,7 +23,6 @@ import {
   HeartHandshake,
   Lightbulb,
 } from 'lucide-react';
-import { useState } from 'react';
 
 // Layout constants
 const SIDEBAR_WIDTH = 'w-72'; // 18rem = 288px
@@ -38,13 +37,18 @@ const navigation = [
   { name: 'Grafici', href: '/charts', icon: BarChart3 },
 ];
 
-export default function Sidebar() {
+interface SidebarProps {
+  /** Stato del drawer mobile, controllato da MainLayout (condiviso con BottomNav). */
+  mobileOpen: boolean;
+  onMobileOpenChange: (open: boolean) => void;
+}
+
+export default function Sidebar({ mobileOpen, onMobileOpenChange }: SidebarProps) {
   const { t } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
   const { signOut, user } = useAuth();
   const { permissions } = usePermissions();
-  const [mobileOpen, setMobileOpen] = useState(false);
 
   const NavContent = () => (
     <div className="flex flex-col h-full">
@@ -60,7 +64,7 @@ export default function Sidebar() {
             <div key={item.name}>
               <Link
                 to={item.href}
-                onClick={() => setMobileOpen(false)}
+                onClick={() => onMobileOpenChange(false)}
                 className={cn(
                   'flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200',
                   isActive
@@ -74,7 +78,7 @@ export default function Sidebar() {
               {item.name === 'Budget' && permissions?.couple_expenses && (
                 <Link
                   to="/couple-budget"
-                  onClick={() => setMobileOpen(false)}
+                  onClick={() => onMobileOpenChange(false)}
                   className={cn(
                     'flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200',
                     location.pathname === '/couple-budget'
@@ -94,7 +98,7 @@ export default function Sidebar() {
         {permissions?.poker && (
           <Link
             to="/poker"
-            onClick={() => setMobileOpen(false)}
+            onClick={() => onMobileOpenChange(false)}
             className={cn(
               'flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200',
               location.pathname === '/poker'
@@ -111,7 +115,7 @@ export default function Sidebar() {
         {permissions?.tcg && (
           <Link
             to="/tcg"
-            onClick={() => setMobileOpen(false)}
+            onClick={() => onMobileOpenChange(false)}
             className={cn(
               'flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200',
               location.pathname.startsWith('/tcg')
@@ -128,7 +132,7 @@ export default function Sidebar() {
         {permissions?.libreria && (
           <Link
             to="/libreria"
-            onClick={() => setMobileOpen(false)}
+            onClick={() => onMobileOpenChange(false)}
             className={cn(
               'flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200',
               location.pathname.startsWith('/libreria')
@@ -145,7 +149,7 @@ export default function Sidebar() {
         {permissions?.fire && (
           <Link
             to="/fire"
-            onClick={() => setMobileOpen(false)}
+            onClick={() => onMobileOpenChange(false)}
             className={cn(
               'flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200',
               location.pathname.startsWith('/fire')
@@ -162,7 +166,7 @@ export default function Sidebar() {
         {permissions?.fumo && (
           <Link
             to="/fumo"
-            onClick={() => setMobileOpen(false)}
+            onClick={() => onMobileOpenChange(false)}
             className={cn(
               'flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200',
               location.pathname === '/fumo'
@@ -182,7 +186,7 @@ export default function Sidebar() {
         {permissions?.admin && (
           <Link
             to="/admin"
-            onClick={() => setMobileOpen(false)}
+            onClick={() => onMobileOpenChange(false)}
             className={cn(
               'flex items-center gap-3 px-4 py-2 mb-2 w-full rounded-lg text-sm font-medium transition-all duration-200',
               location.pathname === '/admin'
@@ -196,7 +200,7 @@ export default function Sidebar() {
         )}
         <button
           onClick={() => {
-            setMobileOpen(false);
+            onMobileOpenChange(false);
             navigate('/settings');
           }}
           className="flex items-center gap-3 px-4 py-2 mb-2 w-full rounded-lg hover:bg-secondary transition-colors cursor-pointer"
@@ -232,7 +236,7 @@ export default function Sidebar() {
         <Button
           variant="outline"
           size="icon"
-          onClick={() => setMobileOpen(!mobileOpen)}
+          onClick={() => onMobileOpenChange(!mobileOpen)}
           className="glass"
         >
           {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -243,7 +247,7 @@ export default function Sidebar() {
       {mobileOpen && (
         <div
           className="lg:hidden fixed inset-0 bg-background/80 backdrop-blur-xs z-40"
-          onClick={() => setMobileOpen(false)}
+          onClick={() => onMobileOpenChange(false)}
         />
       )}
 
