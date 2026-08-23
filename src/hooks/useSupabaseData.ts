@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -20,6 +20,12 @@ interface UseSupabaseDataReturn<T> {
   reload: () => Promise<void>;
 }
 
+/**
+ * Hook generico di caricamento dati utente da una tabella della whitelist
+ * UserTableName (TD-009: migrato da useState/useEffect a React Query,
+ * API pubblica invariata — { data, loading, reload } — così i consumer
+ * non cambiano).
+ */
 export function useSupabaseData<T extends object>(
   options: UseSupabaseDataOptions
 ): UseSupabaseDataReturn<T> {
@@ -27,69 +33,57 @@ export function useSupabaseData<T extends object>(
   const { user } = useAuth();
   const { toast } = useToast();
   const { t } = useTranslation();
-  const [data, setData] = useState<T[]>([]);
-  const [loading, setLoading] = useState(true);
-  const isLoadingRef = useRef(false);
 
-  const loadData = useCallback(async () => {
-    // Evita chiamate multiple concorrenti
-    if (isLoadingRef.current) {
-      return;
-    }
+  const query = useQuery({
+    queryKey: ['supabase-data', tableName, user?.id, orderBy ?? null, ascending, filter],
+    enabled: !!user?.id,
+    // Comportamento allineato alla precedente implementazione manuale:
+    // un solo tentativo per fetch e nessun refetch automatico su focus.
+    retry: false,
+    refetchOnWindowFocus: false,
+    queryFn: async (): Promise<T[]> => {
+      try {
+        // Il nome tabella è garantito valido dal tipo UserTableName
+        // (whitelist compile-time in @/lib/constants, anti-SQL-injection).
+        // Cast puntuale: l'unione di 25 tabelle fa esplodere l'inferenza di
+        // supabase-js (TS2589); a runtime la query è identica.
+        let queryBuilder = supabase
+          .from(tableName as 'transactions')
+          .select('*')
+          .eq('user_id', user!.id);
 
-    if (!user?.id) {
-      return;
-    }
+        if (orderBy) {
+          queryBuilder = queryBuilder.order(orderBy, { ascending });
+        }
 
-    isLoadingRef.current = true;
-    setLoading(true);
-
-    try {
-      // Il nome tabella è garantito valido dal tipo UserTableName
-      // (whitelist compile-time in @/lib/constants, anti-SQL-injection).
-      // Cast puntuale: l'unione di 25 tabelle fa esplodere l'inferenza di
-      // supabase-js (TS2589); a runtime la query è identica.
-      let query = supabase
-        .from(tableName as 'transactions')
-        .select('*')
-        .eq('user_id', user.id);
-
-      if (orderBy) {
-        query = query.order(orderBy, { ascending });
-      }
-
-      if (filter.length > 0) {
-        filter.forEach(f => {
+        for (const f of filter) {
           // Colonna dinamica: `never` è assegnabile a qualunque literal di
           // colonna e evita l'esplosione dell'inferenza (TS2589).
-          query = query.eq(f.column as never, f.value as never);
+          queryBuilder = queryBuilder.eq(f.column as never, f.value as never);
+        }
+
+        const { data: result, error } = await queryBuilder;
+        if (error) {
+          throw error;
+        }
+        return (result ?? []) as unknown as T[];
+      } catch (error) {
+        console.error(`[useSupabaseData] Errore caricamento ${tableName}:`, error);
+        toast({
+          title: t('Errore'),
+          description: t('Impossibile caricare i dati'),
+          variant: 'destructive',
         });
-      }
-
-      const { data: result, error } = await query;
-
-      if (error) {
         throw error;
       }
+    },
+  });
 
-      setData((result as unknown as T[]) || []);
-    } catch (error) {
-      console.error(`[useSupabaseData] Errore caricamento ${tableName}:`, error);
-      toast({
-        title: t('Errore'),
-        description: t('Impossibile caricare i dati'),
-        variant: 'destructive',
-      });
-    } finally {
-      isLoadingRef.current = false;
-      setLoading(false);
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id, tableName, orderBy, ascending, filter]); // Rimuovo toast dalle dipendenze
-
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
-
-  return { data, loading, reload: loadData };
+  return {
+    data: query.data ?? [],
+    loading: query.isLoading,
+    reload: async () => {
+      await query.refetch();
+    },
+  };
 }

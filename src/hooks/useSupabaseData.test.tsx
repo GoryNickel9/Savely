@@ -1,5 +1,7 @@
 // @vitest-environment jsdom
 import { renderHook, waitFor } from '@testing-library/react';
+import type { ReactNode } from 'react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const { useAuthMock, toastMock, fromMock } = vi.hoisted(() => ({
@@ -34,6 +36,16 @@ interface Row {
   name: string;
 }
 
+/** Wrapper con QueryClient isolato per test (hook basato su React Query). */
+function createWrapper() {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
+  return function Wrapper({ children }: { children: ReactNode }) {
+    return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
+  };
+}
+
 describe('useSupabaseData', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -45,8 +57,9 @@ describe('useSupabaseData', () => {
     useAuthMock.mockReturnValue({ user: { id: 'u1' } });
     mockResult = { data: [{ id: '1', name: 'spesa' }], error: null };
 
-    const { result } = renderHook(() =>
-      useSupabaseData<Row>({ tableName: 'categories', orderBy: 'created_at' }),
+    const { result } = renderHook(
+      () => useSupabaseData<Row>({ tableName: 'categories', orderBy: 'created_at' }),
+      { wrapper: createWrapper() },
     );
 
     expect(result.current.loading).toBe(true);
@@ -66,8 +79,9 @@ describe('useSupabaseData', () => {
     useAuthMock.mockReturnValue({ user: { id: 'u1' } });
     mockResult = { data: null, error: { message: 'RLS violation' } };
 
-    const { result } = renderHook(() =>
-      useSupabaseData<Row>({ tableName: 'budgets' }),
+    const { result } = renderHook(
+      () => useSupabaseData<Row>({ tableName: 'budgets' }),
+      { wrapper: createWrapper() },
     );
 
     await waitFor(() => {
@@ -82,11 +96,12 @@ describe('useSupabaseData', () => {
   it('senza utente non esegue alcuna query', async () => {
     useAuthMock.mockReturnValue({ user: null });
 
-    const { result } = renderHook(() =>
-      useSupabaseData<Row>({ tableName: 'budgets' }),
+    const { result } = renderHook(
+      () => useSupabaseData<Row>({ tableName: 'budgets' }),
+      { wrapper: createWrapper() },
     );
 
-    // Un tick per far girare l'effect
+    // Un tick per far girare la query (disabilitata senza utente)
     await waitFor(() => {
       expect(result.current).toBeDefined();
     });
