@@ -123,7 +123,7 @@ export default function ISINMappingsDialog({ open, onOpenChange, userId }: ISINM
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[80vh]">
+      <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle>{t('Gestione Mapping ISIN')}</DialogTitle>
           <DialogDescription>

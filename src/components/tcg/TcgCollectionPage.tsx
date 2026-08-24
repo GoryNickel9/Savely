@@ -214,7 +214,7 @@ export default function TcgCollectionPage({
             <DialogTrigger asChild>
               <Button><Plus className="w-4 h-4 mr-2" />{t('Aggiungi Carta')}</Button>
             </DialogTrigger>
-            <DialogContent className={`${addDialogMaxWidth} max-h-[90vh] overflow-y-auto`}>
+            <DialogContent className={addDialogMaxWidth}>
               <DialogHeader><DialogTitle>{t(addCardTitle)}</DialogTitle></DialogHeader>
               <div className="space-y-4">
                 {/* Search */}

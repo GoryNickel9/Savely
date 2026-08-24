@@ -143,7 +143,7 @@ export default function CategoriesSection() {
                 {t('Gestisci Categorie')}
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+            <DialogContent className="max-w-2xl">
               <DialogHeader>
                 <DialogTitle>{t('Gestisci Categorie')}</DialogTitle>
               </DialogHeader>

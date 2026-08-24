@@ -117,7 +117,7 @@ export default function ImportExportSection({ open, onOpenChange }: ImportExport
             {t('Gestisci Import / Export')}
           </Button>
         </DialogTrigger>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>{t('Import / Export Dati')}</DialogTitle>
           </DialogHeader>

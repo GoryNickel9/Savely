@@ -203,7 +203,7 @@ export default function LibraryPage({ category, searchBooks, labels }: LibraryPa
                 {t(labels.addButton)}
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogContent className="max-w-2xl">
               <DialogHeader>
                 <DialogTitle>{t(labels.addButton)}</DialogTitle>
               </DialogHeader>

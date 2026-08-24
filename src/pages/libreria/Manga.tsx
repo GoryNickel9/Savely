@@ -217,7 +217,7 @@ export default function LibreriaManga() {
                 {t('Aggiungi Manga')}
               </Button>
             </DialogTrigger>
-            <DialogContent className="w-full max-w-xl max-h-[90vh] overflow-y-auto overflow-x-hidden" aria-describedby={undefined}>
+            <DialogContent className="max-w-xl" aria-describedby={undefined}>
               <DialogHeader>
                 <DialogTitle>{t('Aggiungi Manga')}</DialogTitle>
               </DialogHeader>
@@ -390,7 +390,7 @@ export default function LibreriaManga() {
         )}
 
         <Dialog open={editOpen} onOpenChange={setEditOpen}>
-          <DialogContent className="w-full max-w-xl max-h-[90vh] overflow-y-auto overflow-x-hidden" aria-describedby={undefined}>
+          <DialogContent className="max-w-xl" aria-describedby={undefined}>
             <DialogHeader>
               <DialogTitle>{t('Modifica — {{title}}', { title: editingItem?.title ?? '' })}</DialogTitle>
             </DialogHeader>
