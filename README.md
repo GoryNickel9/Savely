@@ -2,7 +2,7 @@
 
 > La tua finanza personale semplificata.
 
-Web application completa per la gestione delle finanze personali: transazioni, budget, portafoglio di investimento, spese ricorrenti, insights automatici, patrimonio storico, statistiche e una serie di moduli specializzati (poker, fumo, FIRE, collezioni TCG e libreria, budget familiare). Costruita con **React + TypeScript + Vite** e backend su **Supabase**.
+Web application completa per la gestione delle finanze personali: transazioni, budget, portafoglio di investimento, spese ricorrenti, insights automatici, patrimonio storico, statistiche e una serie di moduli specializzati (poker, fumo, FIRE, collezioni TCG e libreria, budget familiare). Costruita con **React + TypeScript + Vite** e backend su **Supabase**. Interfaccia localizzata in **italiano e inglese**, esperienze desktop e mobile-first con **navigazione bottom** e installabile come **PWA**.
 
 ---
 
@@ -11,6 +11,8 @@ Web application completa per la gestione delle finanze personali: transazioni, b
 - [Panoramica](#panoramica)
 - [Stack tecnologico](#stack-tecnologico)
 - [Funzionalità](#funzionalità)
+- [Internazionalizzazione (i18n)](#internazionalizzazione-i18n)
+- [Mobile e PWA](#mobile-e-pwa)
 - [Architettura del progetto](#architettura-del-progetto)
 - [Prerequisiti](#prerequisiti)
 - [Installazione](#installazione)
@@ -31,7 +33,7 @@ Web application completa per la gestione delle finanze personali: transazioni, b
 
 Savely è un'applicazione multi-modulo orientata alla finanza personale. Ogni utente autenticato ha accesso a un set di funzionalità base (dashboard, transazioni, budget, portfolio, patrimonio, insights, grafici) e può ottenere accesso a moduli specializzati tramite un **sistema di permessi granulari** gestito a livello di profilo.
 
-L'app è una **single-page application** con autenticazione Supabase, stato server-side gestito con TanStack Query, UI in Tailwind + shadcn/ui, grafici con Recharts e persistenza su database PostgreSQL (Supabase) con Row Level Security.
+L'app è una **single-page application** con autenticazione Supabase, stato server-side gestito con TanStack Query, UI in Tailwind + shadcn/ui, grafici con Recharts e persistenza su database PostgreSQL (Supabase) con Row Level Security. Tutte le route sono **lazy-loaded** (code splitting) e il data fetching passa esclusivamente da custom hooks su React Query.
 
 ---
 
@@ -39,20 +41,22 @@ L'app è una **single-page application** con autenticazione Supabase, stato serv
 
 | Area | Tecnologia |
 |------|------------|
-| **UI framework** | React 18.3 |
-| **Linguaggio** | TypeScript 5.8 (strict) |
-| **Build tool / dev server** | Vite 8.1 |
-| **Routing** | React Router 6.30 |
+| **UI framework** | React 19.2 |
+| **Linguaggio** | TypeScript 5.8 (strict completo, `noImplicitAny`) |
+| **Build tool / dev server** | Vite 8.1 (SWC) |
+| **Routing** | React Router 8.3 |
 | **Stato server & cache** | TanStack Query 5.83 |
-| **Styling** | Tailwind CSS 3.4 + shadcn/ui (Radix UI) |
+| **Styling** | Tailwind CSS 4.3 (config CSS-first `@theme`) + shadcn/ui (Radix UI) + `@tailwindcss/typography` |
 | **Icone** | Lucide React |
-| **Grafici** | Recharts 2.15 |
-| **Backend / Auth / DB** | Supabase (`@supabase/supabase-js` 2.89) |
-| **Form** | react-hook-form 7.61 + zod 3.25 |
-| **Date** | date-fns 3.6 |
+| **Grafici** | Recharts 3.10 |
+| **Backend / Auth / DB** | Supabase (`@supabase/supabase-js` 2.89), tipi generati dal DB |
+| **Form** | react-hook-form 7.61 + zod 4.4 |
+| **Date** | date-fns 4.4 |
+| **i18n** | react-i18next 17 + i18next 26 (it / en) |
+| **Toast** | sonner 2.0 (sistema unificato) |
 | **Parsing / export** | papaparse 5.5 (CSV) |
-| **Testing** | Vitest 4.1 |
-| **Lint** | ESLint 9 + typescript-eslint |
+| **Testing** | Vitest 4.1 + Testing Library (jsdom), Playwright 1.61 (E2E) |
+| **Lint** | ESLint 9 + typescript-eslint 8 |
 
 ---
 
@@ -93,6 +97,9 @@ Per pianificare e monitorare la spesa mensile:
 - **Monitoraggio in tempo reale** dell'avanzamento con barre di progresso e indicatori visivi (sotto/sopra budget).
 - Riepilogo dei totali: budget atteso totale vs. spesa effettiva (mediana globale) e differenza.
 
+#### 📁 Categorie (`/categories`)
+Gestione delle categorie personalizzate in una pagina dedicata: creazione, modifica ed eliminazione con **icona (emoji)**, **colore** e tipo (entrata/uscita). Le stesse funzioni restano disponibili anche dalle Impostazioni.
+
 #### 📈 Portfolio (`/portfolio`)
 Per tracciare i tuoi investimenti e il loro valore nel tempo:
 - Gestione di asset per tipo: **azioni, ETF, crypto, obbligazioni, liquidità, immobili, altro**.
@@ -132,8 +139,9 @@ Segnali automatici generati dai tuoi dati finanziari, senza query aggiuntive (tu
 Gli insight sono ordinati per severità (⚠️ attenzione → ✅ positivo → ℹ️ info) e filtrabili per tipo. La logica è pura e completamente testata in `src/lib/insights.ts` (`generateInsights`).
 
 #### ⚙️ Impostazioni (`/settings`)
-Gestione del proprio account e dei dati:
+Gestione del proprio account e dei dati (pagina suddivisa in sezioni dedicate):
 - **Informazioni Account**: modifica credenziali (email, password) con verifica della password attuale, logout.
+- **Lingua**: scelta della lingua dell'interfaccia (italiano / inglese).
 - **Valuta Principale**: scelta della valuta di default per le nuove transazioni.
 - **Import / Export Dati** (vedi sezione dedicata).
 - **Gestione Categorie**: creazione/modifica/eliminazione di categorie personalizzate con icona (emoji) e colore.
@@ -169,7 +177,7 @@ Calcolatori per la pianificazione dell'indipendenza finanziaria (Financial Indep
 
 #### 🃏 TCG (permesso `tcg`)
 Gestione della collezione di carte da gioco, con valore di mercato:
-- Sotto-sezioni dedicate per **Magic: The Gathering**, **Pokémon TCG** e **Yu-Gi-Oh!** (`/tcg/magic`, `/tcg/pokemon`, `/tcg/yugioh`).
+- Sotto-sezioni dedicate per **Magic: The Gathering**, **Pokémon TCG** e **Yu-Gi-Oh!** (`/tcg/magic`, `/tcg/pokemon`, `/tcg/yugioh`), basate su un componente collezione generico.
 - Per ogni carta: nome, set/espansione, numero collezione, **condizione** (Near Mint → Damaged), lingua (EN, IT, JP, DE, FR, ES, PT, KOR, ZHS), quantità, prezzo d'acquisto, prezzo corrente, data, immagine e note.
 - **Ricerca via API CardTrader**: cerca carte reali con prezzo di mercato (CT Zero) e aggiungile alla collezione in pochi click.
 - **Dashboard collezione**: valore totale (attuale vs costo), P&L assoluto e percentuale, numero di pezzi; pie chart per gioco.
@@ -178,7 +186,7 @@ Gestione della collezione di carte da gioco, con valore di mercato:
 
 #### 📚 Libreria (permesso `libreria`)
 Catalogo della propria collezione libreria, con valutazione:
-- Sotto-sezioni per **Libri**, **Fumetti** e **Manga** (`/libreria/libri`, `/libreria/fumetti`, `/libreria/manga`).
+- Sotto-sezioni per **Libri**, **Fumetti** e **Manga** (`/libreria/libri`, `/libreria/fumetti`, `/libreria/manga`), unificate su una **pagina generica** (`LibraryPage`) configurata per categoria.
 - Per ogni voce: titolo, autore, editore, anno, **copertina**, prezzo d'acquisto, **valore di rivendita**, quantità e note.
 - **Ricerca via API**: Google Books per i libri (con recupero cover), Jikan/MyAnimeList per i manga (tramite Edge Function `mangaworld-proxy`).
 - **Dashboard collezione**: costo totale, valore di rivendita totale, P&L, numero di pezzi; statistiche per categoria.
@@ -187,7 +195,7 @@ Catalogo della propria collezione libreria, con valutazione:
 Per gestire le finanze condivise con un partner:
 - **Accoppiamento**: sistema di invito/accettazione (richiesta → connessione) tra due utenti.
 - **Spese condivise**: una transazione può essere condivisa con il partner con **due modalità di divisione**: 50/50 (predefinito) oppure **importi personalizzati** (quota tua / quota partner esplicite); il partner vede l'importo, la valuta, la descrizione e la data, ma **mai la categoria personale** del creatore (per proteggerne la privacy).
-- **Budget condiviso**: budget mensili per "categoria di coppia" (nome testuale condiviso, non legato ai category_id personali).
+- **Budget condiviso** (`/couple-budget`): budget mensili per "categoria di coppia" (nome testuale condiviso, non legato ai category_id personali).
 - **Suggerimento basato sui dati**: spesa mediana mensile condivisa calcolata sugli storici.
 - **Audit log immutabile** di tutte le azioni sulla connessione (creazione, revoca, ecc.).
 
@@ -195,39 +203,73 @@ Per gestire le finanze condivise con un partner:
 
 ### ⚙️ Amministrazione
 
-- **Admin Panel** (`/admin`, permesso `admin`): elenco di tutti gli utenti con i relativi permessi e assegnazione/modifica dei permessi (inclusi `admin`, `poker`, `fumo`, `fire`, `tcg`, `libreria`, `couple_expenses`).
+- **Admin Panel** (`/admin`, permesso `admin`): elenco di tutti gli utenti (via `/api/admin`) con i relativi permessi e assegnazione/modifica dei permessi (inclusi `admin`, `poker`, `fumo`, `fire`, `tcg`, `libreria`, `couple_expenses`). Strumenti di gestione:
+  - **Reset password** — invio dell'email di recupero a un utente.
+  - **Toggle registrazioni** — abilita/disabilita le nuove signup.
+  - **Eliminazione utenti** — rimozione definitiva dell'account (service role, solo server-side).
+
+---
+
+## Internazionalizzazione (i18n)
+
+Tutte le pagine sono localizzate con **react-i18next**:
+
+- Lingue supportate: **italiano** (default) e **inglese** — dizionari in `src/i18n/locales/{it,en}.json`.
+- Selettore lingua nelle **Impostazioni** (`LanguageSection`).
+- La lingua è applicata ai testi di UI, toast e messaggi di errore.
+- `scripts/extract-i18n-keys.mjs` estrae le chiavi per l'audit dei dizionari; uno **smoke test** Vitest (`src/i18n/smoke.test.ts`) verifica l'inizializzazione.
+
+---
+
+## Mobile e PWA
+
+L'app è progettata per un uso mobile-first:
+
+- **PWA installabile**: `manifest.webmanifest` con icone (192/512 + maskable), `theme-color`, display standalone e meta tag iOS (`apple-touch-icon`).
+- **Bottom navigation** su schermi piccoli: 4 tab frequenti + drawer "Altro" per tutte le sezioni (`components/layout/BottomNav.tsx`).
+- **Dialog responsive**: `max-height` con fallback `dvh` e scroll interno su mobile, margini ridotti.
+- **Touch target** adeguati, rispetto delle **safe-area** (`viewport-fit=cover`) e fix di overflow orizzontali (es. pagine TCG).
+- Script di audit in `scripts/`: `mobile-check.mjs` (screenshot a 375px + rilevamento overflow orizzontale), `dialog-mobile-check.mjs` e `dialog-transaction-repro.mjs` (verifiche dialog).
 
 ---
 
 ## Architettura del progetto
 
 ```
-spendy_cloud/
-├── api/                    # Vercel Functions (invio email via Resend)
+Savely/
+├── api/                    # Vercel Functions (reset-password via Resend, admin)
+├── scripts/                # script di supporto/audit (mobile, visual, i18n, icone PWA)
 ├── src/
 │   ├── components/          # Componenti React
+│   │   ├── charts/          #   grafici di analisi per categoria
 │   │   ├── dashboard/       #   widget dashboard (StatCard)
 │   │   ├── fire/            #   calcolatori FIRE (input, chart, UI)
-│   │   ├── layout/          #   layout, sidebar, navigazione
+│   │   ├── fumo/            #   componenti modulo Fumo
+│   │   ├── layout/          #   MainLayout, Sidebar, BottomNav (mobile)
 │   │   ├── legal/           #   layout pagine legali
+│   │   ├── libreria/        #   pagina collezione generica (libri/fumetti/manga)
 │   │   ├── portfolio/       #   dialog chiusura posizione
-│   │   ├── settings/        #   impostazioni, import, sicurezza, coppia, ISIN
+│   │   ├── settings/        #   sezioni impostazioni (account, sicurezza, import, coppia, ISIN…)
 │   │   ├── statistics/      #   statistiche e budget indicator
+│   │   ├── tcg/             #   pagine collezione TCG
 │   │   └── ui/              #   componenti shadcn/ui (Radix)
-│   ├── hooks/               # Custom hooks (dati, auth, permessi, ecc.)
+│   ├── hooks/               # Custom hooks (dati React Query, auth, permessi, ecc.)
+│   ├── i18n/                # configurazione react-i18next + locales (it, en)
 │   ├── integrations/
-│   │   └── supabase/        # client Supabase + tipi generati
+│   │   └── supabase/        # client Supabase + tipi generati dal DB
 │   ├── lib/                 # utility, tipi, costanti, calcoli, security
 │   │   ├── fire/            #   logica calcoli FIRE
 │   │   └── statistics/      #   logica statistica
-│   ├── pages/               # pagine/route dell'app
+│   ├── pages/               # pagine/route dell'app (lazy-loaded)
 │   │   ├── fire/            #   Standard/Barista FIRE
 │   │   ├── tcg/             #   Magic / Pokémon / Yu-Gi-Oh
 │   │   ├── libreria/        #   Libri / Fumetti / Manga
 │   │   └── ...              #   Dashboard, Transactions, Insights, Portfolio, NetWorth, ecc.
-│   ├── App.tsx              # router + route guards
+│   ├── test/                # setup Vitest (jest-dom, polyfill)
+│   ├── types/               # tipi condivisi (import)
+│   ├── App.tsx              # router + route guards (lazy)
 │   ├── main.tsx             # entry point
-│   └── index.css            # stili globali + Tailwind
+│   └── index.css            # Tailwind 4 (config CSS-first @theme) + stili globali
 ├── e2e/                     # test end-to-end (Playwright)
 ├── supabase/
 │   ├── functions/           # Edge Functions (Deno)
@@ -235,23 +277,32 @@ spendy_cloud/
 │   └── config.toml          # configurazione progetto Supabase
 ├── .github/workflows/        # CI (GitHub Actions)
 ├── plans/                    # documentazione di sviluppo e audit
-├── index.html
+├── TECH_DEBT_REPORT_2026-08-23.md  # audit debito tecnico + roadmap remediation
+├── index.html                # meta PWA (manifest, theme-color, icone)
 ├── package.json
 ├── vite.config.ts
-├── tailwind.config.ts
+├── postcss.config.js         # plugin @tailwindcss/postcss
 ├── playwright.config.ts      # configurazione E2E
+├── vitest.config.ts          # configurazione unit test
 └── vercel.json               # SPA rewrites + security headers
 ```
 
 ### Route guard
 
-L'app definisce guard di rotta che combinano autenticazione e permessi: `ProtectedRoute`, `AdminRoute`, `PokerRoute`, `FumoRoute`, `FireRoute`, `TcgRoute`, `LibreriaRoute`, `CoupleRoute`. Il modulo Insights e le altre pagine base (Dashboard, Transazioni, Uscite Ricorrenti, Budget, Portfolio, Patrimonio, Grafici, Impostazioni) sono protette dalla sola `ProtectedRoute`.
+L'app usa un'unica guard `PermissionRoute`: senza prop `perm` richiede solo l'autenticazione (Dashboard, Transazioni, Uscite Ricorrenti, Budget, Categorie, Portfolio, Patrimonio, Grafici, Insights, Impostazioni); con `perm="poker|fumo|fire|tcg|libreria|couple_expenses|admin"` richiede anche il permesso corrispondente. Le rotte pubbliche (`/auth`, `/auth/callback`, `/reset-password`, `/privacy`, `/cookies`, `/terms`, NotFound) non sono protette.
+
+### Note su qualità e performance
+
+- **Code splitting**: tutte le route sono caricate con `React.lazy` + Suspense (bundle per-route invece di un unico chunk).
+- **Data fetching unificato**: ogni entità ha un hook dedicato in `src/hooks/` basato su TanStack Query (il vecchio doppio paradigma `useSupabaseData` è stato consolidato).
+- **Type safety**: TypeScript `strict` completo, tipi Supabase **generati dal database**, zero cast `as any`.
+- **UI condivisa**: pagine collezione generiche per TCG e Libreria (niente duplicazione per gioco/formato); toast unificati su `sonner`.
 
 ---
 
 ## Prerequisiti
 
-- **Node.js 22** (vedi CI in `.github/workflows/ci.yml`)
+- **Node.js 24** (Active LTS, vedi CI in `.github/workflows/ci.yml`)
 - **npm**
 - Un account / progetto **Supabase**
 
@@ -262,8 +313,8 @@ L'app definisce guard di rotta che combinano autenticazione e permessi: `Protect
 1. **Clona il repository**
 
    ```bash
-   git clone https://github.com/GoryNickel/spendy_cloud.git
-   cd spendy_cloud
+   git clone https://github.com/GoryNickel9/Savely.git
+   cd Savely
    ```
 
 2. **Installa le dipendenze**
@@ -322,12 +373,23 @@ npm run build        # build di produzione
 npm run build:dev    # build in modalità development
 npm run preview      # anteprima del build di produzione
 npm run lint         # ESLint
-npm run typecheck    # controllo tipi TypeScript (tsc --noEmit)
+npm run typecheck    # controllo tipi TypeScript (tsc --noEmit, progetti node + app)
 npm run test         # unit test (Vitest)
 npm run test:watch   # test in watch mode
 npm run e2e          # test end-to-end (Playwright)
 npm run e2e:ui       # test E2E in modalità interattiva
 ```
+
+### Script di supporto (`scripts/`, eseguibili con Node)
+
+| Script | Scopo |
+|--------|-------|
+| `mobile-check.mjs` | Screenshot mobile (375×812) delle pagine pubbliche + rilevamento overflow orizzontale |
+| `visual-check.mjs` | Screenshot delle pagine pubbliche per verifica visiva (usato per la migrazione Tailwind 3→4) |
+| `dialog-mobile-check.mjs` | Verifica comportamento dialog su mobile e desktop (margini, bounding box, scroll) |
+| `dialog-transaction-repro.mjs` | Repro mobile del dialog "Nuova Transazione" |
+| `extract-i18n-keys.mjs` | Estrazione/audit delle chiavi i18n |
+| `gen-icons.mjs` | Genera le icone PWA (PNG) da `scripts/icon.svg` |
 
 ---
 
@@ -357,6 +419,7 @@ La logica lato client vive in `src/lib/permissions.ts` e `src/hooks/usePermissio
 
 ### Importazione
 - **Manuale** — file Excel/CSV con fogli `Transazioni`, `Categorie`, `Obiettivi`, `Portfolio`, `Investimenti`.
+- **Da estratto conto bancario** — dialog dedicato con parsing CSV, barra di avanzamento e validazione di sicurezza.
 - **Da piattaforme esterne** — Revolut, BBVA, TradeRepublic.
 
 > I file importati passano per controlli di sicurezza (vedi `src/lib/importFileSecurity.ts`).
@@ -388,6 +451,13 @@ Esporta tutti i dati in un unico file Excel con i fogli Transazioni, Categorie, 
 | `mangaworld-proxy` | Ricerca manga via Jikan/MAL |
 | `delete-account` | Eliminazione account utente |
 
+### Vercel Functions (`api/`)
+
+| Route | Descrizione |
+|-------|-------------|
+| `/api/reset-password` | Genera il recovery link (Admin API Supabase) e invia l'email branded via Resend |
+| `/api/admin` | Endpoint riservato admin: `get-users` (elenco utenti + profilo) e `delete-user` (eliminazione definitiva). Il chiamante si autentica con il proprio token di sessione, che viene verificato insieme al permesso `admin` prima di usare la service role key |
+
 ---
 
 ## Sicurezza
@@ -395,6 +465,8 @@ Esporta tutti i dati in un unico file Excel con i fogli Transazioni, Categorie, 
 - **Content Security Policy** e security headers (X-Frame-Options, HSTS, Referrer-Policy, Permissions-Policy) configurati in `vercel.json`.
 - **Row Level Security** di Supabase sul database.
 - **Autenticazione a due fattori (TOTP)** opt-in: enrollment/verifica/rimozione tramite l'API MFA nativa di Supabase; la tabella `login_activity` (RLS per-user, append-only) traccia gli eventi di accesso.
+- **Validazione dell'`Origin`** sul redirect di reset-password: solo gli origin in allowlist vengono accettati come destinazione post-recupero.
+- **Endpoint admin hardenati**: `/api/admin` verifica token di sessione + permesso `admin` del chiamante; la service role key resta solo lato server (mai con prefisso `VITE_`).
 - **Privacy nelle spese condivise**: le spese condivise di coppia espongono importo/valuta/descrizione ma **mai** il `category_id` personale del creatore (vedi `shared_expenses_view` e i commenti in `src/lib/types.ts`); esiste inoltre un audit log immutabile. La coerenza dello split personalizzato è validata da un trigger SECURITY DEFINER.
 - **Validazione password** e controlli di sicurezza sugli import (`src/lib/passwordValidation.ts`, `src/lib/importFileSecurity.ts`, `src/lib/couple.security.test.ts`).
 - Suite di **unit test** con Vitest su calcoli finanziari, parsing CSV, sicurezza coppia, validazione password, MFA, user-agent parsing e sicurezza degli import.
@@ -408,8 +480,8 @@ EUR, USD, GBP, CHF, JPY, CNY, IDR — con conversione automatica in EUR.
 
 Il progetto ha due livelli di test.
 
-### Unit test (Vitest)
-Funzioni pure in `src/lib/*.test.ts`: calcoli finanziari (FIRE, net worth, statistiche), insights/anomaly detection, parsing CSV, sicurezza coppia, validazione password e MFA, parsing user-agent, detection ricorrenze, sicurezza degli import.
+### Unit test (Vitest + Testing Library, ambiente jsdom)
+Funzioni pure in `src/lib/*.test.ts` (calcoli finanziari FIRE/net worth/statistiche, insights/anomaly detection, parsing CSV, sicurezza coppia, validazione password e MFA, parsing user-agent, detection ricorrenze, sicurezza degli import) **e hook critici** in `src/hooks/*.test.tsx` (`usePermissions`, `useSupabaseData`), più uno smoke test i18n.
 
 ```bash
 npm test          # run singolo
@@ -445,7 +517,7 @@ In CI i segreti sono configurati come GitHub secrets e il gate E2E gira ad ogni 
 ## CI/CD e deploy
 
 ### CI (GitHub Actions — `.github/workflows/ci.yml`)
-Su push/PR su `main` vengono eseguiti 5 gate paralleli:
+Su push/PR su `main` vengono eseguiti 5 gate paralleli (tutti su **Node 24**, Active LTS):
 
 | Gate | Cosa verifica |
 |------|---------------|
@@ -467,6 +539,7 @@ Environment variable richieste su **Vercel** (solo server-side, mai con prefisso
 |-----------|-------------|
 | `RESEND_API_KEY` | API key di Resend |
 | `SUPABASE_SERVICE_ROLE_KEY` | Service key di Supabase (bypassa RLS — non deve mai finire nel bundle client) |
+| `SUPABASE_URL` | URL del progetto Supabase per `/api/admin` (opzionale: ha default incorporato) |
 | `RESEND_FROM` | Mittente, es. `Savely <noreply@savely.cc>` (default di test: `onboarding@resend.dev`) |
 
 In locale la SPA non serve `/api`: usare `vercel dev` per provare il flusso completo. Nuove email transazionali: aggiungere una route in `api/` riutilizzando il pattern di `reset-password.ts`.
@@ -476,6 +549,8 @@ In locale la SPA non serve `/api`: usare `vercel dev` per provare il flusso comp
 ## Piani di sviluppo
 
 La cartella `plans/` contiene documenti di sviluppo, audit e revisioni (es. audit sicurezza, revisioni di codice). Non sono artefatti finali ma traccia delle decisioni prese durante il ciclo di sviluppo.
+
+Il **debito tecnico** è tracciato in `TECH_DEBT_REPORT_2026-08-23.md`: registro priorizzato dei finding (TD-001…TD-017) e roadmap di remediation — Fase 0 (quick win), Fase 1 (type safety: tipi generati dal DB, `strict` completo) e Fase 3 (upgrade major dipendenze, inclusa la migrazione Tailwind 3→4) completate; Fase 2 (struttura e performance: code splitting, unificazione data fetching, split Settings, test hook) in corso al 23/08/2026.
 
 ---
 
