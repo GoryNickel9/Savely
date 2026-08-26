@@ -60,6 +60,12 @@ jobs:
         run: npm ci
 
       - name: Run unit tests
+        env:
+          # src/integrations/supabase/client.ts crea il client all'import:
+          # senza URL+chiave anon la suite muore prima dei test. Valori pubblici
+          # per design, stessa scelta documentata nel job e2e qui sotto.
+          VITE_SUPABASE_URL: https://crqnfbahytzenisospcx.supabase.co
+          VITE_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNycW5mYmFoeXR6ZW5pc29zcGN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc1MzI4ODUsImV4cCI6MjA4MzEwODg4NX0.2DUoXTd-Mo40TIxJpH0JRBzCg8o18WQsRZS5R9Up9os
         run: npm test
 
   # ─────────────────────────────────────────
