@@ -202,6 +202,7 @@ export default function RecurringExpenses() {
                       onValueChange={setCategoryId}
                       placeholder={t('Seleziona categoria')}
                       filterType="expense"
+                      disablePortal
                     />
                   </div>
                   <div>

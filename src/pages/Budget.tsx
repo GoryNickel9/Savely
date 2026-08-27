@@ -134,6 +134,7 @@ export default function Budget() {
                     onValueChange={setCategoryId}
                     placeholder={t('Categoria')}
                     filterType="expense"
+                    disablePortal
                   />
                   <Input type="number" placeholder={t('Importo')} value={amount} onChange={e => setAmount(e.target.value)} required />
                   <Button type="submit" className="w-full">{t('Crea')}</Button>

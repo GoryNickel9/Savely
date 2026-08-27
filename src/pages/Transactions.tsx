@@ -354,6 +354,7 @@ export default function Transactions() {
                     onValueChange={setCategoryId}
                     placeholder={t('Seleziona')}
                     filterType={type}
+                    disablePortal
                   />
                 </div>
                 <div><Label>{t('Descrizione')}</Label><Input value={description} onChange={e => setDescription(e.target.value)} /></div>

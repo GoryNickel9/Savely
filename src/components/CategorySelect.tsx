@@ -23,6 +23,13 @@ interface CategorySelectProps {
   showAllOption?: boolean;
   allOptionLabel?: string;
   allOptionValue?: string;
+  /**
+   * Renderizza il popover inline invece che via portale. Necessario dentro le
+   * Dialog modali (focus trap): senza, cmdk non riceve focus né click.
+   * Ovunque else il portale è preferibile: il popover flottante sfugge al
+   * clipping di card e contenitori con overflow.
+   */
+  disablePortal?: boolean;
 }
 
 export function CategorySelect({
@@ -34,6 +41,7 @@ export function CategorySelect({
   showAllOption = false,
   allOptionLabel = 'Tutte le categorie',
   allOptionValue = 'all',
+  disablePortal = false,
 }: CategorySelectProps) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
@@ -68,13 +76,12 @@ export function CategorySelect({
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      {/* disablePortal resta necessario dentro le Dialog modali (focus trap),
-          quindi si evita il clipping mantenendo la lista dentro lo spazio
-          visibile della finestra: max-height proporzionato al viewport. */}
+      {/* Nel filtro a pagina il portale libera il popover da ogni clipping
+          ancestor; nelle Dialog il rendering inline resta obbligatorio. */}
       <PopoverContent
         className="w-[var(--radix-popover-trigger-width)] min-w-60 p-0"
         align="start"
-        disablePortal
+        disablePortal={disablePortal}
       >
         <Command>
           <CommandInput placeholder={t('Cerca categoria...')} />
