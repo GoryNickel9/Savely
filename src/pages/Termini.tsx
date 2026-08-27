@@ -1,7 +1,7 @@
 import { Link } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import LegalLayout, { LegalSection } from '@/components/legal/LegalLayout';
-import { LEGAL_OWNER, LEGAL_APP, contactMailtoHref } from '@/lib/legalContents';
+import { LEGAL_OWNER, LEGAL_APP, LEGAL_SOURCE_URL, contactMailtoHref } from '@/lib/legalContents';
 
 export default function Termini() {
   const { t } = useTranslation();
@@ -30,19 +30,22 @@ export default function Termini() {
       </LegalSection>
 
       <LegalSection number={3} title={t('Natura informativa — non consulenza finanziaria')}>
-        <div className="callout">
-          <p>
-            <strong>{t('Importante:')}</strong> {LEGAL_APP.name} <strong>{t("non fornisce consulenza finanziaria, fiscale, legale o d'investimento")}</strong>{t('. I calcoli, gli indicatori (es. FIRE, asset allocation) e le statistiche mostrate hanno scopo unicamente informativo e didattico. Non costituiscono raccomandazione personalizzata.')}
-          </p>
-          <p className="mt-2">
-            {t('Le decisioni finanziarie sono di tua esclusiva responsabilità. Consulta professionisti abilitati prima di assumere decisioni rilevanti.')}
-          </p>
-        </div>
+        <p>
+          {t("{{app}} non fornisce consulenza finanziaria, fiscale, legale o d'investimento. I calcoli, gli indicatori (es. FIRE, asset allocation) e le statistiche mostrate hanno scopo unicamente informativo e didattico. Non costituiscono raccomandazione personalizzata.", { app: LEGAL_APP.name })}
+        </p>
+        <p>
+          {t('Le decisioni finanziarie sono di tua esclusiva responsabilità. Consulta professionisti abilitati prima di assumere decisioni rilevanti.')}
+        </p>
       </LegalSection>
 
       <LegalSection number={4} title={t('Proprietà intellettuale')}>
         <p>
-          {t("I diritti sul software, sul design e sui contenuti del Servizio spettano al Titolare. I dati che inserisci rimangono di tua proprietà. Non è concessa alcuna licenza sul codice o sugli elementi distintivi del Servizio se non il diritto limitato di utilizzo personale, non commerciale, conforme ai presenti Termini.")}
+          {t('Il codice sorgente del Servizio è pubblicato come software open source su')}{' '}
+          <a href={LEGAL_SOURCE_URL} target="_blank" rel="noopener noreferrer">GitHub</a>
+          {t(": l'utilizzo del codice è disciplinato dalla licenza riportata nel repository, mentre l'utilizzo del Servizio ospitato resta regolato dai presenti Termini.")}
+        </p>
+        <p>
+          {t('I dati che inserisci rimangono di tua proprietà. Marchi, identità visiva e contenuti del sito restano del Titolare, che non ne concede alcun uso salvo quanto previsto dalla licenza del codice.')}
         </p>
       </LegalSection>
 

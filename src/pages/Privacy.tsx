@@ -36,7 +36,7 @@ export default function Privacy() {
           <li><strong>{t("Dati finanziari inseriti dall'utente:")}</strong> {t('transazioni, entrate/uscite, budget, risparmi, obiettivi di risparmio.')}</li>
           <li><strong>{t('Dati di portfolio:')}</strong> {t('asset finanziari, quantità, prezzi, ISIN, movimentazioni inserite manualmente o importate da file CSV.')}</li>
           <li><strong>{t('Dati di profilazione e categorie:')}</strong> {t('categorie personalizzate con etichette, emoji e colori.')}</li>
-          <li><strong>{t('Dati opzionali dei moduli:')}</strong> {t('spese ricorrenti, registrazioni poker, dati sul fumo (liquido/CBD/THC), collezioni TCG (carte), libreria (libri/fumetti/manga), spese condivise con familiare (couple budget).')}</li>
+          <li><strong>{t('Dati opzionali dei moduli:')}</strong> {t('spese ricorrenti.')}</li>
           <li><strong>{t('Dati tecnici:')}</strong> {t('indirizzo IP, tipo di browser, dati di sessione necessari per il funzionamento e la sicurezza.')}</li>
         </ul>
         <p>
@@ -76,7 +76,7 @@ export default function Privacy() {
 
       <LegalSection number={5} title={t("Trasferimento dei dati al di fuori dell'UE")}>
         <p>
-          {t("L'infrastruttura del Servizio è ospitata su piattaforme cloud che possono elaborare i dati in regioni dell'Unione Europea o, per alcuni servizi tecnici, in paesi extra-UE. In tal caso, i trasferimenti avvengono con le garanzie adeguate previste dal GDPR (es. clausole contrattuali tipo approvate dalla Commissione Europea) e unicamente per le finalità tecniche necessarie.")}
+          {t("L'infrastruttura del Servizio risiede nell'Unione Europea: il database è ospitato in Irlanda (Supabase) e l'applicazione è distribuita dalla regione di Dublino (Vercel). Non sono previsti trasferimenti intenzionali dei dati fuori dallo Spazio Economico Europeo; qualora in futuro fossero necessari trasferimenti tecnici extra-UE, avverrebbero con le garanzie adeguate previste dal GDPR (es. clausole contrattuali tipo approvate dalla Commissione Europea) e unicamente per le finalità tecniche necessarie.")}
         </p>
       </LegalSection>
 

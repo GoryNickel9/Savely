@@ -33,9 +33,6 @@ export default function Cookies() {
             <strong>{t('Dati delle preferenze')}</strong> {t("(es. valuta predefinita, salvataggio dei moduli in corso): memorizzati localmente o nel tuo profilo per personalizzare l'esperienza. Tipo: funzionali/preferenziali.")}
           </li>
         </ul>
-        <div className="callout">
-          {t('Poiché questi elementi sono')} <strong>{t('strettamente necessari')}</strong> {t("al funzionamento del Servizio, vengono installati senza bisogno di un consenso preventivo (art. 122 del Codice della Privacy). Disattivarli impedirebbe l'accesso e l'uso dell'app.")}
-        </div>
       </LegalSection>
 
       <LegalSection number={3} title={t('Cookie di terze parti')}>
