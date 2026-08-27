@@ -24,6 +24,7 @@ import { supabase } from '@/integrations/supabase/client';
 import AccountSection from '@/components/settings/AccountSection';
 import CurrencySection from '@/components/settings/CurrencySection';
 import LanguageSection from '@/components/settings/LanguageSection';
+import ThemeSection from '@/components/settings/ThemeSection';
 import ImportExportSection from '@/components/settings/ImportExportSection';
 import CategoriesSection from '@/components/settings/CategoriesSection';
 import CoupleSettingsSection from '@/components/settings/CoupleSettingsSection';
@@ -57,6 +58,7 @@ export default function Settings() {
           <AccountSection />
           <CurrencySection />
           <LanguageSection />
+          <ThemeSection />
           <ImportExportSection open={importExportDialogOpen} onOpenChange={setImportExportDialogOpen} />
           <CategoriesSection />
 

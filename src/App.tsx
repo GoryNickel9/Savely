@@ -1,6 +1,7 @@
 import { lazy, Suspense } from "react";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { ThemeProvider } from "next-themes";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
@@ -58,7 +59,7 @@ const queryClient = new QueryClient();
 // this same block that previously lived in each route guard below.
 function LoadingScreen() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background dark">
+    <div className="min-h-screen flex items-center justify-center bg-background">
       <div className="animate-pulse text-muted-foreground">Caricamento...</div>
     </div>
   );
@@ -150,15 +151,19 @@ function AppRoutes() {
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <BrowserRouter>
-      <AuthProvider>
-        <TooltipProvider>
-          <Sonner />
-          <AppRoutes />
-          <CookieBanner />
-        </TooltipProvider>
-      </AuthProvider>
-    </BrowserRouter>
+    {/* Tema scelto dall'utente (Impostazioni → Tema); lo scuro resta il
+        predefinito per continuità col design storico dell'app. */}
+    <ThemeProvider attribute="class" defaultTheme="dark" storageKey="savely-theme" enableSystem>
+      <BrowserRouter>
+        <AuthProvider>
+          <TooltipProvider>
+            <Sonner />
+            <AppRoutes />
+            <CookieBanner />
+          </TooltipProvider>
+        </AuthProvider>
+      </BrowserRouter>
+    </ThemeProvider>
   </QueryClientProvider>
 );
 

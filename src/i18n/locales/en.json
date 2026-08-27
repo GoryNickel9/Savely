@@ -1188,5 +1188,13 @@
   "Vedi tutte": "See all",
   "Budget mensili": "Monthly budgets",
   "Vedi tutti": "See all",
-  "Nessun budget configurato": "No budgets configured"
+  "Nessun budget configurato": "No budgets configured",
+  "Nessuna categoria": "No category",
+  "Tema": "Theme",
+  "Chiaro": "Light",
+  "Scuro": "Dark",
+  "Sistema": "System",
+  "Scegli l'aspetto dell'interfaccia. La preferenza è salvata su questo dispositivo.": "Choose the interface look. The preference is saved on this device.",
+  "Riduci la barra laterale": "Collapse sidebar",
+  "Espandi la barra laterale": "Expand sidebar"
 }

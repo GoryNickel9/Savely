@@ -8,10 +8,7 @@ layer(base);
    le pagine legali usano il @utility custom prose-legal, non questo plugin. */
 @plugin '@tailwindcss/typography';
 
-/* La variante dark si spegne dentro .theme-light: così l'ambito chiaro della
-   dashboard può vivere sotto il root scuro dell'app senza ereditarne le
-   varianti `dark:` dei componenti. */
-@custom-variant dark (&:is(.dark *):not(.theme-light, .theme-light *));
+@custom-variant dark (&:is(.dark *));
 
 @utility container {
   margin-inline: auto;
@@ -345,62 +342,6 @@ layer(base);
     --sidebar-accent-foreground: 0 0% 100%;
     --sidebar-border: 222 25% 18%;
     --sidebar-ring: 142 70% 50%;
-  }
-
-  /* Ambito tema chiaro, confinato alla dashboard. I valori specchiano il
-     blocco :root qui sopra: se modifichi la palette chiara, tienili
-     sincronizzati (duplicato voluto per non toccare le altre pagine). */
-  .theme-light {
-    --background: 220 20% 97%;
-    --foreground: 220 25% 10%;
-
-    --card: 0 0% 100%;
-    --card-foreground: 220 25% 10%;
-
-    --popover: 0 0% 100%;
-    --popover-foreground: 220 25% 10%;
-
-    --primary: 142 70% 45%;
-    --primary-foreground: 0 0% 100%;
-
-    --secondary: 220 15% 92%;
-    --secondary-foreground: 220 25% 10%;
-
-    --muted: 220 15% 92%;
-    --muted-foreground: 220 10% 45%;
-
-    --accent: 262 80% 55%;
-    --accent-foreground: 0 0% 100%;
-
-    --destructive: 0 72% 51%;
-    --destructive-foreground: 0 0% 100%;
-
-    --success: 142 70% 45%;
-    --success-foreground: 0 0% 100%;
-
-    --warning: 38 92% 50%;
-    --warning-foreground: 0 0% 100%;
-
-    --border: 220 15% 88%;
-    --input: 220 15% 88%;
-    --ring: 142 70% 45%;
-
-    --radius: 0.75rem;
-
-    --chart-1: 142 70% 45%;
-    --chart-2: 262 80% 55%;
-    --chart-3: 38 92% 50%;
-    --chart-4: 200 80% 50%;
-    --chart-5: 330 80% 55%;
-
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 220 10% 30%;
-    --sidebar-primary: 142 70% 45%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 220 15% 94%;
-    --sidebar-accent-foreground: 220 25% 10%;
-    --sidebar-border: 220 15% 88%;
-    --sidebar-ring: 142 70% 45%;
   }
 }
 
