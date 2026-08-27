@@ -36,7 +36,7 @@ export default function Privacy() {
           <li><strong>{t("Dati finanziari inseriti dall'utente:")}</strong> {t('transazioni, entrate/uscite, budget, risparmi, obiettivi di risparmio.')}</li>
           <li><strong>{t('Dati di portfolio:')}</strong> {t('asset finanziari, quantità, prezzi, ISIN, movimentazioni inserite manualmente o importate da file CSV.')}</li>
           <li><strong>{t('Dati di profilazione e categorie:')}</strong> {t('categorie personalizzate con etichette, emoji e colori.')}</li>
-          <li><strong>{t('Dati opzionali dei moduli:')}</strong> {t('spese ricorrenti.')}</li>
+          <li><strong>{t('Dati opzionali dei moduli:')}</strong> {t('spese ricorrenti, dati sul fumo (liquido/CBD/THC), collezioni TCG (carte), libreria (libri/fumetti/manga), spese condivise con familiare (couple budget).')}</li>
           <li><strong>{t('Dati tecnici:')}</strong> {t('indirizzo IP, tipo di browser, dati di sessione necessari per il funzionamento e la sicurezza.')}</li>
         </ul>
         <p>
