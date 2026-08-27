@@ -101,18 +101,6 @@ export default function Privacy() {
           <li><strong>{t('Revoca del consenso (art. 7):')}</strong> {t('revocare un consenso precedentemente prestato.')}</li>
           <li><strong>{t("Reclamo all'autorità (art. 77):")}</strong> {t('proporre reclamo al Garante per la Protezione dei Dati Personali (')}<a href="https://www.garanteprivacy.it" target="_blank" rel="noopener noreferrer">garanteprivacy.it</a>).</li>
         </ul>
-        <div className="callout">
-          <p className="mb-2"><strong>{t("Come esercitare i diritti direttamente dall'app:")}</strong></p>
-          <ul className="list-disc pl-5 space-y-1">
-            <li><strong>{t('Portabilità:')}</strong> {t('vai su')} <em>{t('Impostazioni → Import/Export → Esporta CSV')}</em> {t('per scaricare tutti i tuoi dati.')}</li>
-            <li><strong>{t('Cancellazione:')}</strong> {t('vai su')} <em>{t('Impostazioni → Zona Pericolo → Elimina account')}</em>.</li>
-            <li><strong>{t('Rettifica:')}</strong> {t("modifica i dati direttamente dalle sezioni dell'app.")}</li>
-          </ul>
-          <p className="mt-2">
-            {t('Per richieste che non puoi completare autonomamente, scrivi a')}{' '}
-            <a href={privacyMailtoHref('Richiesta diritti GDPR')}>{LEGAL_OWNER.privacyEmail}</a>.
-          </p>
-        </div>
       </LegalSection>
 
       <LegalSection number={8} title={t('Sicurezza dei dati')}>
