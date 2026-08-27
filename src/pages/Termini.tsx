@@ -15,7 +15,7 @@ export default function Termini() {
 
       <LegalSection number={1} title={t('Descrizione del Servizio')}>
         <p>
-          {t("{{app}} è un'applicazione web gratuita per la gestione e il monitoraggio della finanza personale. Consente di registrare entrate e uscite, definire budget, tracciare obiettivi di risparmio, monitorare un portfolio di investimenti e accedere a moduli opzionali (poker, fumo, collezioni TCG, libreria, spese condivise con familiari). Il Servizio è fornito \"così com'è\", a scopo informativo e di produttività personale.", { app: LEGAL_APP.name })}
+          {t("{{app}} è un'applicazione web gratuita per la gestione e il monitoraggio della finanza personale. Consente di registrare entrate e uscite, definire budget, tracciare obiettivi di risparmio, monitorare un portfolio di investimenti e accedere a moduli opzionali (fumo, collezioni TCG, libreria, spese condivise con familiari). Il Servizio è fornito \"così com'è\", a scopo informativo e di produttività personale.", { app: LEGAL_APP.name })}
         </p>
       </LegalSection>
 
