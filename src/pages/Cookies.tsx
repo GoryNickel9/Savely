@@ -1,7 +1,7 @@
 import { Link } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import LegalLayout, { LegalSection } from '@/components/legal/LegalLayout';
-import { LEGAL_OWNER, LEGAL_APP, privacyMailtoHref } from '@/lib/legalContents';
+import { LEGAL_OWNER, LEGAL_APP, contactMailtoHref } from '@/lib/legalContents';
 
 export default function Cookies() {
   const { t } = useTranslation();
@@ -73,7 +73,7 @@ export default function Cookies() {
       <LegalSection number={6} title={t('Contatti')}>
         <p>
           {t("Per domande relative ai cookie, contatta il Titolare all'indirizzo")}{' '}
-          <a href={privacyMailtoHref('Domanda Cookie')}>{LEGAL_OWNER.email}</a>.
+          <a href={contactMailtoHref('Domanda Cookie')}>{LEGAL_OWNER.contactEmail}</a>.
         </p>
         <p>
           {t('Vedi anche la')} <Link to="/privacy">{t('Privacy Policy')}</Link> {t('e i')}{' '}

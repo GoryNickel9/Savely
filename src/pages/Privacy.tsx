@@ -19,9 +19,9 @@ export default function Privacy() {
         <ul>
           <li><strong>{t('Nome:')}</strong> {LEGAL_OWNER.name}</li>
           <li><strong>{t('Email:')}</strong>{' '}
-            <a href={`mailto:${LEGAL_OWNER.email}`}>{LEGAL_OWNER.email}</a>
+            <a href={`mailto:${LEGAL_OWNER.privacyEmail}`}>{LEGAL_OWNER.privacyEmail}</a>
           </li>
-          <li><strong>{t('P.IVA / C.F.:')}</strong> {t(LEGAL_OWNER.vatId)}</li>
+          <li><strong>{t('Codice fiscale:')}</strong> {LEGAL_OWNER.vatId}</li>
           <li><strong>{t('Sede:')}</strong> {t(LEGAL_OWNER.address)}</li>
         </ul>
         <p>
@@ -110,7 +110,7 @@ export default function Privacy() {
           </ul>
           <p className="mt-2">
             {t('Per richieste che non puoi completare autonomamente, scrivi a')}{' '}
-            <a href={privacyMailtoHref('Richiesta diritti GDPR')}>{LEGAL_OWNER.email}</a>.
+            <a href={privacyMailtoHref('Richiesta diritti GDPR')}>{LEGAL_OWNER.privacyEmail}</a>.
           </p>
         </div>
       </LegalSection>
@@ -136,7 +136,7 @@ export default function Privacy() {
       <LegalSection number={11} title={t('Contatti')}>
         <p>
           {t("Per qualsiasi domanda, richiesta o segnalazione relativa al trattamento dei dati personali, contatta il Titolare all'indirizzo")}{' '}
-          <a href={privacyMailtoHref('Domanda Privacy')}>{LEGAL_OWNER.email}</a>.
+          <a href={privacyMailtoHref('Domanda Privacy')}>{LEGAL_OWNER.privacyEmail}</a>.
         </p>
         <p>
           {t('Vedi anche la')} <Link to="/cookies">{t('Cookie Policy')}</Link> {t('e i')}{' '}

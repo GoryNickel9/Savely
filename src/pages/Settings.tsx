@@ -16,6 +16,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import MainLayout from '@/components/layout/MainLayout';
+import { LEGAL_OWNER } from '@/lib/legalContents';
 import { useAuth } from '@/hooks/useAuth';
 import { usePermissions } from '@/hooks/usePermissions';
 import { toast } from 'sonner';
@@ -92,8 +93,8 @@ export default function Settings() {
             </div>
             <p className="text-xs text-muted-foreground">
               {t('Per richieste relative ai tuoi dati scrivi a')}{' '}
-              <a href="mailto:lucabaldino10@proton.me" className="text-primary hover:underline">
-                lucabaldino10@proton.me
+              <a href={`mailto:${LEGAL_OWNER.privacyEmail}`} className="text-primary hover:underline">
+                {LEGAL_OWNER.privacyEmail}
               </a>
               {t('. Per cancellare definitivamente il tuo account, vedi la sezione "Zona Pericolo" sottostante.')}
             </p>

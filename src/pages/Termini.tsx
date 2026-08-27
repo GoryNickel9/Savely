@@ -1,7 +1,7 @@
 import { Link } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import LegalLayout, { LegalSection } from '@/components/legal/LegalLayout';
-import { LEGAL_OWNER, LEGAL_APP, privacyMailtoHref } from '@/lib/legalContents';
+import { LEGAL_OWNER, LEGAL_APP, contactMailtoHref } from '@/lib/legalContents';
 
 export default function Termini() {
   const { t } = useTranslation();
@@ -79,7 +79,7 @@ export default function Termini() {
       <LegalSection number={9} title={t('Contatti')}>
         <p>
           {t("Per domande sui presenti Termini, contatta il Titolare all'indirizzo")}{' '}
-          <a href={privacyMailtoHref('Domanda Termini')}>{LEGAL_OWNER.email}</a>.
+          <a href={contactMailtoHref('Domanda Termini')}>{LEGAL_OWNER.contactEmail}</a>.
         </p>
         <p>
           {t('Vedi anche la')} <Link to="/privacy">{t('Privacy Policy')}</Link> {t('e la')}{' '}
