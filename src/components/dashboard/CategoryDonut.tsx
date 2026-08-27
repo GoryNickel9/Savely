@@ -14,23 +14,37 @@ interface CategoryDonutProps {
   range: DateRange;
 }
 
-/** Fette mostrate singolarmente; le restanti si aggregano in "Altro". */
-const MAX_SLICES = 5;
-
-// Palette per il donut: i cinque token chart + un grigio neutro per "Altro".
-const SLICE_COLORS = [
+/**
+ * Palette di riserva per le categorie senza colore definito (dopo i cinque
+ * token chart, tonalità distinte per restare leggibili anche con molte voci).
+ */
+const FALLBACK_PALETTE = [
   'hsl(var(--chart-1))',
   'hsl(var(--chart-2))',
   'hsl(var(--chart-3))',
   'hsl(var(--chart-4))',
   'hsl(var(--chart-5))',
+  '#0ea5e9',
+  '#f97316',
+  '#14b8a6',
+  '#8b5cf6',
+  '#f43f5e',
+  '#a3a3a3',
 ];
-const OTHER_COLOR = '#94a3b8';
 
-/** Sfondo morbido per la tessera dell'icona: usa il colore categoria se è un hex. */
+const HEX_COLOR = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i;
+
+function sliceColor(categoryColor: string | null | undefined, index: number): string {
+  if (categoryColor && HEX_COLOR.test(categoryColor.trim())) {
+    return categoryColor.trim();
+  }
+  return FALLBACK_PALETTE[index % FALLBACK_PALETTE.length];
+}
+
+/** Sfondo morbido per la tessera dell'icona a partire dal colore categoria. */
 function iconTileStyle(color: string | null): React.CSSProperties | undefined {
-  if (color && color.startsWith('#') && (color.length === 7 || color.length === 4)) {
-    return { backgroundColor: `${color}22` };
+  if (color && HEX_COLOR.test(color.trim())) {
+    return { backgroundColor: `${color.trim()}22` };
   }
   return undefined;
 }
@@ -38,31 +52,19 @@ function iconTileStyle(color: string | null): React.CSSProperties | undefined {
 export default function CategoryDonut({ transactions, range }: CategoryDonutProps) {
   const { t } = useTranslation();
 
-  const slices = useMemo(() => {
-    const breakdown = categoryBreakdown(transactions, range);
-    if (breakdown.length <= MAX_SLICES) return breakdown;
-    const top = breakdown.slice(0, MAX_SLICES);
-    const restTotal = breakdown.slice(MAX_SLICES).reduce((sum, s) => sum + s.total, 0);
-    const grandTotal = breakdown.reduce((sum, s) => sum + s.total, 0);
-    return [
-      ...top,
-      {
-        categoryId: 'altro',
-        name: t('Altro'),
-        icon: null,
-        color: null,
-        total: restTotal,
-        percent: grandTotal > 0 ? (restTotal / grandTotal) * 100 : 0,
-      },
-    ];
-  }, [transactions, range, t]);
+  // Tutte le categorie del periodo, ordinate per importo decrescente (nessuna
+  // aggregazione in "Altro": ogni categoria resta visibile e riconoscibile).
+  const slices = useMemo(
+    () => categoryBreakdown(transactions, range),
+    [transactions, range]
+  );
 
   const total = useMemo(() => slices.reduce((sum, s) => sum + s.total, 0), [slices]);
 
-  const chartData = slices.map((s, index) => ({
-    name: s.name,
-    value: s.total,
-    color: s.categoryId === 'altro' ? OTHER_COLOR : SLICE_COLORS[index % SLICE_COLORS.length],
+  const chartData = slices.map((slice, index) => ({
+    name: slice.name || t('Nessuna categoria'),
+    value: slice.total,
+    color: sliceColor(slice.color, index),
   }));
 
   return (
@@ -75,10 +77,12 @@ export default function CategoryDonut({ transactions, range }: CategoryDonutProp
         </div>
       ) : (
         <div className="mt-4 flex flex-1 flex-col items-center gap-6 lg:flex-row">
-          <div className="relative h-[200px] w-[200px] shrink-0">
+          {/* group + group-hover: con il tooltip aperto il totale centrale
+              sfuma per non sovrapporsi alla scritta. */}
+          <div className="group relative h-[200px] w-[200px] shrink-0">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
-                <Tooltip content={<ChartTooltip />} />
+                <Tooltip content={<ChartTooltip />} wrapperStyle={{ zIndex: 50 }} />
                 <Pie
                   data={chartData}
                   dataKey="value"
@@ -95,13 +99,13 @@ export default function CategoryDonut({ transactions, range }: CategoryDonutProp
                 </Pie>
               </PieChart>
             </ResponsiveContainer>
-            <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
+            <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center transition-opacity duration-200 group-hover:opacity-0">
               <p className="text-lg font-display font-bold tabular-nums">{formatEUR(total)}</p>
               <p className="text-xs text-muted-foreground">{t('Totale')}</p>
             </div>
           </div>
 
-          <ul className="w-full min-w-0 flex-1 space-y-3">
+          <ul className="w-full min-w-0 flex-1 max-h-[260px] space-y-3 overflow-y-auto pr-1">
             {slices.map((slice, index) => (
               <li key={slice.categoryId} className="flex items-center gap-3">
                 <span
@@ -111,18 +115,16 @@ export default function CategoryDonut({ transactions, range }: CategoryDonutProp
                 >
                   {slice.icon ?? '🏷️'}
                 </span>
-                <span className="min-w-0 flex-1 truncate text-sm font-medium">{slice.name}</span>
+                <span className="min-w-0 flex-1 truncate text-sm font-medium">
+                  {slice.name || t('Nessuna categoria')}
+                </span>
                 <span className="text-sm font-semibold tabular-nums">{formatEUR(slice.total)}</span>
                 <span className="w-14 shrink-0 text-right text-xs text-muted-foreground tabular-nums">
                   {formatPercent(slice.percent)}
                 </span>
-                {/* Colore della fetta corrispondente, per associare legenda e grafico. */}
                 <span
                   className="hidden h-2 w-2 rounded-full sm:block"
-                  style={{
-                    backgroundColor:
-                      slice.categoryId === 'altro' ? OTHER_COLOR : SLICE_COLORS[index % SLICE_COLORS.length],
-                  }}
+                  style={{ backgroundColor: sliceColor(slice.color, index) }}
                   aria-hidden
                 />
               </li>
