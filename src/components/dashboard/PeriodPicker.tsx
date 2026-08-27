@@ -78,7 +78,7 @@ export default function PeriodPicker({ selection, onChange }: PeriodPickerProps)
       <PopoverTrigger asChild>
         <Button
           variant="outline"
-          className="h-10 gap-2 rounded-lg border-border bg-card px-4 text-sm font-medium text-card-foreground shadow-sm hover:bg-muted/60"
+          className="h-10 w-full gap-2 rounded-lg border-border bg-card px-4 text-sm font-medium text-card-foreground shadow-sm hover:bg-muted/60 md:w-auto"
         >
           <CalendarRange className="h-4 w-4 text-muted-foreground" />
           {rangeLabel(range.from, range.to)}

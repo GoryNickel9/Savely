@@ -84,8 +84,9 @@ export default function BudgetsWidget({ budgets, transactions }: BudgetsWidgetPr
                 <span className="min-w-0 flex-1 truncate text-sm font-medium">
                   {budget.category?.name ?? t('Categoria')}
                 </span>
-                <span className="shrink-0 text-xs text-muted-foreground tabular-nums">
-                  {formatEUR(spent)} / {formatEUR(limit)}
+                <span className="shrink-0 whitespace-nowrap text-xs text-muted-foreground tabular-nums">
+                  {formatEUR(spent)}
+                  <span className="hidden sm:inline"> / {formatEUR(limit)}</span>
                 </span>
                 <span className="w-12 shrink-0 text-right text-sm font-semibold tabular-nums">
                   {formatPercent(percent)}

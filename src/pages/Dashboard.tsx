@@ -27,12 +27,8 @@ export default function Dashboard() {
   const stats = useMemo(() => computePeriodStats(transactions, range), [transactions, range]);
 
   return (
-    <MainLayout
-      // Il tema chiaro è confinato alla dashboard: il wrapper negativo sui margini
-      // copre l'area contenuto fino ai bordi; il resto dell'app resta scuro.
-      contentClassName="theme-light bg-background -mx-6 -my-6 px-6 py-6 pt-20 pb-28 lg:-mx-8 lg:-my-8 lg:px-8 lg:py-8 lg:pt-8 lg:pb-8"
-    >
-      <div className="min-h-screen space-y-8">
+    <MainLayout>
+      <div className="space-y-6 lg:space-y-8">
         <header className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
           <div>
             <h1 className="text-3xl font-display font-bold">{t('Dashboard')}</h1>
