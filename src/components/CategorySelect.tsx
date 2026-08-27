@@ -68,10 +68,17 @@ export function CategorySelect({
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-full p-0" align="start" disablePortal>
+      {/* disablePortal resta necessario dentro le Dialog modali (focus trap),
+          quindi si evita il clipping mantenendo la lista dentro lo spazio
+          visibile della finestra: max-height proporzionato al viewport. */}
+      <PopoverContent
+        className="w-[var(--radix-popover-trigger-width)] min-w-60 p-0"
+        align="start"
+        disablePortal
+      >
         <Command>
           <CommandInput placeholder={t('Cerca categoria...')} />
-          <CommandList>
+          <CommandList className="max-h-[min(45vh,300px)]">
             <CommandEmpty>{t('Nessuna categoria trovata.')}</CommandEmpty>
             <CommandGroup>
               {showAllOption && (
@@ -84,11 +91,11 @@ export function CategorySelect({
                 >
                   <Check
                     className={cn(
-                      "mr-2 h-4 w-4",
+                      "mr-2 h-4 w-4 shrink-0",
                       isAllSelected ? "opacity-100" : "opacity-0"
                     )}
                   />
-                  <span>{t(allOptionLabel)}</span>
+                  <span className="truncate" title={t(allOptionLabel)}>{t(allOptionLabel)}</span>
                 </CommandItem>
               )}
               {filteredCategories.map((category) => (
@@ -102,12 +109,12 @@ export function CategorySelect({
                 >
                   <Check
                     className={cn(
-                      "mr-2 h-4 w-4",
+                      "mr-2 h-4 w-4 shrink-0",
                       value === category.id ? "opacity-100" : "opacity-0"
                     )}
                   />
-                  <span className="mr-2">{category.icon}</span>
-                  <span>{category.name}</span>
+                  <span className="mr-2 shrink-0">{category.icon}</span>
+                  <span className="truncate" title={category.name}>{category.name}</span>
                 </CommandItem>
               ))}
             </CommandGroup>
