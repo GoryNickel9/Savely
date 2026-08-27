@@ -10,3 +10,5 @@ export {
   calculateMedian,
   calculateWinsorizedMean
 } from './statistics';
+
+export * from './dashboardStats';
