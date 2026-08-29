@@ -390,6 +390,7 @@
   "Errore di registrazione": "Registration error",
   "Errore durante l'eliminazione": "Error during deletion",
   "Errore durante la lettura del file": "Error reading the file",
+  "Errore durante la ricerca": "Search failed",
   "Errore export": "Export error",
   "Errore import": "Import error",
   "Errore lettura file": "File reading error",

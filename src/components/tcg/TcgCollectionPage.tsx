@@ -57,7 +57,7 @@ export default function TcgCollectionPage({
   const { t } = useTranslation();
   const { cards, isLoading, totalValue, totalCost, totalGain, totalGainPercent, createCard, updateCard, deleteCard } = useTcgCards(category);
 
-  const { results, loading: searching, search: searchCardTrader, reset: resetResults } = useCardTraderSearch();
+  const { results, loading: searching, error: searchError, search: searchCardTrader, reset: resetResults } = useCardTraderSearch();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [selected, setSelected] = useState<CardTraderCard | null>(null);
@@ -232,6 +232,10 @@ export default function TcgCollectionPage({
                     </Button>
                   </div>
                 </div>
+
+                {searchError && (
+                  <p className="text-sm text-destructive">{t('Errore durante la ricerca')}: {searchError}</p>
+                )}
 
                 {/* Results */}
                 {results.length > 0 && !selected && (
