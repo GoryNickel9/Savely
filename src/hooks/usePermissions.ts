@@ -45,7 +45,7 @@ function readStoredPermissions(): StoredPermissions | null {
 }
 
 export function usePermissions() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   // Envelope letto una sola volta al mount: consente il render immediato con
   // i permessi noti dell'utente; il fetch parte comunque per confermare.
   const [stored] = useState(readStoredPermissions);
@@ -59,6 +59,13 @@ export function usePermissions() {
 
   useEffect(() => {
     if (!user?.id) {
+      // User null con auth ancora in corso = sessione in fase di ripristino
+      // (è il caso di ogni refresh di pagina): non toccare stato né cache e
+      // resta in loading, altrimenti la guardia vede "permessi assenti" con
+      // il caricamento finto-terminato e rimanda in dashboard prima che il
+      // fetch per l'utente vero riparta.
+      if (authLoading) return;
+      // Logout reale: azzera permessi e cache.
       setPermissions(null);
       permissionsOwnerId.current = null;
       localStorage.removeItem(PERMISSIONS_STORAGE_KEY);
@@ -112,7 +119,7 @@ export function usePermissions() {
     return () => {
       cancelled = true;
     };
-  }, [user?.id]);
+  }, [user?.id, authLoading]);
 
   return { permissions, loading };
 }

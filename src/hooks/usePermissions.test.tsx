@@ -167,9 +167,43 @@ describe('usePermissions', () => {
     consoleErrorSpy.mockRestore();
   });
 
-  it('senza utente azzera i permessi e rimuove la cache', async () => {
+  it('durante il ripristino della sessione resta in loading e conserva la cache', async () => {
+    // Il refresh di pagina monta l'hook con user null mentre l'auth ripristina
+    // la sessione: il loading non deve scattare a false né la cache svuotarsi,
+    // altrimenti la guardia rimanda in dashboard prima del fetch.
+    writeCache('u1', pokerPerms);
+    let resolveFetch!: (p: Permissions) => void;
+    getUserPermissionsMock.mockReturnValue(
+      new Promise((resolve) => {
+        resolveFetch = resolve;
+      })
+    );
+    useAuthMock.mockReturnValue({ user: null, loading: true });
+
+    const { result, rerender } = renderHook(() => usePermissions());
+
+    expect(result.current.loading).toBe(true);
+    expect(result.current.permissions).toEqual(pokerPerms);
+    expect(localStorage.getItem(STORAGE_KEY)).not.toBeNull();
+
+    // La sessione si è ripristinata: parte il fetch, il loading resta true
+    useAuthMock.mockReturnValue({ user: { id: 'u1' }, loading: false });
+    rerender();
+
+    expect(result.current.loading).toBe(true);
+    expect(result.current.permissions).toEqual(pokerPerms);
+
+    await act(async () => {
+      resolveFetch(adminPerms);
+    });
+
+    expect(result.current.loading).toBe(false);
+    expect(result.current.permissions).toEqual(adminPerms);
+  });
+
+  it('senza utente (logout) azzera i permessi e rimuove la cache', async () => {
     writeCache('u1', adminPerms);
-    useAuthMock.mockReturnValue({ user: null });
+    useAuthMock.mockReturnValue({ user: null, loading: false });
 
     const { result } = renderHook(() => usePermissions());
 
