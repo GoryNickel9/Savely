@@ -84,7 +84,7 @@ function PermissionRoute({
   const { user, loading } = useAuth();
   const { permissions, loading: permissionsLoading } = usePermissions();
 
-  if (loading || (perm && permissionsLoading)) {
+  if (loading) {
     return <LoadingScreen />;
   }
 
@@ -92,8 +92,11 @@ function PermissionRoute({
     return <Navigate to="/auth" replace />;
   }
 
+  // Solo quando il permesso NON risulta concesso si attende il fetch: al
+  // refresh la cache può essere assente o corrotta, e decidere prima dei
+  // dati freschi rimandava in dashboard anche chi ha accesso alla sezione.
   if (perm && !permissions?.[perm]) {
-    return <Navigate to="/" replace />;
+    return permissionsLoading ? <LoadingScreen /> : <Navigate to="/" replace />;
   }
 
   return <>{children}</>;

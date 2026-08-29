@@ -12,6 +12,9 @@ const CACHE_TTL = 5 * 60 * 1000; // 5 minuti
  * Recupera i permessi di un utente dal database
  * @param userId ID dell'utente
  * @returns Permessi dell'utente
+ * @throws Se la query fallisce (token in rinnovo, rete, RLS): distinguere
+ * l'errore dai "permessi assenti" evita di sovrascrivere permessi validi
+ * con i default tutti-false.
  */
 export async function getUserPermissions(userId: string): Promise<Permissions> {
   // Verifica cache
@@ -20,32 +23,30 @@ export async function getUserPermissions(userId: string): Promise<Permissions> {
     return cached.data;
   }
 
-  try {
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('permissions')
-      .eq('user_id', userId)
-      .single();
+  // maybeSingle: il profilo assente (utente registrato prima che il trigger
+  // crei la riga su profiles) arriva come data null e non come errore.
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('permissions')
+    .eq('user_id', userId)
+    .maybeSingle();
 
-    if (error || !data) {
-      // Se non ci sono permessi, restituisci i permessi di default
-      const defaultPermissions = getDefaultPermissions();
-      permissionsCache.set(userId, { data: defaultPermissions, timestamp: Date.now() });
-      return defaultPermissions;
-    }
-
-    const permissions = parsePermissions((data as { permissions?: unknown }).permissions);
-
-    // Salva in cache
-    permissionsCache.set(userId, { data: permissions, timestamp: Date.now() });
-    
-    return permissions;
-  } catch (error) {
-    console.error('Errore nel recupero dei permessi:', error);
-    const defaultPermissions = getDefaultPermissions();
-    permissionsCache.set(userId, { data: defaultPermissions, timestamp: Date.now() });
-    return defaultPermissions;
+  if (error) {
+    throw error;
   }
+
+  if (!data) {
+    // Profilo non ancora creato (trigger in ritardo): default senza cacharli,
+    // così i moduli abilitati compaiono appena la riga esiste.
+    return getDefaultPermissions();
+  }
+
+  const permissions = parsePermissions((data as { permissions?: unknown }).permissions);
+
+  // Salva in cache
+  permissionsCache.set(userId, { data: permissions, timestamp: Date.now() });
+
+  return permissions;
 }
 
 /**

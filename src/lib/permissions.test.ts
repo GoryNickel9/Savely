@@ -1,5 +1,16 @@
-import { describe, expect, it } from 'vitest';
-import { parsePermissions, getDefaultPermissions } from './permissions';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+  parsePermissions,
+  getDefaultPermissions,
+  clearAllPermissionsCache,
+  getUserPermissions,
+} from './permissions';
+
+const { fromMock } = vi.hoisted(() => ({ fromMock: vi.fn() }));
+
+vi.mock('@/integrations/supabase/client', () => ({
+  supabase: { from: fromMock },
+}));
 
 describe('parsePermissions', () => {
   it('returns all defaults for null, undefined or non-object values', () => {
@@ -53,5 +64,55 @@ describe('parsePermissions', () => {
     expect(result.admin).toBe(false);
     expect(result.poker).toBe(false);
     expect(result.fumo).toBe(true);
+  });
+});
+
+describe('getUserPermissions', () => {
+  type QueryResult = { data: unknown; error: { message: string } | null };
+
+  /** Catena thenable che replica il builder Supabase (select → eq → maybeSingle). */
+  const chain = (result: QueryResult) => ({
+    select: () => ({
+      eq: () => ({
+        maybeSingle: () => Promise.resolve(result),
+      }),
+    }),
+  });
+
+  beforeEach(() => {
+    fromMock.mockReset();
+    clearAllPermissionsCache();
+  });
+
+  it('restituisce i permessi del profilo quando la riga esiste', async () => {
+    fromMock.mockImplementation(() => chain({ data: { permissions: { admin: true } }, error: null }));
+
+    await expect(getUserPermissions('u1')).resolves.toEqual({
+      ...getDefaultPermissions(),
+      admin: true,
+    });
+  });
+
+  it('profilo assente senza errore restituisce i default (utente in attesa del trigger)', async () => {
+    fromMock.mockImplementation(() => chain({ data: null, error: null }));
+
+    await expect(getUserPermissions('u1')).resolves.toEqual(getDefaultPermissions());
+  });
+
+  it('un errore DB propaga l\'eccezione invece di restituire i default', async () => {
+    // Prima del fix un errore (token in rinnovo, rete) veniva mascherato dai
+    // default tutti-false, che finivano anche in cache corrompendola.
+    fromMock.mockImplementation(() => chain({ data: null, error: { message: 'JWT expired' } }));
+
+    await expect(getUserPermissions('u1')).rejects.toEqual({ message: 'JWT expired' });
+  });
+
+  it('usa la cache interna entro il TTL senza interrogare di nuovo il DB', async () => {
+    fromMock.mockImplementation(() => chain({ data: { permissions: { tcg: true } }, error: null }));
+
+    await getUserPermissions('u1');
+    await getUserPermissions('u1');
+
+    expect(fromMock).toHaveBeenCalledTimes(1);
   });
 });
