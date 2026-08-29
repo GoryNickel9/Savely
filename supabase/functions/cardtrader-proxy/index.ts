@@ -3,9 +3,13 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const CT_API_URL = 'https://api.cardtrader.com/api/v2';
 
-// Module-level cache for expansions (persists across warm invocations)
+// Module-level cache for expansions (persists across warm invocations).
+// Con TTL: senza, i set rilasciati dopo il boot dell'isolate resterebbero
+// "Unknown Set" fino al riciclo dell'isolate.
 let expansionsCache: Record<number, { id: number; name: string }> = {};
+let expansionsCacheTime = 0;
 let isFetchingExpansions = false;
+const EXPANSIONS_TTL_MS = 6 * 60 * 60 * 1000; // 6 ore
 
 // @ts-ignore
 const ALLOWED_ORIGINS = (Deno.env.get('ALLOWED_ORIGIN') || '')
@@ -26,7 +30,9 @@ function getCorsHeaders(requestOrigin: string | null): Record<string, string> {
 }
 
 async function getExpansions(apiKey: string): Promise<Record<number, { id: number; name: string }>> {
-  if (Object.keys(expansionsCache).length > 0) return expansionsCache;
+  if (Object.keys(expansionsCache).length > 0 && Date.now() - expansionsCacheTime < EXPANSIONS_TTL_MS) {
+    return expansionsCache;
+  }
   if (isFetchingExpansions) {
     while (isFetchingExpansions) {
       await new Promise((resolve) => setTimeout(resolve, 100));
@@ -41,9 +47,14 @@ async function getExpansions(apiKey: string): Promise<Record<number, { id: numbe
     });
     if (res.ok) {
       const expansions: any[] = await res.json();
-      expansions.forEach((exp) => {
-        expansionsCache[exp.id] = { id: exp.id, name: exp.name };
-      });
+      if (expansions.length > 0) {
+        const fresh: Record<number, { id: number; name: string }> = {};
+        expansions.forEach((exp) => {
+          fresh[exp.id] = { id: exp.id, name: exp.name };
+        });
+        expansionsCache = fresh;
+        expansionsCacheTime = Date.now();
+      }
     }
     return expansionsCache;
   } catch (err) {
@@ -52,6 +63,31 @@ async function getExpansions(apiKey: string): Promise<Record<number, { id: numbe
   } finally {
     isFetchingExpansions = false;
   }
+}
+
+// CardTrader /blueprints è paginato (50 per pagina, ordinate per id crescente):
+// senza seguire le pagine le carte dei set più nuovi restano fuori dai risultati.
+const BLUEPRINTS_PAGE_SIZE = 50;
+const BLUEPRINTS_MAX_PAGES = 10; // max ~500 blueprint per ricerca
+
+async function searchBlueprints(name: string, apiKey: string): Promise<any[]> {
+  const all: any[] = [];
+  for (let page = 1; page <= BLUEPRINTS_MAX_PAGES; page++) {
+    const res = await fetch(
+      `${CT_API_URL}/blueprints?name=${encodeURIComponent(name)}&page=${page}`,
+      { headers: { Authorization: `Bearer ${apiKey}` } },
+    );
+    if (!res.ok) {
+      if (all.length > 0) break; // meglio restituire le pagine già ricevute
+      const text = await res.text();
+      console.error(`CardTrader blueprints error ${res.status}: ${text}`);
+      throw new Error(`CardTrader error: ${res.statusText}`);
+    }
+    const batch: any[] = await res.json();
+    all.push(...batch);
+    if (batch.length < BLUEPRINTS_PAGE_SIZE) break;
+  }
+  return all;
 }
 
 // @ts-ignore
@@ -118,18 +154,7 @@ Deno.serve(async (req: Request) => {
 
       await getExpansions(apiKey);
 
-      const res = await fetch(
-        `${CT_API_URL}/blueprints?name=${encodeURIComponent(name)}`,
-        { headers: { Authorization: `Bearer ${apiKey}` } },
-      );
-
-      if (!res.ok) {
-        const text = await res.text();
-        console.error(`CardTrader blueprints error ${res.status}: ${text}`);
-        throw new Error(`CardTrader error: ${res.statusText}`);
-      }
-
-      const blueprints: any[] = await res.json();
+      const blueprints: any[] = await searchBlueprints(name, apiKey);
 
       const cards = blueprints.map((bp) => {
         const expansion = expansionsCache[bp.expansion_id] ?? { name: 'Unknown Set' };
