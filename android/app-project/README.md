@@ -2,6 +2,10 @@
 
 Questo progetto apre `https://www.savely.cc/` attraverso Android Browser Helper. Non contiene una copia delle schermate web. Il codice e le dipendenze della web app restano separati dalla build Android.
 
+`android/.ignore` esclude questa cartella dallo scanner automatico di Tailwind. Senza l'esclusione, parole presenti nei sorgenti Java e negli script, come `static`, possono aggiungere CSS al sito. Git continua a vedere i sorgenti e i nuovi file Android; il controllo `node android/scripts/verify-web-scanner.mjs` verifica esclusione, inclusione dei sorgenti web e regole Git.
+
+Ripgrep legge anche `.ignore`. Per cercare nel progetto Android usare `rg --no-ignore-dot android` o `rg --files --no-ignore-dot android`: questi comandi mantengono le esclusioni `.gitignore` per chiavi, build e file locali.
+
 ## Versioni della build
 
 | Componente | Versione |

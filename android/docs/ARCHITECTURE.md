@@ -17,6 +17,8 @@ TWA risponde al requisito di distribuire un'icona Android mantenendo tutte le fu
 
 Le build Android non hanno bisogno di eseguire Vite. Vercel continua a usare il processo web attuale. L'aggiunta di un progetto nativo non impedisce a Vercel di avviare una build web su un commit della repository: l'isolamento garantisce che quella build non compili Android. Il filtro delle build Vercel non viene modificato in questo intervento.
 
+`android/.ignore` esclude i file Android dallo scanner automatico Tailwind, che altrimenti potrebbe aggiungere classi al CSS web. `.ignore` riguarda l'analisi dei file; `.gitignore` continua a proteggere segreti e output, mentre i sorgenti nativi rimangono versionabili. Il controllo `verify-web-scanner.mjs` verifica queste due proprietà.
+
 ## Browser, sessione e permessi
 
 TWA si basa su Custom Tabs. Browser, cookie, storage e password salvate seguono il provider del dispositivo. Cambio di browser, profilo o cancellazione dei dati browser possono richiedere un nuovo login. Il contenitore non legge i token web e non modifica i permessi degli utenti Savely. [Custom Tabs](https://developer.chrome.com/docs/android/custom-tabs).

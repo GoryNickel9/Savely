@@ -1,0 +1,3 @@
+# Tailwind's automatic scanner reads .ignore; Git continues tracking Android sources normally.
+# Keep native files out of the web CSS candidate set without changing web configuration.
+*

@@ -14,6 +14,11 @@ Registra prove e limiti prima di distribuire la release come verificata. Questo 
 | `https://www.savely.cc/.well-known/assetlinks.json` | FALLITO prima della pubblicazione: 200 HTML della SPA, non JSON | GET diretto senza redirect; ETag uguale alla home |
 | Isolamento web | PASSATO: solo perimetro Android e Asset Links; contenuto web invariato | `node android/scripts/verify-isolation.mjs`; normalizzazione LF/CRLF |
 | Regressione web | PASSATO: lint, typecheck, 228 test in 20 file e build Vite | Comandi npm eseguiti dall'agente principale |
+| CI della PR | PASSATO: qualità web, typecheck e 228 test; E2E 6 PASS e 6 SKIP | [PR draft 1](https://github.com/GoryNickel9/Savely/pull/1); E2E autenticati saltati per assenza dei segreti di collaudo |
+| Audit dipendenze web | FALLITO nel gate CI: 18 vulnerabilità, 5 moderate e 13 high | Audit riprodotto localmente; `package.json` e lockfile web invariati rispetto alla base; aggiornamenti dipendenze fuori perimetro Android |
+| Scanner CSS web | PASSATO: 338 file analizzati, 0 file Android | `node android/scripts/verify-web-scanner.mjs`; `android/.ignore` esclude i sorgenti nativi dallo scanner senza impedirne il versionamento Git |
+| Confronto build web con base Git | PASSATO per 129 di 131 file byte per byte, inclusi tutti JS/CSS e index HTML | Build della base `origin/main` da archivio Git nello stesso ambiente Node e con le stesse dipendenze; CSS 117336 byte e hash uguale |
+| Due asset testuali nel confronto archivio/Windows | PASSATO: contenuto identico dopo normalizzazione LF/CRLF | `manifest.webmanifest` e `robots.txt`; il file aggiunto è soltanto `.well-known/assetlinks.json` |
 | Asset Links nell'output web locale | PASSATO: JSON copiato in `dist/.well-known/assetlinks.json` | Build Vite e lettura del file generato |
 | Unit test nativi dopo correzione manifest e dominio canonico | PASSATO: 7 test, 0 failure, 0 error | `testDebugUnitTest`, incluso `BrowserHelperManifestTest` e policy URL |
 | Contratti del checker deployment | PASSATO: 10 casi, con cache, certificato errato e HTML al posto di JSON | `android/scripts/Test-DeploymentChecks.ps1`, eseguito anche da build e CI |
@@ -31,6 +36,7 @@ Registra prove e limiti prima di distribuire la release come verificata. Questo 
 | Deep link Android ACTION_VIEW | BLOCCATO: comando ADB rifiutato dalla revisione automatica senza motivo disponibile | Conservazione query/fragment e origine verificata con unit test; nessuna prova device dichiarata |
 | Funzioni Android con account | NON ESEGUITO | Nessuna sessione/account E2E disponibile durante questi controlli |
 | Preview Vercel con Asset Links | PASSATO: home 200 HTML/max-age=0; Asset Links 200 `application/json; charset=utf-8`, impronta esatta | [Preview verificata](https://savely-cdajlhta7-gorynickel9s-projects.vercel.app/), GET eseguiti dall'agente principale; routing Vercel invariato |
+| Preview Vercel della PR | PASSATO: Asset Links 200 JSON senza redirect e certificato corrispondente | [Preview della PR](https://savely-git-codex-android-twa-gorynickel9s-projects.vercel.app/.well-known/assetlinks.json); produzione invariata |
 | Versione aggiornata dopo deploy | NON ESEGUITO | Richiede osservazione di due aperture separate da deploy |
 
 Il controllo HTTP è una fotografia del dominio al momento della lettura. L'aggiunta locale del file e una build web riuscita non dimostrano che Vercel lo esponga correttamente. La risposta online deve essere ricontrollata dopo la pubblicazione.
@@ -44,7 +50,7 @@ Registra i dati nella scheda seguente. Un risultato senza ambiente ed evidenza r
 | Campo | Valore |
 |---|---|
 | Data e ora, Europe/Rome | 11 ottobre 2026; smoke definitivo ore 14:27:48 |
-| Commit sorgente APK | Da compilare |
+| Commit sorgente APK | `35daaea`; ricompilazione confermata con lo stesso SHA-256 finale |
 | Package / versionCode / versionName | `cc.savely.android` / `2` / `1.0.0`, fonte `android/release.json` |
 | SHA-256 file APK | `de6f78b8858740de7d0d3312e4e90bbc4b1c83cac659d2cfd383dc2aecd6bb4c` |
 | Dimensione APK finale | 769581 byte |
@@ -83,6 +89,13 @@ Controlla che `package.json`, lockfile web, `vite.config.ts`, `vercel.json`, `ts
 
 Il workflow di build Android non pubblica il sito. Un commit della stessa repository può comunque far partire Vercel secondo le impostazioni già attive: questa versione non modifica tali impostazioni. Il deploy di `assetlinks.json` usa il normale processo esistente.
 
+Lo scanner Tailwind analizza la repository oltre ai sorgenti web. I nuovi file Android avevano introdotto classi accidentali nel CSS; `android/.ignore` ora li esclude dall'analisi. Il confronto con la build della base conferma che tutti JS, CSS e index HTML coincidono byte per byte. Lo script verifica anche che Git continui a includere i sorgenti nativi. Per cercare nei file Android con ripgrep usa `rg --no-ignore-dot`: continua a rispettare `.gitignore`, che esclude chiavi, credenziali e output di build.
+
+```powershell
+node .\android\scripts\verify-web-scanner.mjs
+rg --no-ignore-dot --files android
+```
+
 ## Limiti da riportare
 
 La parità funzionale deriva dallo stesso sito e deve essere confermata con prove TWA. MFA, file picker, download, collegamenti email, domini esterni e account admin meritano risultati distinti. Senza gli account o il dispositivo richiesti, usa BLOCCATO con causa precisa; non sostituire il caso con PASSATO perché la route esiste.
@@ -94,3 +107,5 @@ La navigazione anonima verifica l'accesso pubblico e il redirect a login delle r
 La prima run poteva leggere il documento precedente prima della nuova navigazione. Una run successiva ha registrato 38 PASS e 1 FAIL sul vecchio target Chrome 0, lasciato in background dalle prove precedenti. La suite definitiva seleziona esplicitamente il target attivo 2 dell'APK, lo porta in primo piano, controlla gli errori di navigazione e attende il nuovo `loaderId`: tutti i 39 casi passano. Il risultato definitivo sostituisce le due prove precedenti.
 
 La richiesta di rete osservata all'apertura dimostra che il browser carica un nuovo documento dalla home. La prova tra due deploy diversi deve ancora confrontare gli asset caricati prima e dopo il rilascio: i due risultati hanno ambiti distinti.
+
+La PR resta draft e il gate di sicurezza è fallito per le dipendenze web esistenti. Il progetto Android non cambia quelle dipendenze; un intervento sull'audit richiede un ambito distinto. L'esito E2E con sei casi saltati non certifica l'accesso con account.

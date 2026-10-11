@@ -51,6 +51,7 @@ Sul dominio di produzione, il controllo deve raggiungere direttamente `https://w
 Get-Help .\android\scripts\Verify-Deployment.ps1 -Detailed
 .\android\scripts\Verify-Deployment.ps1
 node .\android\scripts\verify-isolation.mjs
+node .\android\scripts\verify-web-scanner.mjs
 .\android\scripts\Test-DeploymentChecks.ps1
 ```
 
@@ -79,6 +80,8 @@ Nell'emulatore la riapertura dall'icona ha richiesto il nuovo documento via rete
 Il censimento delle 41 route e il controllo HTTP preliminare sono eseguiti. I controlli web passano: lint, TypeScript, 228 test e build Vite. Passano 7 test nativi e 10 test del checker HTTP; il lint Android riporta 0 errori e 3 warning. La release firmata sul dominio canonico `www` apre il sito su emulatore API 35 / Chrome 124, sia a freddo sia dall'icona con browser già aperto, senza crash. La barra del browser resta visibile finché Asset Links manca in produzione.
 
 Lo smoke test anonimo sul target attivo dell'APK ha superato tutti i 39 casi: redirect delle 34 route protette e caricamento delle cinque pagine pubbliche/404. L'APK finale, versione `1.0.0` con `versionCode` 2, è stato installato sopra la build interna con codice 1 mantenendo un valore di prova nello storage browser. Lo smoke e questa prova di aggiornamento non verificano i flussi con account. La parità funzionale autenticata resta **NON ESEGUITO**. Conserva evidenze in [VALIDATION.md](VALIDATION.md) e aggiorna ogni riga della [matrice](FUNCTIONAL_MATRIX.md) dopo il test.
+
+La [PR draft](https://github.com/GoryNickel9/Savely/pull/1) ha superato qualità web, TypeScript e test; l'E2E registra 6 PASS e 6 SKIP per assenza dei segreti di accesso. Il gate di sicurezza segnala 18 vulnerabilità nelle dipendenze web già presenti. Le dipendenze rimangono invariate e il gate non viene dichiarato superato. La preview serve Asset Links correttamente; la produzione resta da pubblicare.
 
 Per ripetere lo smoke usa un emulatore di collaudo con Chrome e profilo anonimo, apri l'APK e inoltra il socket DevTools con ADB:
 
