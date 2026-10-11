@@ -1,0 +1,11 @@
+dist/
+local/
+**/build/
+**/.gradle/
+**/local.properties
+**/*.jks
+**/*.keystore
+**/*.p12
+**/*.clixml
+**/.idea/
+**/__pycache__/

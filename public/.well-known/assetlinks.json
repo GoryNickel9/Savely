@@ -1,0 +1,14 @@
+[
+  {
+    "target": {
+      "sha256_cert_fingerprints": [
+        "14:81:89:8B:EE:49:7D:37:CB:22:A3:70:79:53:82:ED:20:D2:5F:3A:E5:DF:05:65:B1:B1:80:8C:5D:DC:FC:1D"
+      ],
+      "namespace": "android_app",
+      "package_name": "cc.savely.android"
+    },
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ]
+  }
+]
