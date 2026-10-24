@@ -29,6 +29,7 @@ import ImportExportSection from '@/components/settings/ImportExportSection';
 import CategoriesSection from '@/components/settings/CategoriesSection';
 import CoupleSettingsSection from '@/components/settings/CoupleSettingsSection';
 import SecuritySection from '@/components/settings/SecuritySection';
+import AndroidDownloadSection from '@/components/settings/AndroidDownloadSection';
 
 /**
  * Pagina Impostazioni: shell che compone le sezioni estratte in
@@ -59,6 +60,7 @@ export default function Settings() {
           <CurrencySection />
           <LanguageSection />
           <ThemeSection />
+          <AndroidDownloadSection />
           <ImportExportSection open={importExportDialogOpen} onOpenChange={setImportExportDialogOpen} />
           <CategoriesSection />
 

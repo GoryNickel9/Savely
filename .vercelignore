@@ -1,0 +1,9 @@
+.git
+.vercel
+.env*
+node_modules
+dist
+e2e/.auth
+test-results
+playwright-report
+*.log

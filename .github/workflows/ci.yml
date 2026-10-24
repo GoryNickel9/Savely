@@ -36,6 +36,10 @@ jobs:
         run: npm run lint
 
       - name: Build
+        # Compile-only configuration; deployed builds use the real Vercel variables.
+        env:
+          VITE_SUPABASE_URL: https://ci-build.supabase.co
+          VITE_SUPABASE_ANON_KEY: ci-public-build-placeholder
         run: npm run build
 
   # ─────────────────────────────────────────

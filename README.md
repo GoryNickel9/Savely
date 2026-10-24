@@ -457,6 +457,10 @@ Esporta tutti i dati in un unico file Excel con i fogli Transazioni, Categorie, 
 |-------|-------------|
 | `/api/reset-password` | Genera il recovery link (Admin API Supabase) e invia l'email branded via Resend |
 | `/api/admin` | Endpoint riservato admin: `get-users` (elenco utenti + profilo) e `delete-user` (eliminazione definitiva). Il chiamante si autentica con il proprio token di sessione, che viene verificato insieme al permesso `admin` prima di usare la service role key |
+| `/api/android-update?channel=stable\|preview` | Versione e checksum Android tramite GitHub; metadati pubblici, senza credenziali o URL diretti all’APK |
+| `/api/android-download?tag=…&sha256=…` | Download APK con sessione Supabase verificata sul server; stream GitHub, versione fissata e checksum controllato |
+
+Il pulsante **Impostazioni → App Android → Scarica APK Android** scarica l’ultima versione pubblicata, comprese le alpha, dopo il login. L’APK viene verificato prima di essere salvato dal browser. Il proxy è attivo in produzione dal 24 ottobre 2026 e usa un token server con sola lettura di `Savely-Android`, che rimane privata. La code35 è pubblicata: chi usa una versione fino alla code34 deve installarla dalla webapp sopra quella esistente, senza disinstallarla. Configurazione, contratto Android e verifiche sono in [docs/ANDROID_DISTRIBUTION.md](docs/ANDROID_DISTRIBUTION.md).
 
 ---
 

@@ -1197,5 +1197,17 @@
   "Sistema": "System",
   "Scegli l'aspetto dell'interfaccia. La preferenza è salvata su questo dispositivo.": "Choose the interface look. The preference is saved on this device.",
   "Riduci la barra laterale": "Collapse sidebar",
-  "Espandi la barra laterale": "Expand sidebar"
+  "Espandi la barra laterale": "Expand sidebar",
+  "App Android": "Android app",
+  "Scarica l’ultima versione di Savely per Android 8 o successivo. Android richiederà di autorizzare l’installazione dal browser.": "Download the latest Savely release for Android 8 or later. Android will ask you to allow installation from your browser.",
+  "Download in corso…": "Downloading…",
+  "Scarica APK Android": "Download Android APK",
+  "APK verificato. Completa il download nel browser.": "APK verified. Complete the download in your browser.",
+  "Accedi di nuovo per scaricare Savely.": "Sign in again to download Savely.",
+  "Download Android non disponibile. Riprova più tardi.": "Android download unavailable. Try again later.",
+  "Metadati del download Android non validi.": "Invalid Android download metadata.",
+  "Indirizzo del download Android non valido.": "Invalid Android download URL.",
+  "Dimensione del download Android non valida.": "Invalid Android download size.",
+  "Download Android incompleto. Riprova.": "Incomplete Android download. Try again.",
+  "Verifica del download Android non riuscita. Riprova.": "Android download verification failed. Try again."
 }

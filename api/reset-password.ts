@@ -1,4 +1,4 @@
-import type { VercelRequest, VercelResponse } from './vercel';
+import type { VercelRequest, VercelResponse } from './vercel.js';
 
 /**
  * POST /api/reset-password  { email }

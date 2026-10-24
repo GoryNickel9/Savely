@@ -1,5 +1,11 @@
 {
   "regions": ["dub1"],
+  "functions": {
+    "api/android-download.ts": {
+      "maxDuration": 300,
+      "supportsCancellation": true
+    }
+  },
   "rewrites": [
     {
       "source": "/((?!api).*)",
