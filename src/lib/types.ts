@@ -1,5 +1,6 @@
 export type CurrencyCode = 'EUR' | 'USD' | 'GBP' | 'CHF' | 'JPY' | 'CNY' | 'IDR';
 export type TransactionType = 'income' | 'expense';
+export type SpendingPattern = 'regular' | 'occasional';
 export type AssetType = 'stock' | 'etf' | 'crypto' | 'bond' | 'cash' | 'real_estate' | 'other';
 
 /**
@@ -122,6 +123,7 @@ export interface Category {
   icon: string;
   color: string;
   type: TransactionType;
+  spending_pattern?: SpendingPattern;
   created_at: string;
   deleted_at: string | null;
 }

@@ -2,9 +2,10 @@ import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router';
 import BudgetProgress from '@/components/BudgetProgress';
-import { MEDIAN_CALCULATION_DAYS } from '@/lib/constants';
 import { Budget, Transaction } from '@/lib/types';
-import { getMedianMonthlySpending } from '@/lib/utils';
+import { getBudgetReferenceSpending } from '@/lib/budgetSpending';
+import { todayLocalISO } from '@/lib/utils';
+import { useSpendingForecast } from '@/hooks/useSpendingForecast';
 import { formatEUR, formatPercent } from './format';
 
 interface BudgetsWidgetProps {
@@ -17,27 +18,25 @@ const MAX_ITEMS = 4;
 
 export default function BudgetsWidget({ budgets, transactions }: BudgetsWidgetProps) {
   const { t } = useTranslation();
+  const remote = useSpendingForecast(todayLocalISO(), budgets.some(budget => budget.category?.spending_pattern === 'occasional'));
+  const comparisons = remote.isError ? undefined : remote.data?.occasionalSpending;
 
-  // Stessa mediana della pagina Budget, indipendente dal periodo della Dashboard.
+  // Same per-category comparison as the Budget page, independent of dashboard filters.
   const rows = useMemo(() => {
     return budgets
       .map((budget) => {
         const limit = Number(budget.amount) || 0;
-        const spent = getMedianMonthlySpending({
-          transactions,
-          categoryId: budget.category_id,
-          days: MEDIAN_CALCULATION_DAYS,
-        });
+        const spent = getBudgetReferenceSpending(budget, transactions, comparisons);
         return {
           budget,
           limit,
           spent,
-          percent: limit > 0 ? (spent / limit) * 100 : 0,
+          percent: spent !== null && limit > 0 ? (spent / limit) * 100 : 0,
         };
       })
       .sort((a, b) => b.percent - a.percent)
       .slice(0, MAX_ITEMS);
-  }, [budgets, transactions]);
+  }, [budgets, transactions, comparisons]);
 
   return (
     <div className="flex h-full flex-col rounded-xl border border-border/60 bg-card p-6 shadow-sm">
@@ -48,7 +47,9 @@ export default function BudgetsWidget({ budgets, transactions }: BudgetsWidgetPr
         </Link>
       </div>
       <p className="mt-1 text-sm text-muted-foreground">
-        {t('Mediana mensile (ultimi 730 giorni)')}
+        {t(budgets.some(budget => budget.category?.spending_pattern === 'occasional')
+          ? 'Spese regolari: mediana su 730 giorni. Spese saltuarie: media su 12 mesi, inclusi i mesi a zero.'
+          : 'Mediana mensile (ultimi 730 giorni)')}
       </p>
 
       {rows.length === 0 ? (
@@ -73,16 +74,18 @@ export default function BudgetsWidget({ budgets, transactions }: BudgetsWidgetPr
                 </span>
                 <span className="min-w-0 flex-1 truncate text-sm font-medium">
                   {budget.category?.name ?? t('Categoria')}
+                  {budget.category?.spending_pattern === 'occasional' && <span className="block text-xs font-normal text-muted-foreground">{t('Media mensile su 12 mesi')}</span>}
                 </span>
                 <span className="shrink-0 whitespace-nowrap text-xs text-muted-foreground tabular-nums">
-                  {formatEUR(spent)}
+                  {spent === null ? '—' : formatEUR(spent)}
                   <span className="hidden sm:inline"> / {formatEUR(limit)}</span>
                 </span>
                 <span className="w-12 shrink-0 text-right text-sm font-semibold tabular-nums">
-                  {formatPercent(percent, 2)}
+                  {spent === null ? '—' : formatPercent(percent, 2)}
                 </span>
               </div>
-              <BudgetProgress value={percent} className="h-2" />
+              {spent === null ? <p className="text-xs text-muted-foreground" role="status">{t(remote.isLoading ? 'Calcolo in corso…' : 'Confronto delle spese saltuarie non disponibile. Riprova.')}</p>
+                : <BudgetProgress value={percent} className="h-2" />}
             </li>
           ))}
         </ul>

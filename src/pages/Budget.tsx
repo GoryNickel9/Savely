@@ -6,13 +6,14 @@ import { useCategories } from '@/hooks/useCategories';
 import { useTransactions } from '@/hooks/useTransactions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import BudgetProgress from '@/components/BudgetProgress';
 import { CURRENCY_SYMBOLS } from '@/lib/constants';
 import { Plus, Edit2, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { getMedianMonthlySpending, getGlobalMedianMonthlySpending, parseAmount } from '@/lib/utils';
+import { getGlobalMedianMonthlySpending, parseAmount, todayLocalISO } from '@/lib/utils';
+import { getBudgetReferenceSpending } from '@/lib/budgetSpending';
+import { useSpendingForecast } from '@/hooks/useSpendingForecast';
 import { MEDIAN_CALCULATION_DAYS } from '@/lib/constants';
 import { CategorySelect } from '@/components/CategorySelect';
 
@@ -30,24 +31,10 @@ export default function Budget() {
   const [editBudgetId, setEditBudgetId] = useState('');
   const [editAmount, setEditAmount] = useState('');
 
-  // Calculate the 24-month period ending at current date
-  const { startDate, endDate } = useMemo(() => {
-    const end = new Date();
-    const start = new Date();
-    start.setDate(start.getDate() - 730);
-    return { startDate: start, endDate: end };
-  }, []);
-
-  // Get median monthly spending for a category over the last 24 months
-  const getMedianSpending = useMemo(() => {
-    return (catId: string) => {
-      return getMedianMonthlySpending({
-        transactions,
-        categoryId: catId,
-        days: MEDIAN_CALCULATION_DAYS
-      });
-    };
-  }, [transactions]);
+  const occasionalCategories = expenseCategories.filter(category => category.spending_pattern === 'occasional');
+  const hasOccasional = occasionalCategories.length > 0;
+  const remote = useSpendingForecast(todayLocalISO(), hasOccasional);
+  const comparisons = remote.isError ? undefined : remote.data?.occasionalSpending;
 
   // Sort budgets alphabetically by category name
   const sortedBudgets = useMemo(() => {
@@ -61,11 +48,15 @@ export default function Budget() {
   // Calculate totals
   const totals = useMemo(() => {
     const totalExpected = budgets.reduce((sum, b) => sum + Number(b.amount), 0);
-    // Calculate global median monthly spending (all categories together)
-    const totalActual = getGlobalMedianMonthlySpending(transactions, MEDIAN_CALCULATION_DAYS);
-    const difference = totalActual - totalExpected;
+    // Keep the regular-spending median and add the server-owned occasional averages.
+    const occasionalIds = new Set(expenseCategories.filter(category => category.spending_pattern === 'occasional').map(category => category.id));
+    const averages = [...occasionalIds].map(id => comparisons?.categories.find(category => category.categoryId === id));
+    const totalActual = averages.some(value => !value) ? null
+      : getGlobalMedianMonthlySpending(transactions.filter(transaction => !occasionalIds.has(transaction.category_id ?? '')), MEDIAN_CALCULATION_DAYS)
+        + averages.reduce((sum, value) => sum + Number(value!.averageMonthly), 0);
+    const difference = totalActual === null ? null : totalActual - totalExpected;
     return { totalExpected, totalActual, difference };
-  }, [budgets, transactions]);
+  }, [budgets, transactions, expenseCategories, comparisons]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -111,15 +102,13 @@ export default function Budget() {
   const usedCategoryIds = budgets.map(b => b.category_id);
   const availableCategories = expenseCategories.filter(c => !usedCategoryIds.includes(c.id));
 
-  const periodLabel = `${startDate.toLocaleDateString('it-IT', { month: 'short', year: 'numeric' })} - ${endDate.toLocaleDateString('it-IT', { month: 'short', year: 'numeric' })}`;
-
   return (
     <MainLayout>
       <div className="space-y-6">
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
             <h1 className="text-3xl font-display font-bold">{t('Budget')}</h1>
-            <p className="text-muted-foreground">{t('Mediana mensile (ultimi 730 giorni)')}</p>
+            <p className="text-muted-foreground">{t(hasOccasional ? 'Spese regolari: mediana su 730 giorni. Spese saltuarie: media su 12 mesi, inclusi i mesi a zero.' : 'Mediana mensile (ultimi 730 giorni)')}</p>
           </div>
           <div className="flex gap-2">
             {/* Create Budget Dialog */}
@@ -152,35 +141,38 @@ export default function Budget() {
               <p className="text-2xl font-bold">{CURRENCY_SYMBOLS.EUR}{totals.totalExpected.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
             </div>
             <div className="glass rounded-xl p-6">
-              <p className="text-sm text-muted-foreground mb-1">{t('Spesa mediana mensile reale')}</p>
-              <p className="text-2xl font-bold">{CURRENCY_SYMBOLS.EUR}{totals.totalActual.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+              <p className="text-sm text-muted-foreground mb-1">{t(hasOccasional ? 'Spesa mensile di riferimento' : 'Spesa mediana mensile reale')}</p>
+              <p className="text-2xl font-bold">{totals.totalActual === null ? '—' : `${CURRENCY_SYMBOLS.EUR}${totals.totalActual.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}</p>
             </div>
             <div className="glass rounded-xl p-6">
               <p className="text-sm text-muted-foreground mb-1">{t('Differenza')}</p>
-              <p className={`text-2xl font-bold ${totals.difference > 0 ? 'text-destructive' : totals.difference < 0 ? 'text-green-600' : ''}`}>
-                {totals.difference > 0 ? '+' : ''}{CURRENCY_SYMBOLS.EUR}{totals.difference.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              <p className={`text-2xl font-bold ${totals.difference !== null && totals.difference > 0 ? 'text-destructive' : totals.difference !== null && totals.difference < 0 ? 'text-green-600' : ''}`}>
+                {totals.difference === null ? '—' : `${totals.difference > 0 ? '+' : ''}${CURRENCY_SYMBOLS.EUR}${totals.difference.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
               </p>
             </div>
           </div>
         )}
 
+        {hasOccasional && !comparisons && <p role="status" className="text-sm text-muted-foreground">{t(remote.isLoading ? 'Calcolo in corso…' : 'Confronto delle spese saltuarie non disponibile. Riprova.')}</p>}
         <div className="grid gap-4">
           {budgets.length === 0 ? (
             <div className="glass rounded-xl p-12 text-center text-muted-foreground">{t('Nessun budget impostato')}</div>
           ) : sortedBudgets.map(b => {
-            const medianSpent = getMedianSpending(b.category_id);
-            const percent = Number(b.amount) > 0 ? (medianSpent / Number(b.amount)) * 100 : 0;
+            const referenceSpent = getBudgetReferenceSpending(b, transactions, comparisons);
+            const percent = referenceSpent !== null && Number(b.amount) > 0 ? (referenceSpent / Number(b.amount)) * 100 : 0;
             const isOver = percent >= 100;
             return (
               <div key={b.id} className="glass rounded-xl p-6">
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-3">
                     <span className="text-2xl">{b.category?.icon}</span>
-                    <span className="font-medium">{b.category?.name}</span>
+                    <div><span className="font-medium">{b.category?.name}</span>
+                      <p className="text-xs text-muted-foreground">{t(b.category?.spending_pattern === 'occasional' ? 'Media mensile su 12 mesi' : 'Mediana mensile (ultimi 730 giorni)')}</p>
+                    </div>
                   </div>
                   <div className="flex items-center gap-3">
                     <span className={isOver ? 'text-destructive font-semibold' : 'text-muted-foreground'}>
-                      {CURRENCY_SYMBOLS.EUR}{medianSpent.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} / {CURRENCY_SYMBOLS.EUR}{Number(b.amount).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      {referenceSpent === null ? '—' : `${CURRENCY_SYMBOLS.EUR}${referenceSpent.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} / {CURRENCY_SYMBOLS.EUR}{Number(b.amount).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </span>
                     <Button
                       variant="ghost"
@@ -200,7 +192,7 @@ export default function Budget() {
                     </Button>
                   </div>
                 </div>
-                <BudgetProgress value={percent} />
+                {referenceSpent !== null && <BudgetProgress value={percent} />}
               </div>
             );
           })}

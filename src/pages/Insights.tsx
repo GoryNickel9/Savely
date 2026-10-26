@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link } from 'react-router';
-import { AlertTriangle, BellRing, CalendarDays, ChevronDown, Info, Lightbulb, PiggyBank, Receipt, Repeat, TrendingDown, TrendingUp, Trophy } from 'lucide-react';
+import { AlertTriangle, BellRing, CalendarDays, Info, Lightbulb, PiggyBank, Receipt, Repeat, TrendingDown, TrendingUp, Trophy } from 'lucide-react';
 import MainLayout from '@/components/layout/MainLayout';
 import SpendingForecastCard from '@/components/insights/SpendingForecastCard';
 import { useInsights } from '@/hooks/useInsights';
@@ -76,7 +75,6 @@ export default function Insights() {
               </> : <Card><CardContent className="space-y-2 py-9 text-center">
                 <p className="font-medium">{t(hasTransactions ? 'Nessun segnale rilevante nei dati disponibili' : 'Nessuna transazione disponibile')}</p>
                 <p className="text-sm text-muted-foreground">{t(hasTransactions ? 'I segnali verranno aggiornati con le nuove transazioni.' : 'Registra le transazioni per analizzare le tue abitudini di spesa.')}</p>
-                {!hasTransactions && <Link to="/transactions" className="inline-block pt-2 text-sm text-primary hover:underline">{t('Apri transazioni')}</Link>}
               </CardContent></Card>}
             </section>
           </>
@@ -97,11 +95,6 @@ function InsightCard({ insight }: { insight: Insight }) {
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-start justify-between gap-2"><h3 className="text-sm font-semibold leading-snug">{insight.title}</h3><Badge variant={badge.variant}>{t(badge.label)}</Badge></div>
           <p className="mt-1.5 text-sm text-muted-foreground">{insight.message}</p>
-          {insight.details && insight.details.length > 0 && <details className="group mt-3">
-            <summary className="flex w-fit cursor-pointer list-none items-center gap-1.5 rounded-sm text-xs font-medium text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring [&::-webkit-details-marker]:hidden">{t('Vedi confronto')}<ChevronDown className="h-3.5 w-3.5 transition-transform group-open:rotate-180 motion-reduce:transition-none" aria-hidden /></summary>
-            <dl className="mt-3 space-y-2 rounded-lg bg-secondary/60 p-3 text-xs">{insight.details.map((detail, index) => <div key={`${detail.label}-${index}`} className="flex flex-wrap justify-between gap-x-5 gap-y-1"><dt className="text-muted-foreground">{detail.label}</dt><dd className="font-medium tabular-nums">{detail.value}</dd></div>)}</dl>
-          </details>}
-          {insight.href && <Link to={insight.href} className="mt-3 inline-block text-xs font-medium text-primary hover:underline">{t(insight.href === '/budget' ? 'Apri budget' : insight.href === '/portfolio' ? 'Apri portfolio' : insight.href === '/recurring' ? 'Apri spese ricorrenti' : 'Apri transazioni')}</Link>}
         </div>
       </CardContent>
     </Card>

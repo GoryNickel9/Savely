@@ -58,6 +58,7 @@ export function useInsights() {
         netWorthHistory: netWorthHistory ?? [],
         recurringCandidates: candidates,
         referenceDate,
+        occasionalSpending: remote.data?.occasionalSpending,
       });
       return { insights, dataError: false };
     } catch {
@@ -65,7 +66,7 @@ export function useInsights() {
     }
   // Detectors read i18n internally: a language change must invalidate their messages.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [transactions, budgets, categories, openAssets, netWorthHistory, candidates, referenceDate, i18n.language]);
+  }, [transactions, budgets, categories, openAssets, netWorthHistory, candidates, referenceDate, remote.data?.occasionalSpending, i18n.language]);
 
   return {
     insights: result.insights,

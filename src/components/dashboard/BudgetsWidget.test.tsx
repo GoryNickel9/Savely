@@ -4,6 +4,8 @@ import { MemoryRouter } from 'react-router';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import type { Budget, Transaction } from '@/lib/types';
 import BudgetsWidget from './BudgetsWidget';
+const remote = vi.hoisted(() => ({ useSpendingForecast: vi.fn() }));
+vi.mock('@/hooks/useSpendingForecast', () => ({ useSpendingForecast: remote.useSpendingForecast }));
 
 const budget: Budget = {
   id: 'budget-food', user_id: 'user', category_id: 'food', amount: 300,
@@ -23,6 +25,7 @@ function expense(date: string, amount: number, overrides: Partial<Transaction> =
 }
 
 beforeEach(() => {
+  remote.useSpendingForecast.mockReturnValue({ data: undefined, isLoading: false });
   vi.useFakeTimers({ toFake: ['Date'] });
   vi.setSystemTime(new Date(2026, 9, 26, 12));
 });
@@ -71,4 +74,17 @@ it('mostra zero per una categoria senza spese nello storico', () => {
   const row = within(screen.getByRole('listitem'));
   expect(row.getByText('€0,00', { exact: false })).toBeTruthy();
   expect(row.getByText('0%')).toBeTruthy();
+});
+
+it('uses the server average for occasional categories and never renders missing data as zero', () => {
+  const occasional = { ...budget, category: { ...budget.category!, spending_pattern: 'occasional' as const } };
+  const view = render(<MemoryRouter><BudgetsWidget budgets={[occasional]} transactions={[]} /></MemoryRouter>);
+  expect(screen.getByText('Confronto delle spese saltuarie non disponibile. Riprova.')).toBeTruthy();
+  expect(screen.queryByRole('progressbar')).toBeNull();
+  remote.useSpendingForecast.mockReturnValue({ data: { occasionalSpending: { categories: [
+    { categoryId: 'food', expectedMonthly: '300.00', averageMonthly: '25.00' },
+  ] } }, isLoading: false });
+  view.rerender(<MemoryRouter><BudgetsWidget budgets={[occasional]} transactions={[]} /></MemoryRouter>);
+  expect(screen.getByText('€25,00', { exact: false })).toBeTruthy();
+  expect(screen.getByRole('progressbar')).toBeTruthy();
 });

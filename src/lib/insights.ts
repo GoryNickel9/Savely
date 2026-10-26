@@ -19,9 +19,10 @@ import type { NetWorthSnapshot } from '@/hooks/useNetWorthHistory';
 import type { RecurringCandidate } from './recurringDetection';
 import { detectRecurringCandidates, normalizeDescription } from './recurringDetection';
 import { calculateMedian } from './statistics';
-import { parseLocalDate } from './utils';
+import { parseLocalDate, todayLocalISO } from './utils';
 import { MEDIAN_CALCULATION_DAYS } from './constants';
 import { FORECAST_DAYS, transactionEUR, validTransactions } from './spendingForecast';
+import type { OccasionalSpending } from './forecastContract';
 
 // --- Public types -----------------------------------------------------------
 
@@ -63,6 +64,7 @@ export interface InsightsInput {
   recurringCandidates?: RecurringCandidate[];
   /** Reference date — defaults to now(). Pass explicitly in tests. */
   referenceDate?: Date;
+  occasionalSpending?: OccasionalSpending;
 }
 
 // --- Tunable thresholds -----------------------------------------------------
@@ -109,6 +111,7 @@ export function generateInsights(input: InsightsInput): Insight[] {
     netWorthHistory,
     recurringCandidates = [],
     referenceDate = new Date(),
+    occasionalSpending,
   } = input;
 
   const transactions = validTransactions(rawTransactions)
@@ -116,6 +119,9 @@ export function generateInsights(input: InsightsInput): Insight[] {
     .map(transaction => ({ ...transaction, amount: transactionEUR(transaction), currency: 'EUR' as const }));
 
   const categoryName = buildCategoryNameMap(categories);
+  const occasionalIds = new Set([...categories, ...budgets.flatMap(budget => budget.category ? [budget.category] : [])]
+    .filter(category => !category.deleted_at && category.type === 'expense' && category.spending_pattern === 'occasional').map(category => category.id));
+  for (const category of occasionalSpending?.categories ?? []) occasionalIds.add(category.categoryId);
   // Infer the usual price BEFORE the last charge, including already tracked series.
   const latestDates = new Map<string, string>();
   for (const transaction of transactions) {
@@ -130,12 +136,12 @@ export function generateInsights(input: InsightsInput): Insight[] {
   for (const candidate of detectRecurringCandidates(previousCharges)) priceCandidates.set(candidate.normalizedKey, candidate);
 
   const insights: Insight[] = [
-    ...detectSpendingAnomalies(transactions, categoryName, referenceDate),
-    ...detectBudgetExceeded(transactions, budgets.filter(budget => budget.currency === 'EUR'), categoryName, referenceDate),
+    ...detectSpendingAnomalies(transactions, categoryName, referenceDate).filter(insight => !occasionalIds.has(insight.categoryId ?? '')),
+    ...detectBudgetExceeded(transactions, budgets.filter(budget => budget.currency === 'EUR'), categoryName, referenceDate, occasionalIds, occasionalSpending),
     ...detectPortfolioLoss(openAssets),
     ...detectNetWorthMilestone(netWorthHistory.filter(snapshot => parseLocalDate(snapshot.date) <= referenceDate)),
     ...detectSavingMonth(transactions, referenceDate),
-    ...detectCategoryTrend(transactions, categoryName, referenceDate),
+    ...detectCategoryTrend(transactions, categoryName, referenceDate).filter(insight => !occasionalIds.has(insight.categoryId ?? '')),
     ...detectNewRecurring(recurringCandidates),
     ...detectRecurringPriceChange(transactions, [...priceCandidates.values()]),
   ];
@@ -226,14 +232,16 @@ function detectSpendingAnomalies(
 }
 
 /**
- * Flag budget overruns: current-month spending for a budgeted category above
- * the configured budget amount.
+ * Regular categories use current-month spending; occasional categories read
+ * the server's twelve-month mean and comparison flag, without recomputing them.
  */
 function detectBudgetExceeded(
   transactions: Transaction[],
   budgets: Budget[],
   categoryName: Map<string, string>,
-  referenceDate: Date
+  referenceDate: Date,
+  occasionalIds: Set<string>,
+  remote?: OccasionalSpending,
 ): Insight[] {
   const currentMonthKey = monthKey(referenceDate);
   const spentByCategory = new Map<string, number>();
@@ -248,16 +256,22 @@ function detectBudgetExceeded(
 
   const insights: Insight[] = [];
   for (const b of budgets) {
-    const spent = spentByCategory.get(b.category_id) ?? 0;
-    if (b.amount > 0 && spent > b.amount) {
+    const occasional = occasionalIds.has(b.category_id);
+    const comparison = remote?.categories.find(category => category.categoryId === b.category_id);
+    if (occasional && (!comparison || comparison.expectedMonthly !== Number(b.amount).toFixed(2)
+      || remote!.endDate !== todayLocalISO(referenceDate))) throw new Error('Occasional budget comparison unavailable');
+    const spent = occasional ? Number(comparison!.averageMonthly) : spentByCategory.get(b.category_id) ?? 0;
+    if (b.amount > 0 && (occasional ? comparison!.exceeded : spent > b.amount)) {
       const name = categoryName.get(b.category_id) ?? b.category?.name ?? i18n.t('Categoria');
-      const over = spent - b.amount;
+      const over = occasional ? Number(comparison!.over) : spent - b.amount;
       insights.push({
         id: `budget_exceeded:${b.category_id}`,
         kind: 'budget_exceeded',
         severity: 'warning',
         title: i18n.t('Budget superato in {{name}}', { name }),
-        message: i18n.t('Hai speso {{spent}} su un budget di {{budget}} ({{over}} oltre).', {
+        message: i18n.t(occasional
+          ? 'La media mensile su 12 mesi è {{spent}}, rispetto a {{budget}} attesi ({{over}} oltre). Sono inclusi i mesi a zero e il mese corrente fino a oggi.'
+          : 'Hai speso {{spent}} su un budget di {{budget}} ({{over}} oltre).', {
           spent: formatEur(spent),
           budget: formatEur(b.amount),
           over: formatEur(over),
@@ -267,7 +281,7 @@ function detectBudgetExceeded(
         categoryId: b.category_id,
         href: '/budget',
         details: [
-          { label: i18n.t('Spesa del mese'), value: formatEur(spent) },
+          { label: i18n.t(occasional ? 'Media mensile su 12 mesi' : 'Spesa del mese'), value: formatEur(spent) },
           { label: i18n.t('Budget della categoria'), value: formatEur(b.amount) },
           { label: i18n.t('Superamento'), value: formatEur(over) },
         ],

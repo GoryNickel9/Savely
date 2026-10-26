@@ -40,16 +40,17 @@ it('mostra previsione, somma dei budget e margine senza testi dimostrativi o lin
   expect(screen.queryByText(/Il totale unisce|In questa anteprima|vengono trattate separatamente|non vengono contate due volte/)).toBeNull();
 });
 
-it('filtra i segnali, mantiene la previsione e permette di aprire i dettagli', () => {
+it('filtra i segnali e mantiene la previsione senza confronti o link Apri', () => {
   show();
   fireEvent.click(screen.getByRole('button', { name: /Da verificare/ }));
   expect(screen.queryByText('Alimentari oltre il budget')).toBeNull();
   expect(screen.getByText('1.650,00€')).toBeTruthy();
   fireEvent.click(screen.getByRole('button', { name: /Tutti/ }));
-  const summary = screen.getByText('Vedi confronto');
-  fireEvent.click(summary);
-  expect(summary.closest('details')?.open).toBe(true);
-  expect(screen.getByRole('link', { name: 'Apri budget' }).getAttribute('href')).toBe('/budget');
+  expect(screen.getByText('Alimentari oltre il budget')).toBeTruthy();
+  expect(screen.getByText('340 euro su 300')).toBeTruthy();
+  expect(screen.queryByText('Vedi confronto')).toBeNull();
+  expect(screen.queryByText('Budget della categoria')).toBeNull();
+  expect(screen.queryAllByRole('link', { name: /^Apri/ })).toHaveLength(0);
 });
 
 it('mostra lo sforamento previsto rispetto alla somma dei budget', () => {
@@ -83,4 +84,5 @@ it('distingue assenza di transazioni e caricamento', () => {
   mocks.useInsights.mockReturnValue({ ...state(), forecast: null, insights: [], hasTransactions: false });
   view.rerender(<MemoryRouter><Insights /></MemoryRouter>);
   expect(screen.getByText('Nessuna transazione disponibile')).toBeTruthy();
+  expect(screen.queryByRole('link', { name: 'Apri transazioni' })).toBeNull();
 });

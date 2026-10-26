@@ -1267,5 +1267,15 @@
   "aumentata": "increased",
   "diminuita": "decreased",
   "L'ultimo addebito è {{latest}}: {{pct}}% rispetto all'importo abituale di {{median}}.": "The latest charge is {{latest}}: {{pct}}% compared with the usual amount of {{median}}.",
-  "Stai risparmiando {{amount}} questo mese: +{{pct}}% rispetto agli stessi giorni dei mesi precedenti ({{average}}).": "You have saved {{amount}} this month: +{{pct}}% compared with the same days in previous months ({{average}})."
+  "Stai risparmiando {{amount}} questo mese: +{{pct}}% rispetto agli stessi giorni dei mesi precedenti ({{average}}).": "You have saved {{amount}} this month: +{{pct}}% compared with the same days in previous months ({{average}}).",
+  "Andamento delle spese": "Spending pattern",
+  "Regolari": "Regular",
+  "Saltuarie": "Occasional",
+  "Per le spese saltuarie, il budget si confronta con la media su 12 mesi, inclusi i mesi a zero e il mese corrente fino a oggi.": "For occasional expenses, the budget is compared with the 12-month average, including zero-spend months and the current month through today.",
+  "Media mensile su 12 mesi": "12-month monthly average",
+  "Spese regolari: mediana su 730 giorni. Spese saltuarie: media su 12 mesi, inclusi i mesi a zero.": "Regular expenses: median over 730 days. Occasional expenses: 12-month average, including zero-spend months.",
+  "Spesa mensile di riferimento": "Reference monthly spending",
+  "Calcolo in corso…": "Calculating…",
+  "Confronto delle spese saltuarie non disponibile. Riprova.": "Occasional spending comparison unavailable. Please retry.",
+  "La media mensile su 12 mesi è {{spent}}, rispetto a {{budget}} attesi ({{over}} oltre). Sono inclusi i mesi a zero e il mese corrente fino a oggi.": "The 12-month monthly average is {{spent}}, compared with {{budget}} expected ({{over}} over). Zero-spend months and the current month through today are included."
 }

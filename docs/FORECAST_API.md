@@ -1,6 +1,6 @@
 # Previsione condivisa — schema 1
 
-Web e Android consumano lo stesso motore in `server/spending-forecast.ts`. La migrazione conserva il modello `weekday-history-v1`: massimo 180 giorni, minimo 56, media delle spese variabili per categoria e giorno della settimana, con programmate e ricorrenze deduplicate. I sei segnali Android restano locali; la versione web mantiene i propri otto segnali.
+Web e Android consumano lo stesso motore in `server/spending-forecast.ts`. La migrazione conserva il modello `weekday-history-v1`: massimo 180 giorni, minimo 56, media delle spese variabili per categoria e giorno della settimana, con programmate e ricorrenze deduplicate. Il confronto con il budget delle categorie saltuarie viene calcolato dal server in `server/occasional-spending.ts`. Gli altri segnali mantengono i calcoli esistenti nei client.
 
 ## Richiesta e autenticazione
 
@@ -21,6 +21,22 @@ La risposta contiene `schemaVersion`, `modelVersion`, `userId`, `timeZone`, `gen
 Tutti gli importi sono stringhe decimali EUR con due cifre, per esempio `"152.60"`; i valori mancanti sono `null`. Budget, se presente, contiene `limit`. Ogni punto contiene `day`, `actual`, `projected`. Il browser converte i decimali soltanto per formattazione e grafico; Android li legge con `BigDecimal`, senza ricalcolarli. Entrambi verificano schema, proprietario, fuso e forma del mese. Un nuovo `modelVersion` è accettato se il contratto rimane compatibile; cambiamenti incompatibili richiedono una nuova versione dello schema e dei client.
 
 `inputSha256` identifica gli input letti per il calcolo. Le letture REST di tabelle diverse non sono uno snapshot transazionale: movimenti inseriti durante la lettura possono appartenere alla richiesta successiva. Le pagine usano ordinamento stabile, 500 righe, limite di 100.000 righe per tabella e controllo degli ID duplicati; errori e limiti interrompono la risposta senza totali parziali. La funzione ha durata massima di 60 secondi e timeout complessivo delle richieste dati di 45 secondi.
+
+## Confronto delle categorie saltuarie
+
+La risposta aggiunge `occasionalSpending`: `startDate`, `endDate`, `months: 12` e un array `categories`. Ogni categoria contiene `categoryId`, `total`, `averageMonthly`, `expectedMonthly`, `exceeded` e `over`. Gli importi sono stringhe EUR a due decimali. `expectedMonthly` è `null` quando manca un budget in EUR; in quel caso non viene dichiarato uno sforamento. I client leggono media ed esito senza applicare una formula locale alternativa.
+
+Il periodo comprende il mese corrente fino alla data del server e gli 11 mesi precedenti, dal primo giorno del mese iniziale. La somma delle spese effettive della categoria è divisa sempre per 12, anche se alcuni mesi non hanno movimenti. Tre pagamenti da 100 EUR producono una media di 25 EUR/mese; un solo pagamento da 100 EUR produce 8,33 EUR/mese. Non vengono spostate transazioni né creati saldi cumulativi. Le spese del mese e la previsione rimangono negli importi effettivi.
+
+Il server accumula centesimi interi e verifica lo sforamento sul totale non arrotondato, confrontandolo con 12 volte il budget. La media trasportata e lo scostamento sono arrotondati ai centesimi per la visualizzazione: un superamento inferiore a mezzo centesimo mensile può apparire come 0,00 EUR. La classificazione è inclusa nell'hash degli input. Date future, movimenti cancellati e movimenti fuori dalla finestra sono esclusi; i cambi sono quelli registrati nelle transazioni.
+
+`categories.spending_pattern` ammette `regular` e `occasional`; la scelta avviene nei form Categorie e Impostazioni del web e nel form Categorie Android. La migrazione `20261026220000_category_spending_pattern.sql` mantiene regolari le categorie esistenti. Applicarla prima di pubblicare il backend, poi distribuire i client aggiornati. Lo schema 1 rimane compatibile con i client precedenti, che ignorano la sezione aggiunta; i vecchi client continuano però a usare il precedente confronto mensile fino all'aggiornamento dell'app.
+
+Il campo è opzionale nei decoder per conservare la lettura delle fixture e risposte precedenti. Una categoria marcata saltuaria con budget richiede il risultato aggiornato del server: se manca o il budget è cambiato, il confronto viene segnalato come non disponibile. La cache della previsione viene invalidata anche quando si modifica una categoria.
+
+Il divisore fisso presume che lo storico dei 12 mesi sia completo. Un mese senza movimenti non si distingue da uno non importato: uno storico parziale può sottostimare la media. I nuovi test coprono esplicitamente questa convenzione. La previsione mantiene i propri requisiti di storico; il confronto su 12 mesi viene restituito anche quando la previsione non è disponibile.
+
+Verifiche locali del 26 ottobre 2026: suite Vitest completa, test aggiuntivi dei form Categorie e Impostazioni, TypeScript, lint dei file modificati, build web e caricamento ESM della funzione server superati. Il selettore reale è stato controllato in Chromium a 375, 812 e 1280 px, nei due temi, con apertura da tastiera, selezione, movimento ridotto e testo al 125%; nessun overflow orizzontale. Android: 400 test JUnit, compilazione e `lintDebug` superati. Non erano collegati emulatori o dispositivi; non è stato verificato il nuovo form su Android in esecuzione. Migrazione e rilasci non eseguiti.
 
 ## Errori e aggiornamento
 

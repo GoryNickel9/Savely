@@ -6,7 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { TransactionType, Category } from '@/lib/types';
+import { TransactionType, Category, SpendingPattern } from '@/lib/types';
+import SpendingPatternSelect from '@/components/SpendingPatternSelect';
 import { Plus, Edit2, Trash2, FolderPlus } from 'lucide-react';
 import { toast } from 'sonner';
 import { EMOJI_OPTIONS, COLOR_OPTIONS } from '@/lib/constants';
@@ -21,6 +22,7 @@ export default function Categories() {
   const [catIcon, setCatIcon] = useState('📦');
   const [catColor, setCatColor] = useState('#6b7280');
   const [catType, setCatType] = useState<TransactionType>('expense');
+  const [catPattern, setCatPattern] = useState<SpendingPattern>('regular');
 
   // Edit dialog state
   const [editOpen, setEditOpen] = useState(false);
@@ -29,18 +31,20 @@ export default function Categories() {
   const [editIcon, setEditIcon] = useState('📦');
   const [editColor, setEditColor] = useState('#6b7280');
   const [editType, setEditType] = useState<TransactionType>('expense');
+  const [editPattern, setEditPattern] = useState<SpendingPattern>('regular');
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!catName.trim()) return;
     try {
-      await createCategory.mutateAsync({ name: catName.trim(), icon: catIcon, color: catColor, type: catType });
+      await createCategory.mutateAsync({ name: catName.trim(), icon: catIcon, color: catColor, type: catType, spending_pattern: catType === 'expense' ? catPattern : 'regular' });
       toast(t('Categoria creata!'));
       setCreateOpen(false);
       setCatName('');
       setCatIcon('📦');
       setCatColor('#6b7280');
       setCatType('expense');
+      setCatPattern('regular');
     } catch {
       toast.error(t('Errore'));
     }
@@ -55,7 +59,8 @@ export default function Categories() {
         name: editName.trim(), 
         icon: editIcon, 
         color: editColor, 
-        type: editType 
+        type: editType,
+        spending_pattern: editType === 'expense' ? editPattern : 'regular',
       });
       toast(t('Categoria aggiornata!'));
       setEditOpen(false);
@@ -85,6 +90,7 @@ export default function Categories() {
     setEditIcon(category.icon);
     setEditColor(category.color);
     setEditType(category.type);
+    setEditPattern(category.spending_pattern ?? 'regular');
     setEditOpen(true);
   };
 
@@ -143,6 +149,7 @@ export default function Categories() {
                     <SelectItem value="income">{t('Entrata')}</SelectItem>
                   </SelectContent>
                 </Select>
+                {catType === 'expense' && <SpendingPatternSelect value={catPattern} onChange={setCatPattern} />}
                 <Button type="submit" className="w-full" disabled={createCategory.isPending}>
                   {createCategory.isPending ? t('Creazione...') : t('Crea Categoria')}
                 </Button>
@@ -167,7 +174,7 @@ export default function Categories() {
                       <span className="text-3xl">{category.icon}</span>
                       <div>
                         <div className="font-medium">{category.name}</div>
-                        <div className="text-sm text-muted-foreground">{category.type}</div>
+                        <div className="text-sm text-muted-foreground">{t(category.spending_pattern === 'occasional' ? 'Saltuarie' : 'Regolari')}</div>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
@@ -267,6 +274,7 @@ export default function Categories() {
                   <SelectItem value="income">{t('Entrata')}</SelectItem>
                 </SelectContent>
               </Select>
+              {editType === 'expense' && <SpendingPatternSelect value={editPattern} onChange={setEditPattern} />}
               <Button type="submit" className="w-full" disabled={updateCategory.isPending}>
                 {updateCategory.isPending ? t('Aggiornamento...') : t('Aggiorna Categoria')}
               </Button>

@@ -11,10 +11,10 @@ const owner = '11111111-1111-4111-8111-111111111111';
 const now = new Date('2026-10-15T12:00:00Z');
 const req: VercelRequest = { method: 'POST', headers: { authorization: 'Bearer synthetic' }, body: { schemaVersion: 1, timeZone: 'Europe/Rome' } };
 const calls: URL[] = [];
-let badOwner = false, duplicate = false, failure = false, pages = false;
+let badOwner = false, duplicate = false, failure = false, pages = false, occasional = false;
 beforeEach(() => {
   vi.stubEnv('SUPABASE_URL', 'https://backend.example.test'); vi.stubEnv('SUPABASE_ANON_KEY', 'public-key');
-  calls.length = 0; badOwner = false; duplicate = false; failure = false; pages = false;
+  calls.length = 0; badOwner = false; duplicate = false; failure = false; pages = false; occasional = false;
   vi.stubGlobal('fetch', vi.fn(async (url: string, init: RequestInit) => {
     const path = new URL(url); calls.push(path);
     expect(init.headers).toEqual({ apikey: 'public-key', Authorization: 'Bearer synthetic' });
@@ -24,6 +24,13 @@ beforeEach(() => {
     expect(path.searchParams.get('limit')).toBe('500');
     if (failure) return Response.json({}, { status: 503 });
     const offset = Number(path.searchParams.get('offset'));
+    if (occasional && !offset) {
+      if (path.pathname.endsWith('categories')) return Response.json([{ id: 'dentist', user_id: owner, type: 'expense', spending_pattern: 'occasional', deleted_at: null }]);
+      if (path.pathname.endsWith('budgets')) return Response.json([{ id: 'b', user_id: owner, category_id: 'dentist', amount: 25, currency: 'EUR' }]);
+      if (path.pathname.endsWith('transactions')) return Response.json(['2025-11-01', '2026-05-01', '2026-10-15'].map((date, index) => ({
+        id: `t${index}`, user_id: owner, date, type: 'expense', amount: 100, currency: 'EUR', description: null, category_id: 'dentist', deleted_at: null,
+      })));
+    }
     if (path.pathname.endsWith('transactions') && (!offset || duplicate)) {
       const count = pages ? 500 : 1;
       return Response.json(Array.from({ length: count }, (_, index) => ({ id: `t${offset + index}`, user_id: badOwner ? 'other' : owner,
@@ -58,6 +65,17 @@ it('reads complete owned pages and returns a versioned exact-cent response', asy
   expect(calls.some(url => url.searchParams.get('offset') === '500')).toBe(true);
   expect(result.modelVersion).toBe('weekday-history-v1');
   expect(decodeForecast(result, owner, 'Europe/Rome').forecast.total).not.toBeNull();
+});
+it('serves the same 12-month comparison to both clients from owned data and includes classification in the hash', async () => {
+  const baseline = await getForecast(req, now);
+  occasional = true;
+  const result = await getForecast(req, now);
+  expect(decodeForecast(result, owner, 'Europe/Rome').occasionalSpending).toMatchObject({
+    startDate: '2025-11-01', endDate: '2026-10-15', months: 12,
+    categories: [{ categoryId: 'dentist', averageMonthly: '25.00', expectedMonthly: '25.00', exceeded: false }],
+  });
+  expect(result.forecast.spent).toBe('100.00');
+  expect(result.inputSha256).not.toBe(baseline.inputSha256);
 });
 it('rejects missing authentication and user-supplied datasets before any read', async () => {
   await expect(getForecast({ ...req, headers: {} }, now)).rejects.toMatchObject({ status: 401 });

@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Category, TransactionType } from '@/lib/types';
+import { Category, TransactionType, SpendingPattern } from '@/lib/types';
 import { useAuth } from './useAuth';
 
 export function useCategories() {
@@ -24,7 +24,7 @@ export function useCategories() {
   });
 
   const createCategory = useMutation({
-    mutationFn: async (category: { name: string; icon: string; color: string; type: TransactionType }) => {
+    mutationFn: async (category: { name: string; icon: string; color: string; type: TransactionType; spending_pattern?: SpendingPattern }) => {
       if (!user) throw new Error('Not authenticated');
       const { error, data } = await supabase.from('categories').insert({
         ...category,
@@ -38,12 +38,15 @@ export function useCategories() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['categories'] });
+      queryClient.invalidateQueries({ queryKey: ['budgets'] });
+      queryClient.invalidateQueries({ queryKey: ['spending-forecast'] });
+      queryClient.invalidateQueries({ queryKey: ['transactions'] });
       queryClient.invalidateQueries({ queryKey: ['statistics'] });
     },
   });
 
   const updateCategory = useMutation({
-    mutationFn: async ({ id, ...category }: { id: string; name: string; icon: string; color: string; type: TransactionType }) => {
+    mutationFn: async ({ id, ...category }: { id: string; name: string; icon: string; color: string; type: TransactionType; spending_pattern?: SpendingPattern }) => {
       if (!user) throw new Error('Not authenticated');
       const { error } = await supabase
         .from('categories')
@@ -54,6 +57,9 @@ export function useCategories() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['categories'] });
+      queryClient.invalidateQueries({ queryKey: ['budgets'] });
+      queryClient.invalidateQueries({ queryKey: ['spending-forecast'] });
+      queryClient.invalidateQueries({ queryKey: ['transactions'] });
       queryClient.invalidateQueries({ queryKey: ['statistics'] });
     },
   });

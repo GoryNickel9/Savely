@@ -29,7 +29,8 @@ import {
 } from '@/components/ui/dialog';
 import { useCategories } from '@/hooks/useCategories';
 import { toast } from 'sonner';
-import { Category, TransactionType } from '@/lib/types';
+import { Category, TransactionType, SpendingPattern } from '@/lib/types';
+import SpendingPatternSelect from '@/components/SpendingPatternSelect';
 import { EMOJI_OPTIONS, COLOR_OPTIONS } from '@/lib/constants';
 
 /**
@@ -48,6 +49,7 @@ export default function CategoriesSection() {
   const [editCatIcon, setEditCatIcon] = useState('📦');
   const [editCatColor, setEditCatColor] = useState('#6b7280');
   const [editCatType, setEditCatType] = useState<TransactionType>('expense');
+  const [editPattern, setEditPattern] = useState<SpendingPattern>('regular');
   const [categoryDeleteOpen, setCategoryDeleteOpen] = useState(false);
   const [deletingCategory, setDeletingCategory] = useState<string | null>(null);
 
@@ -56,6 +58,7 @@ export default function CategoriesSection() {
   const [newCatIcon, setNewCatIcon] = useState('📦');
   const [newCatColor, setNewCatColor] = useState('#6b7280');
   const [newCatType, setNewCatType] = useState<TransactionType>('expense');
+  const [newPattern, setNewPattern] = useState<SpendingPattern>('regular');
 
   const openCategoryEdit = (category: Category) => {
     setEditingCategory(category.id);
@@ -63,6 +66,7 @@ export default function CategoriesSection() {
     setEditCatIcon(category.icon);
     setEditCatColor(category.color);
     setEditCatType(category.type);
+    setEditPattern(category.spending_pattern ?? 'regular');
     setCategoryEditOpen(true);
   };
 
@@ -79,7 +83,8 @@ export default function CategoriesSection() {
         name: newCatName.trim(),
         icon: newCatIcon,
         color: newCatColor,
-        type: newCatType
+        type: newCatType,
+        spending_pattern: newCatType === 'expense' ? newPattern : 'regular',
       });
       toast(t('Categoria creata!'));
       setNewCatOpen(false);
@@ -87,6 +92,7 @@ export default function CategoriesSection() {
       setNewCatIcon('📦');
       setNewCatColor('#6b7280');
       setNewCatType('expense');
+      setNewPattern('regular');
     } catch {
       toast.error(t('Errore'));
     }
@@ -101,7 +107,8 @@ export default function CategoriesSection() {
         name: editCatName.trim(),
         icon: editCatIcon,
         color: editCatColor,
-        type: editCatType
+        type: editCatType,
+        spending_pattern: editCatType === 'expense' ? editPattern : 'regular',
       });
       toast(t('Categoria aggiornata!'));
       setCategoryEditOpen(false);
@@ -234,6 +241,7 @@ export default function CategoriesSection() {
                     <SelectItem value="income">{t('Entrata')}</SelectItem>
                   </SelectContent>
                 </Select>
+                {newCatType === 'expense' && <SpendingPatternSelect value={newPattern} onChange={setNewPattern} />}
                 <Button type="submit" className="w-full" disabled={createCategory.isPending}>
                   {createCategory.isPending ? t('Creazione...') : t('Crea Categoria')}
                 </Button>
@@ -280,6 +288,7 @@ export default function CategoriesSection() {
                 ))}
               </div>
             </div>
+            {editCatType === 'expense' && <SpendingPatternSelect value={editPattern} onChange={setEditPattern} />}
             <Button type="submit" className="w-full" disabled={updateCategory.isPending}>
               {updateCategory.isPending ? t('Aggiornamento...') : t('Aggiorna Categoria')}
             </Button>

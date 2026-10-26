@@ -16,13 +16,19 @@ Per la sola previsione, una ricorrenza con almeno tre addebiti precedenti coeren
 
 Una transazione variabile programmata sostituisce, fino al proprio importo, l'aspettativa per la stessa categoria e lo stesso giorno. Non viene aggiunta integralmente una seconda previsione della stessa spesa.
 
-Gli importi delle transazioni sono convertiti in euro con il cambio registrato. Budget e ricorrenti non hanno un cambio memorizzato: se utilizzano altre valute, il totale previsionale non viene mostrato. Input non finiti, date non valide e budget duplicati per categoria producono uno stato di errore esplicito. L’endpoint esegue soltanto letture con il JWT dell’utente; non richiede migrazioni o scritture al database.
+Gli importi delle transazioni sono convertiti in euro con il cambio registrato. Budget e ricorrenti non hanno un cambio memorizzato: se utilizzano altre valute, il totale previsionale non viene mostrato. Input non finiti, date non valide e budget duplicati per categoria producono uno stato di errore esplicito. L’endpoint esegue soltanto letture con il JWT dell’utente. La classificazione delle categorie richiede la migrazione descritta in FORECAST_API.md; il calcolo non scrive dati finanziari.
 
 ## Segnali
 
 Anomalie e trend aggregano le transazioni per mese prima di calcolare la mediana. Le anomalie confrontano soltanto gli stessi giorni trascorsi; i trend confrontano mesi conclusi. I mesi completi senza spese valgono zero. Un mese iniziale coperto solo in parte non entra nel confronto. Le transazioni future e cancellate sono escluse.
 
 Budget, anomalia e trend della stessa categoria diventano una sola scheda, con precedenza al superamento del budget e dettagli conservati. L'ordinamento usa gravità e tipo di segnale, senza confrontare euro con percentuali. I rincari confrontano l'ultimo addebito con una ricorrenza rilevata prima di quell'addebito, anche se il suggerimento di ricorrenza è già stato accettato.
+
+Le schede mostrano titolo, messaggio e gravità. La pagina non mostra il controllo «Vedi confronto», i dettagli espandibili o i collegamenti «Apri…», nemmeno nello stato senza transazioni. I dati dei segnali restano disponibili nel modello.
+
+Le categorie di spesa possono essere regolari o saltuarie. Quelle esistenti restano regolari. Per le saltuarie, il backend restituisce la media delle spese nei 12 mesi di calendario, incluso il mese corrente fino a oggi e i mesi a zero, e la confronta con il budget mensile atteso. Web e Android leggono lo stesso risultato. Non generano per queste categorie i precedenti segnali di anomalia mensile o trend basati sulla mediana. Pagina Budget e widget della dashboard web mostrano la media ricevuta dal server, con un'etichetta distinta dalla mediana delle spese regolari. La sintesi della pagina Budget somma la mediana globale delle spese regolari e le medie delle categorie saltuarie.
+
+Tre spese da 100 EUR nella finestra producono una media di 25 EUR/mese; una sola produce 8,33 EUR/mese. La spesa effettiva resta 100 EUR nel mese del pagamento. I mesi senza movimenti valgono zero anche quando lo storico importato è più corto: occorre importare i 12 mesi per evitare una sottostima. Contratto, precisione e ordine di rilascio sono in [FORECAST_API.md](FORECAST_API.md#confronto-delle-categorie-saltuarie).
 
 ## Verifica e limiti
 

@@ -1,7 +1,8 @@
 import { createHash } from 'node:crypto';
 import type { VercelRequest } from '../api/vercel.js';
 import { forecastResponseSchema } from '../src/lib/forecastContract.js';
-import type { Transaction, Budget } from '../src/lib/types.js';
+import type { Transaction, Budget, Category } from '../src/lib/types.js';
+import { occasionalSpending } from './occasional-spending.js';
 import { forecastSpending, type RecurringExpense } from './spending-forecast.js';
 
 export class ForecastError extends Error {
@@ -63,15 +64,17 @@ export async function getForecast(req: VercelRequest, now = new Date()) {
       }
     }
   }
-  const [transactions, budgets, recurring] = await Promise.all([
+  const [transactions, budgets, recurring, categories] = await Promise.all([
     rows('transactions', 'id,user_id,type,amount,currency,exchange_rate_eur,date,description,category_id,deleted_at,updated_at'),
     rows('budgets', 'id,user_id,category_id,amount,currency,updated_at'),
     rows('recurring_expenses', 'id,user_id,category_id,name,amount,currency,frequency,next_due_date,is_active,week_interval,deleted_at,updated_at'),
+    rows('categories', 'id,user_id,type,spending_pattern,deleted_at'),
   ]);
   if (transactions.some(row => !['income', 'expense'].includes(String(row.type)) || typeof row.currency !== 'string' ||
       row.description !== null && typeof row.description !== 'string' || row.category_id !== null && typeof row.category_id !== 'string') ||
     budgets.some(row => typeof row.category_id !== 'string' || typeof row.currency !== 'string') ||
-    recurring.some(row => typeof row.is_active !== 'boolean' || row.category_id !== null && typeof row.category_id !== 'string')) {
+    recurring.some(row => typeof row.is_active !== 'boolean' || row.category_id !== null && typeof row.category_id !== 'string') ||
+    categories.some(row => !['regular', 'occasional'].includes(String(row.spending_pattern)) || !['income', 'expense'].includes(String(row.type)))) {
     throw new ForecastError(422, 'Invalid financial data');
   }
   const forecast = forecastSpending(transactions as unknown as Transaction[], budgets as unknown as Budget[], recurring as unknown as RecurringExpense[], asOf);
@@ -82,7 +85,8 @@ export async function getForecast(req: VercelRequest, now = new Date()) {
   };
   return forecastResponseSchema.parse({
     schemaVersion: 1, modelVersion: 'weekday-history-v1', userId, timeZone, generatedAt: now.toISOString(),
-    inputSha256: createHash('sha256').update(JSON.stringify([asOf, timeZone, transactions, budgets, recurring])).digest('hex'),
+    inputSha256: createHash('sha256').update(JSON.stringify([asOf, timeZone, transactions, budgets, recurring, categories])).digest('hex'),
+    occasionalSpending: occasionalSpending(transactions as unknown as Transaction[], budgets as unknown as Budget[], categories as unknown as Category[], asOf),
     forecast: { ...forecast, spent: money(forecast.spent), scheduled: money(forecast.scheduled), variable: money(forecast.variable),
       total: money(forecast.total), budget: forecast.budget && { limit: money(forecast.budget.limit) },
       points: forecast.points.map(p => ({ ...p, actual: money(p.actual), projected: money(p.projected) })),

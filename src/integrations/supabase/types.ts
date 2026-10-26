@@ -174,6 +174,7 @@ export type Database = {
           icon: string | null
           id: string
           name: string
+          spending_pattern: "regular" | "occasional"
           type: Database["public"]["Enums"]["transaction_type"]
           user_id: string
         }
@@ -184,6 +185,7 @@ export type Database = {
           icon?: string | null
           id?: string
           name: string
+          spending_pattern?: "regular" | "occasional"
           type: Database["public"]["Enums"]["transaction_type"]
           user_id: string
         }
@@ -194,6 +196,7 @@ export type Database = {
           icon?: string | null
           id?: string
           name?: string
+          spending_pattern?: "regular" | "occasional"
           type?: Database["public"]["Enums"]["transaction_type"]
           user_id?: string
         }
