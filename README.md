@@ -68,11 +68,12 @@ L'app è organizzata in **moduli**. Le sezioni base sono disponibili per ogni ut
 
 #### 📊 Dashboard (`/`)
 La pagina di benvenuto che riassume lo stato delle tue finanze in un colpo d'occhio:
-- **Patrimonio Netto** — calcolato come cashflow totale (entrate − uscite di sempre) + P&L realizzato delle sole posizioni di investimento (escluse liquidità, immobili e "altro") + valore degli immobili scontato del 25% (per prudenza).
+- **Saldo totale** cumulato fino alla fine del periodo selezionato, calcolato su Supabase usando tutte le transazioni attive e il cambio in EUR registrato. La card non dipende dal numero di movimenti caricati nel browser.
 - **Statistiche del mese corrente** — entrate e uscite del mese in corso.
 - **Statistiche dell'anno corrente** — entrate e uscite da inizio anno.
 - **Performance Portfolio** — valore, P&L (assoluto e percentuale) delle posizioni aperte (solo strumenti di investimento).
 - **Budget mensili** confrontati con la mediana delle spese mensili degli ultimi 730 giorni, come nella pagina Budget. Il widget mostra le quattro categorie con la percentuale di utilizzo più alta, indipendentemente dal periodo selezionato nella Dashboard.
+- Le barre budget sono verdi sotto il 75%, gialle dal 75% a meno del 100% e rosse dal 100%. Oltre il limite, la barra resta piena e il widget mostra la percentuale reale.
 - **Ultime transazioni** inserite.
 
 #### 💸 Transazioni (`/transactions`)
@@ -492,6 +493,8 @@ Funzioni pure in `src/lib/*.test.ts` (calcoli finanziari FIRE/net worth/statisti
 npm test          # run singolo
 npm run test:watch
 ```
+
+La regressione sul limite REST copre storici superiori a 1.000 movimenti, ordinamento per data e ID, errori nelle pagine successive e invalidazione della cache del saldo. La funzione SQL ha un test transazionale separato, con dati annullati al termine; istruzioni e limiti sono in [docs/DASHBOARD_BALANCE.md](docs/DASHBOARD_BALANCE.md).
 
 ### E2E (Playwright)
 Test end-to-end che guidano l'app reale in browser Chromium. Sono divisi in due progetti:

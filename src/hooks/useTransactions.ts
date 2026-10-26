@@ -3,22 +3,46 @@ import { supabase } from '@/integrations/supabase/client';
 import { Transaction, TransactionType, CurrencyCode } from '@/lib/types';
 import { useAuth } from './useAuth';
 
+const PAGE_SIZE = 1000;
+
 export function useTransactions() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
   const { data: transactions = [], isLoading } = useQuery({
     queryKey: ['transactions', user?.id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('transactions')
-        .select('*, category:categories(*)')
-        .eq('user_id', user!.id)
-        .is('deleted_at', null)
-        .order('date', { ascending: false });
-      
-      if (error) throw error;
-      return data as Transaction[];
+    queryFn: async ({ signal }) => {
+      const allTransactions: Transaction[] = [];
+      const seen = new Set<string>();
+      let total: number | null = null;
+
+      do {
+        const offset = allTransactions.length;
+        const { data, error, count } = await supabase
+          .from('transactions')
+          .select('*, category:categories(*)', { count: 'exact' })
+          .eq('user_id', user!.id)
+          .is('deleted_at', null)
+          .order('date', { ascending: false })
+          .order('id', { ascending: false })
+          .range(offset, offset + PAGE_SIZE - 1)
+          .abortSignal(signal);
+
+        if (error) throw error;
+        if (count === null) throw new Error('Conteggio delle transazioni non disponibile');
+        if (total !== null && count !== total) throw new Error('Lo storico è cambiato durante il caricamento. Riprova.');
+        total = count;
+        if (!data || (!data.length && allTransactions.length < total)) {
+          throw new Error('Caricamento dello storico incompleto');
+        }
+        for (const transaction of data) {
+          if (seen.has(transaction.id)) throw new Error('Lo storico è cambiato durante il caricamento. Riprova.');
+          seen.add(transaction.id);
+        }
+        allTransactions.push(...(data as Transaction[]));
+      } while (allTransactions.length < total);
+
+      return allTransactions;
     },
     enabled: !!user,
   });

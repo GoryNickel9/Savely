@@ -51,6 +51,7 @@ it('confronta il budget con la mediana dei totali mensili degli ultimi 730 giorn
   expect(row.getByText('€240,00', { exact: false })).toBeTruthy();
   expect(row.getByText('/ €300,00')).toBeTruthy();
   expect(row.getByText('80%')).toBeTruthy();
+  expect(row.getByRole('progressbar').className).toContain('[&>div]:bg-warning');
 
   view.rerender(
     <MemoryRouter>
@@ -59,6 +60,8 @@ it('confronta il budget con la mediana dei totali mensili degli ultimi 730 giorn
   );
   expect(row.getByText('€360,00', { exact: false })).toBeTruthy();
   expect(row.getByText('120%')).toBeTruthy();
+  expect(row.getByRole('progressbar').className).toContain('[&>div]:bg-destructive');
+  expect(row.getByRole('progressbar').getAttribute('aria-valuenow')).toBe('100');
 });
 
 it('mostra zero per una categoria senza spese nello storico', () => {

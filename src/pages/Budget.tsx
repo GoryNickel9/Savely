@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Progress } from '@/components/ui/progress';
+import BudgetProgress from '@/components/BudgetProgress';
 import { CURRENCY_SYMBOLS } from '@/lib/constants';
 import { Plus, Edit2, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -169,8 +169,8 @@ export default function Budget() {
             <div className="glass rounded-xl p-12 text-center text-muted-foreground">{t('Nessun budget impostato')}</div>
           ) : sortedBudgets.map(b => {
             const medianSpent = getMedianSpending(b.category_id);
-            const percent = Math.min((medianSpent / Number(b.amount)) * 100, 100);
-            const isOver = medianSpent > Number(b.amount);
+            const percent = Number(b.amount) > 0 ? (medianSpent / Number(b.amount)) * 100 : 0;
+            const isOver = percent >= 100;
             return (
               <div key={b.id} className="glass rounded-xl p-6">
                 <div className="flex items-center justify-between mb-3">
@@ -200,7 +200,7 @@ export default function Budget() {
                     </Button>
                   </div>
                 </div>
-                <Progress value={percent} className={isOver ? '[&>div]:bg-destructive' : ''} />
+                <BudgetProgress value={percent} />
               </div>
             );
           })}

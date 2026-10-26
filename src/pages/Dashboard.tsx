@@ -12,10 +12,13 @@ import { formatEUR, formatPercent } from '@/components/dashboard/format';
 import {
   computePeriodStats,
   PeriodSelection,
+  percentChange,
+  previousRange,
   resolvePeriod,
 } from '@/lib/statistics/dashboardStats';
 import { useTransactions } from '@/hooks/useTransactions';
 import { useBudgets } from '@/hooks/useBudgets';
+import { useTransactionBalance } from '@/hooks/useTransactionBalance';
 
 export default function Dashboard() {
   const { t } = useTranslation();
@@ -25,6 +28,8 @@ export default function Dashboard() {
   const [selection, setSelection] = useState<PeriodSelection>({ preset: 'mese-corrente' });
   const range = useMemo(() => resolvePeriod(selection), [selection]);
   const stats = useMemo(() => computePeriodStats(transactions, range), [transactions, range]);
+  const balanceQuery = useTransactionBalance(range.to, previousRange(range).to);
+  const balance = balanceQuery.isError ? undefined : balanceQuery.data;
 
   return (
     <MainLayout>
@@ -40,10 +45,11 @@ export default function Dashboard() {
         <section aria-label={t('Indicatori principali')} className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4">
           <KpiCard
             title={t('Saldo totale')}
-            value={formatEUR(stats.balance)}
+            value={balance ? formatEUR(balance.balance) : '—'}
             icon={<Wallet className="h-5 w-5" />}
             accent="neutral"
-            deltaPercent={stats.deltaPercent.balance}
+            deltaPercent={balance ? percentChange(balance.balance, balance.previousBalance) : null}
+            subtitle={balanceQuery.isError ? t('Impossibile caricare il saldo') : balance ? undefined : t('Caricamento...')}
           />
           <KpiCard
             title={t('Entrate')}

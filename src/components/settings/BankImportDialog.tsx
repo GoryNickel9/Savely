@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -53,6 +54,7 @@ const DEFAULT_COLORS = [
 
 export default function BankImportDialog({ open, onOpenChange, userId }: BankImportDialogProps) {
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
   const { categories, refetch: refetchCategories, isLoading } = useCategories();
   const { assets, createAsset } = usePortfolio();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -566,6 +568,9 @@ export default function BankImportDialog({ open, onOpenChange, userId }: BankImp
       console.error('Import error:', error);
       toast.error(t('Errore di importazione'), { description: t('Si è verificato un errore durante l\'importazione. Riprova.') });
       setStep('review');
+    } finally {
+      // Anche un import parziale può aver aggiunto movimenti prima dell'errore.
+      void queryClient.invalidateQueries({ queryKey: ['transactions'] });
     }
   };
 

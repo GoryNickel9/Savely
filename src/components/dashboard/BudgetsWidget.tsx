@@ -1,10 +1,10 @@
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router';
-import { Progress } from '@/components/ui/progress';
+import BudgetProgress from '@/components/BudgetProgress';
 import { MEDIAN_CALCULATION_DAYS } from '@/lib/constants';
 import { Budget, Transaction } from '@/lib/types';
-import { cn, getMedianMonthlySpending } from '@/lib/utils';
+import { getMedianMonthlySpending } from '@/lib/utils';
 import { formatEUR, formatPercent } from './format';
 
 interface BudgetsWidgetProps {
@@ -32,7 +32,7 @@ export default function BudgetsWidget({ budgets, transactions }: BudgetsWidgetPr
           budget,
           limit,
           spent,
-          percent: limit > 0 ? Math.min((spent / limit) * 100, 999) : 0,
+          percent: limit > 0 ? (spent / limit) * 100 : 0,
         };
       })
       .sort((a, b) => b.percent - a.percent)
@@ -79,10 +79,10 @@ export default function BudgetsWidget({ budgets, transactions }: BudgetsWidgetPr
                   <span className="hidden sm:inline"> / {formatEUR(limit)}</span>
                 </span>
                 <span className="w-12 shrink-0 text-right text-sm font-semibold tabular-nums">
-                  {formatPercent(percent)}
+                  {formatPercent(percent, 2)}
                 </span>
               </div>
-              <Progress value={percent} className={cn('h-2', percent >= 100 && '[&>div]:bg-destructive')} />
+              <BudgetProgress value={percent} className="h-2" />
             </li>
           ))}
         </ul>

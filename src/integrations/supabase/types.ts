@@ -1417,6 +1417,10 @@ export type Database = {
           user_id: string
         }[]
       }
+      get_transaction_balance: {
+        Args: { p_date: string; p_previous_date: string }
+        Returns: { balance: number; previous_balance: number }[]
+      }
       get_registrations_enabled: { Args: never; Returns: boolean }
       get_user_mfa_factors: {
         Args: { user_id_param: string }

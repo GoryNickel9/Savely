@@ -8,10 +8,10 @@ export function formatEUR(amount: number): string {
   })}`;
 }
 
-/** Formatta una percentuale già in scala 0–100 con al massimo un decimale (it-IT). */
-export function formatPercent(percent: number): string {
+/** Formatta una percentuale già in scala 0–100 (it-IT). */
+export function formatPercent(percent: number, maximumFractionDigits = 1): string {
   return `${(Number(percent) || 0).toLocaleString('it-IT', {
     minimumFractionDigits: 0,
-    maximumFractionDigits: 1,
+    maximumFractionDigits,
   })}%`;
 }
