@@ -3,6 +3,8 @@ import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 import { usePermissions } from '@/hooks/usePermissions';
+import type { Permissions } from '@/lib/types';
+import type { LucideIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   LayoutDashboard,
@@ -13,7 +15,6 @@ import {
   LogOut,
   Menu,
   X,
-  CalendarClock,
   Shield,
   Dices,
   Cigarette,
@@ -30,14 +31,47 @@ import {
 const SIDEBAR_WIDTH = 'w-72';
 const SIDEBAR_COLLAPSED_WIDTH = 'w-[72px]';
 
-const navigation = [
-  { name: 'Dashboard', href: '/', icon: LayoutDashboard },
-  { name: 'Transazioni', href: '/transactions', icon: ArrowLeftRight },
-  { name: 'Uscite Ricorrenti', href: '/recurring', icon: CalendarClock },
-  { name: 'Budget', href: '/budget', icon: PiggyBank },
-  { name: 'Portfolio', href: '/portfolio', icon: LineChart },
-  { name: 'Insights', href: '/insights', icon: Lightbulb },
-  { name: 'Grafici', href: '/charts', icon: BarChart3 },
+interface NavigationItem {
+  name: string;
+  href: string;
+  icon: LucideIcon;
+  permission?: keyof Permissions;
+  nested?: boolean;
+}
+
+const navigation: { name: string; items: NavigationItem[] }[] = [
+  {
+    name: 'Dashboard',
+    items: [
+      { name: 'Dashboard', href: '/', icon: LayoutDashboard },
+      { name: 'Transazioni', href: '/transactions', icon: ArrowLeftRight },
+    ],
+  },
+  {
+    name: 'Budgeting',
+    items: [
+      { name: 'Budget', href: '/budget', icon: PiggyBank },
+      { name: 'Budget Familiare', href: '/couple-budget', icon: HeartHandshake, permission: 'couple_expenses' },
+    ],
+  },
+  {
+    name: 'Finance',
+    items: [
+      { name: 'Portfolio', href: '/portfolio', icon: LineChart },
+      { name: 'Insights', href: '/insights', icon: Lightbulb },
+      { name: 'Grafici', href: '/charts', icon: BarChart3 },
+    ],
+  },
+  {
+    name: 'Altro',
+    items: [
+      { name: 'Poker', href: '/poker', icon: Dices, permission: 'poker' },
+      { name: 'Fumo', href: '/fumo', icon: Cigarette, permission: 'fumo' },
+      { name: 'FIRE', href: '/fire', icon: Flame, permission: 'fire', nested: true },
+      { name: 'TCG', href: '/tcg', icon: Library, permission: 'tcg', nested: true },
+      { name: 'Libreria', href: '/libreria', icon: BookOpen, permission: 'libreria', nested: true },
+    ],
+  },
 ];
 
 interface SidebarProps {
@@ -123,100 +157,37 @@ export default function Sidebar({
         </div>
       )}
 
-      <nav className="flex-1 px-4 space-y-1 overflow-y-auto">
-        {navigation.map((item) => {
-          const isActive = location.pathname === item.href;
+      <nav className="flex-1 px-4 space-y-4 overflow-y-auto">
+        {navigation.map((group) => {
+          const items = group.items.filter((item) => !item.permission || permissions?.[item.permission]);
+          if (items.length === 0) return null;
+
           return (
-            <div key={item.name}>
-              <Link
-                to={item.href}
-                title={t(item.name)}
-                onClick={() => onMobileOpenChange(false)}
-                className={linkCls(isActive)}
-              >
-                <item.icon className="w-5 h-5 shrink-0" />
-                {navLabel(item.name)}
-              </Link>
-              {item.name === 'Budget' && permissions?.couple_expenses && (
-                <Link
-                  to="/couple-budget"
-                  title={t('Budget Familiare')}
-                  onClick={() => onMobileOpenChange(false)}
-                  className={linkCls(location.pathname === '/couple-budget')}
-                >
-                  <HeartHandshake className="w-5 h-5 shrink-0" />
-                  {navLabel('Budget Familiare')}
-                </Link>
-              )}
-            </div>
+            <section key={group.name} aria-label={t(group.name)}>
+              <h2 className={cn('px-4 pb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground', iconOnly && 'sr-only')}>
+                {t(group.name)}
+              </h2>
+              <div className="space-y-1">
+                {items.map((item) => {
+                  const isActive = location.pathname === item.href || (item.nested && location.pathname.startsWith(`${item.href}/`));
+                  return (
+                    <Link
+                      key={item.href}
+                      to={item.href}
+                      title={t(item.name)}
+                      aria-current={isActive ? 'page' : undefined}
+                      onClick={() => onMobileOpenChange(false)}
+                      className={linkCls(Boolean(isActive))}
+                    >
+                      <item.icon aria-hidden="true" className="w-5 h-5 shrink-0" />
+                      {navLabel(item.name)}
+                    </Link>
+                  );
+                })}
+              </div>
+            </section>
           );
         })}
-
-        {/* Sezione Poker - visibile solo agli utenti con permesso poker */}
-        {permissions?.poker && (
-          <Link
-            to="/poker"
-            title={t('Poker')}
-            onClick={() => onMobileOpenChange(false)}
-            className={linkCls(location.pathname === '/poker')}
-          >
-            <Dices className="w-5 h-5 shrink-0" />
-            {navLabel('Poker')}
-          </Link>
-        )}
-
-        {/* Sezione TCG - visibile solo agli utenti con permesso tcg */}
-        {permissions?.tcg && (
-          <Link
-            to="/tcg"
-            title={t('TCG')}
-            onClick={() => onMobileOpenChange(false)}
-            className={linkCls(location.pathname.startsWith('/tcg'))}
-          >
-            <Library className="w-5 h-5 shrink-0" />
-            {navLabel('TCG')}
-          </Link>
-        )}
-
-        {/* Sezione Libreria - visibile solo agli utenti con permesso libreria */}
-        {permissions?.libreria && (
-          <Link
-            to="/libreria"
-            title={t('Libreria')}
-            onClick={() => onMobileOpenChange(false)}
-            className={linkCls(location.pathname.startsWith('/libreria'))}
-          >
-            <BookOpen className="w-5 h-5 shrink-0" />
-            {navLabel('Libreria')}
-          </Link>
-        )}
-
-        {/* Sezione FIRE - visibile solo agli utenti con permesso fire */}
-        {permissions?.fire && (
-          <Link
-            to="/fire"
-            title={t('FIRE')}
-            onClick={() => onMobileOpenChange(false)}
-            className={linkCls(location.pathname.startsWith('/fire'))}
-          >
-            <Flame className="w-5 h-5 shrink-0" />
-            {navLabel('FIRE')}
-          </Link>
-        )}
-
-        {/* Sezione Fumo - visibile solo agli utenti con permesso fumo */}
-        {permissions?.fumo && (
-          <Link
-            to="/fumo"
-            title={t('Fumo')}
-            onClick={() => onMobileOpenChange(false)}
-            className={linkCls(location.pathname === '/fumo')}
-          >
-            <Cigarette className="w-5 h-5 shrink-0" />
-            {navLabel('Fumo')}
-          </Link>
-        )}
-
       </nav>
 
       <div className={cn('p-4 border-t border-border shrink-0', iconOnly && 'px-3')}>

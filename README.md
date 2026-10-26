@@ -64,6 +64,8 @@ L'app è una **single-page application** con autenticazione Supabase, stato serv
 
 L'app è organizzata in **moduli**. Le sezioni base sono disponibili per ogni utente autenticato; i moduli specializzati richiedono un permesso specifico (vedi [Sistema di permessi](#sistema-di-permessi)).
 
+Il menu laterale, condiviso da desktop e drawer mobile, raggruppa le voci in Dashboard (Dashboard, Transazioni), Budgeting (Budget, Budget Familiare), Finance (Portfolio, Insights, Grafici) e Altro (Poker, Fumo, FIRE, TCG, Libreria). Le voci riservate compaiono solo con il relativo permesso; i gruppi vuoti sono nascosti. Uscite Ricorrenti resta disponibile alla route `/recurring`, ma non compare nel menu.
+
 ### 🧩 Moduli base (tutti gli utenti autenticati)
 
 #### 📊 Dashboard (`/`)
