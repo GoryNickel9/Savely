@@ -4,19 +4,19 @@ La pagina mette la previsione di fine mese prima dei segnali. Il budget mensile 
 
 ## Previsione
 
-`forecastSpending` in `src/lib/spendingForecast.ts` è una funzione pura. La data di riferimento indica la fine del giorno locale; le transazioni successive sono programmate, non già spese.
+`forecastSpending` in `server/spending-forecast.ts` è il motore unico, eseguito dal backend. Web e Android ricevono il risultato da `POST /api/spending-forecast`; il browser e l’APK non includono un secondo motore. [Contratto, autenticazione e limiti](FORECAST_API.md). La data di riferimento indica la fine del giorno locale; le transazioni successive sono programmate, non già spese.
 
 La finestra di apprendimento contiene i 180 giorni precedenti, escluso il giorno di riferimento. Se il primo movimento disponibile è più recente, il calcolo usa la finestra più corta e ne mostra la durata. Servono almeno 56 giorni. Si assume che lo storico importato sia completo nell'intervallo tra il primo movimento e la data corrente: il sistema non può distinguere un giorno senza acquisti da un'importazione mancante.
 
 Per ogni categoria e giorno della settimana, il modello divide la somma delle spese variabili per il numero di occorrenze di quel giorno nella finestra. Il denominatore comprende i giorni a zero. Per i giorni restanti del mese somma queste aspettative, le ricorrenti attese e le transazioni future già registrate.
 
-Le ricorrenti configurate prevalgono su quelle rilevate automaticamente. Il rilevatore usa solo dati storici; le descrizioni normalizzate delle ricorrenti sono escluse dal modello variabile. Le ricorrenti disattivate non vengono riproposte dal rilevatore. Per una scadenza, un pagamento o movimento programmato con descrizione e categoria compatibili, successivo alla scadenza precedente e non oltre quella attuale, soddisfa l'occorrenza una sola volta. Gli addebiti anticipati sono quindi conteggiati nello speso. Gli intervalli settimanali e i mesi corti usano il calendario locale, mantenendo il giorno dell'ancoraggio originale.
+Le ricorrenti configurate prevalgono su quelle rilevate automaticamente. Il rilevatore usa solo dati storici; le descrizioni normalizzate delle ricorrenti sono escluse dal modello variabile. Le ricorrenti disattivate non vengono riproposte dal rilevatore. Per una scadenza, un pagamento o movimento programmato con descrizione e categoria compatibili, successivo alla scadenza precedente e non oltre quella attuale, soddisfa l'occorrenza una sola volta. Gli addebiti anticipati sono quindi conteggiati nello speso. Gli intervalli settimanali e i mesi corti usano la data locale selezionata dal server e aritmetica di calendario indipendente dal fuso del processo, mantenendo il giorno dell'ancoraggio originale.
 
 Per la sola previsione, una ricorrenza con almeno tre addebiti precedenti coerenti può mantenere la propria cadenza dopo un ultimo addebito di importo diverso; in quel caso il nuovo importo diventa la stima della prossima scadenza. I suggerimenti standard conservano la soglia originaria di stabilità dei prezzi.
 
 Una transazione variabile programmata sostituisce, fino al proprio importo, l'aspettativa per la stessa categoria e lo stesso giorno. Non viene aggiunta integralmente una seconda previsione della stessa spesa.
 
-Gli importi delle transazioni sono convertiti in euro con il cambio registrato. Budget e ricorrenti non hanno un cambio memorizzato: se utilizzano altre valute, il totale previsionale non viene mostrato. Input non finiti, date non valide e budget duplicati per categoria producono uno stato di errore esplicito. Non vengono aggiunti endpoint, tabelle o scritture al database.
+Gli importi delle transazioni sono convertiti in euro con il cambio registrato. Budget e ricorrenti non hanno un cambio memorizzato: se utilizzano altre valute, il totale previsionale non viene mostrato. Input non finiti, date non valide e budget duplicati per categoria producono uno stato di errore esplicito. L’endpoint esegue soltanto letture con il JWT dell’utente; non richiede migrazioni o scritture al database.
 
 ## Segnali
 

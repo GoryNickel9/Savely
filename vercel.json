@@ -1,6 +1,7 @@
 {
   "regions": ["dub1"],
   "functions": {
+    "api/spending-forecast.ts": { "maxDuration": 60 },
     "api/android-download.ts": {
       "maxDuration": 300,
       "supportsCancellation": true

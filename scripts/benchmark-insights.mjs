@@ -7,7 +7,7 @@ import { createServer } from 'vite';
 const root = fileURLToPath(new URL('../', import.meta.url));
 const server = await createServer({ root, configFile: false, resolve: { alias: { '@': `${root}src` } }, server: { middlewareMode: true, hmr: false }, optimizeDeps: { noDiscovery: true } });
 try {
-  const { forecastSpending } = await server.ssrLoadModule('/src/lib/spendingForecast.ts');
+  const { forecastSpending } = await server.ssrLoadModule('/server/spending-forecast.ts');
   const { generateInsights } = await server.ssrLoadModule('/src/lib/insights.ts');
   const referenceDate = new Date(2026, 9, 20);
   const transactions = [];
@@ -21,7 +21,7 @@ try {
     });
   }
   const run = () => {
-    const forecast = forecastSpending(transactions, [], [], referenceDate);
+    const forecast = forecastSpending(transactions, [], [], '2026-10-20');
     assert.equal(forecast.total, 3100);
     assert.equal(forecast.spent, 2000);
     assert.equal(forecast.variable, 1100);

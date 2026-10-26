@@ -74,6 +74,7 @@ export function useRecurringExpenses() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['recurring_expenses'] });
+      queryClient.invalidateQueries({ queryKey: ['spending-forecast'] });
     },
   });
 
@@ -101,6 +102,7 @@ export function useRecurringExpenses() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['recurring_expenses'] });
+      queryClient.invalidateQueries({ queryKey: ['spending-forecast'] });
     },
   });
 
@@ -117,6 +119,7 @@ export function useRecurringExpenses() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['recurring_expenses'] });
+      queryClient.invalidateQueries({ queryKey: ['spending-forecast'] });
     },
   });
 
@@ -189,6 +192,7 @@ export function useRecurringExpenses() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['recurring_expenses'] });
+      queryClient.invalidateQueries({ queryKey: ['spending-forecast'] });
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
     },
   });

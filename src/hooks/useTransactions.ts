@@ -71,6 +71,7 @@ export function useTransactions() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      queryClient.invalidateQueries({ queryKey: ['spending-forecast'] });
       queryClient.invalidateQueries({ queryKey: ['statistics'] });
     },
   });
@@ -99,6 +100,7 @@ export function useTransactions() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      queryClient.invalidateQueries({ queryKey: ['spending-forecast'] });
       queryClient.invalidateQueries({ queryKey: ['statistics'] });
     },
   });
@@ -115,6 +117,7 @@ export function useTransactions() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      queryClient.invalidateQueries({ queryKey: ['spending-forecast'] });
       queryClient.invalidateQueries({ queryKey: ['statistics'] });
     },
   });

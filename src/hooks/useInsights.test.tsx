@@ -7,18 +7,18 @@ import { useInsights } from './useInsights';
 import type { Transaction } from '@/lib/types';
 import i18n from '@/i18n';
 
-const mocks = vi.hoisted(() => ({ transactions: [] as Transaction[], txError: false, recurringError: false }));
+const mocks = vi.hoisted(() => ({ transactions: [] as Transaction[], txError: false, recurringError: false, forecastDate: null as string | null }));
 vi.mock('./useTransactions', () => ({ useTransactions: () => ({ transactions: mocks.transactions, isLoading: false, isError: mocks.txError }) }));
 vi.mock('./useBudgets', () => ({ useBudgets: () => ({ budgets: [], isLoading: false, isError: false }) }));
 vi.mock('./usePortfolio', () => ({ usePortfolio: () => ({ assets: [], isLoading: false, isError: false }) }));
 vi.mock('./useNetWorthHistory', () => ({ useNetWorthHistory: () => ({ data: [], isLoading: false, isError: false }) }));
-vi.mock('./useRecurringExpenses', () => ({ useRecurringExpenses: () => ({ recurringExpenses: [], isLoading: false, isError: mocks.recurringError }) }));
+vi.mock('./useSpendingForecast', () => ({ useSpendingForecast: () => ({ data: mocks.forecastDate ? { forecast: { date: mocks.forecastDate } } : null, isLoading: false, isError: mocks.recurringError }) }));
 vi.mock('./useRecurringCandidates', () => ({ useRecurringCandidates: () => ({ candidates: [], isLoading: false, isError: false }) }));
 
 beforeEach(() => {
   vi.useFakeTimers();
   vi.setSystemTime(new Date(2026, 9, 20));
-  mocks.transactions = []; mocks.txError = false; mocks.recurringError = false;
+  mocks.transactions = []; mocks.txError = false; mocks.recurringError = false; mocks.forecastDate = null;
 });
 afterEach(() => { cleanup(); vi.useRealTimers(); void i18n.changeLanguage('it'); });
 function setup() {
@@ -46,7 +46,7 @@ it('riprova il caricamento di tutte le fonti utilizzate', async () => {
   const { result, client } = setup();
   const retry = vi.spyOn(client, 'invalidateQueries');
   await result.current.retry();
-  expect(retry.mock.calls.map(call => call[0]?.queryKey?.[0])).toEqual(['transactions', 'budgets', 'portfolio', 'net-worth-history', 'recurring_expenses']);
+  expect(retry.mock.calls.map(call => call[0]?.queryKey?.[0])).toEqual(['transactions', 'budgets', 'portfolio', 'net-worth-history', 'recurring_expenses', 'spending-forecast']);
 });
 
 it('aggiorna i messaggi dei segnali quando cambia la lingua', async () => {
@@ -58,4 +58,13 @@ it('aggiorna i messaggi dei segnali quando cambia la lingua', async () => {
   expect(result.current.insights.some(item => item.title.includes('Spesa ricorrente'))).toBe(true);
   await act(() => i18n.changeLanguage('en'));
   expect(result.current.insights.some(item => item.title.includes('Recurring expense'))).toBe(true);
+});
+
+it('usa la data del server anche se l’orologio del dispositivo è diverso', () => {
+  mocks.forecastDate = '2026-10-19';
+  mocks.transactions = [{ id: 'future', user_id: 'u', date: '2026-10-20', amount: 10, type: 'expense', currency: 'EUR', exchange_rate_eur: 1,
+    category_id: 'food', description: null, deleted_at: null, created_at: '', updated_at: '' }];
+  const { result } = setup();
+  expect(result.current.referenceDate.getDate()).toBe(19);
+  expect(result.current.hasTransactions).toBe(false);
 });

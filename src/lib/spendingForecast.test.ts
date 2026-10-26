@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { addDays, subDays } from 'date-fns';
 import type { Transaction, Budget } from './types';
 import type { RecurringExpense } from '@/hooks/useRecurringExpenses';
-import { forecastSpending, transactionEUR } from './spendingForecast';
+import { transactionEUR } from './spendingForecast';
+import { forecastSpending as serverForecast } from '../../server/spending-forecast';
+const forecastSpending = (transactions: Transaction[], budgets: Budget[], recurring: RecurringExpense[], date: Date) => serverForecast(transactions, budgets, recurring, todayLocalISO(date));
 import { todayLocalISO } from './utils';
 
 const today = new Date(2026, 9, 20);
