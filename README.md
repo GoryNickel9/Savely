@@ -72,7 +72,8 @@ La pagina di benvenuto che riassume lo stato delle tue finanze in un colpo d'occ
 - **Statistiche del mese corrente** — entrate e uscite del mese in corso.
 - **Statistiche dell'anno corrente** — entrate e uscite da inizio anno.
 - **Performance Portfolio** — valore, P&L (assoluto e percentuale) delle posizioni aperte (solo strumenti di investimento).
-- **Totale budget** impostato e le **ultime transazioni** inserite.
+- **Budget mensili** confrontati con la mediana delle spese mensili degli ultimi 730 giorni, come nella pagina Budget. Il widget mostra le quattro categorie con la percentuale di utilizzo più alta, indipendentemente dal periodo selezionato nella Dashboard.
+- **Ultime transazioni** inserite.
 
 #### 💸 Transazioni (`/transactions`)
 Il cuore della contabilità quotidiana:

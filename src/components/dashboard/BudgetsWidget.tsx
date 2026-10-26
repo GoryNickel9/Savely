@@ -1,11 +1,10 @@
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router';
-import { endOfMonth, startOfMonth } from 'date-fns';
 import { Progress } from '@/components/ui/progress';
-import { isInRange } from '@/lib/statistics/dashboardStats';
+import { MEDIAN_CALCULATION_DAYS } from '@/lib/constants';
 import { Budget, Transaction } from '@/lib/types';
-import { cn } from '@/lib/utils';
+import { cn, getMedianMonthlySpending } from '@/lib/utils';
 import { formatEUR, formatPercent } from './format';
 
 interface BudgetsWidgetProps {
@@ -19,28 +18,16 @@ const MAX_ITEMS = 4;
 export default function BudgetsWidget({ budgets, transactions }: BudgetsWidgetProps) {
   const { t } = useTranslation();
 
-  // I budget sono mensili e generici (month/year sentinella nel DB): la spesa
-  // di riferimento è il mese corrente, indipendente dal periodo selezionato.
-  const currentMonth = useMemo(() => {
-    const now = new Date();
-    return { from: startOfMonth(now), to: endOfMonth(now) };
-  }, []);
-
+  // Stessa mediana della pagina Budget, indipendente dal periodo della Dashboard.
   const rows = useMemo(() => {
-    const spentByCategory = new Map<string, number>();
-    for (const tx of transactions) {
-      if (tx.type !== 'expense' || !tx.category_id) continue;
-      if (!isInRange(tx, currentMonth)) continue;
-      spentByCategory.set(
-        tx.category_id,
-        (spentByCategory.get(tx.category_id) ?? 0) + (Number(tx.amount) || 0)
-      );
-    }
-
     return budgets
       .map((budget) => {
         const limit = Number(budget.amount) || 0;
-        const spent = spentByCategory.get(budget.category_id) ?? 0;
+        const spent = getMedianMonthlySpending({
+          transactions,
+          categoryId: budget.category_id,
+          days: MEDIAN_CALCULATION_DAYS,
+        });
         return {
           budget,
           limit,
@@ -50,7 +37,7 @@ export default function BudgetsWidget({ budgets, transactions }: BudgetsWidgetPr
       })
       .sort((a, b) => b.percent - a.percent)
       .slice(0, MAX_ITEMS);
-  }, [budgets, transactions, currentMonth]);
+  }, [budgets, transactions]);
 
   return (
     <div className="flex h-full flex-col rounded-xl border border-border/60 bg-card p-6 shadow-sm">
@@ -60,6 +47,9 @@ export default function BudgetsWidget({ budgets, transactions }: BudgetsWidgetPr
           {t('Vedi tutti')}
         </Link>
       </div>
+      <p className="mt-1 text-sm text-muted-foreground">
+        {t('Mediana mensile (ultimi 730 giorni)')}
+      </p>
 
       {rows.length === 0 ? (
         <div className="flex flex-1 items-center justify-center py-16 text-sm text-muted-foreground">
