@@ -13,8 +13,9 @@ const snapshot = fs.readFileSync(path.join(root, 'private-dataset.json'), 'utf8'
 assert.equal(crypto.createHash('sha256').update(snapshot).digest('hex'), source.inputSha256, 'Snapshot differs from previous comparison');
 const compareQuarters = process.argv[2] === '--quarter-weights';
 const compareFifths = process.argv[2] === '--fifth-weights';
-const compareWeights = compareQuarters || compareFifths;
-const output = path.resolve(process.argv[compareWeights ? 3 : 2] ?? path.join(root, `${compareFifths ? 'v10' : compareQuarters ? 'v9' : 'v8'}-comparison-7-14-21-28.json`));
+const compareTwentieths = process.argv[2] === '--twentieth-weights';
+const compareWeights = compareQuarters || compareFifths || compareTwentieths;
+const output = path.resolve(process.argv[compareWeights ? 3 : 2] ?? path.join(root, `${compareTwentieths ? 'v11' : compareFifths ? 'v10' : compareQuarters ? 'v9' : 'v8'}-comparison-7-14-21-28.json`));
 const prior = compareWeights ? JSON.parse(fs.readFileSync(path.join(root, 'v8-comparison-7-14-21-28.json'), 'utf8').replace(/^\uFEFF/, '')) : null;
 if (prior) {
   assert.equal(prior.inputSha256, source.inputSha256);
@@ -23,7 +24,7 @@ if (prior) {
 const relative = path.relative(root, output);
 if (!relative || relative.startsWith('..') || path.isAbsolute(relative) || output === sourceFile || output === path.join(root, 'private-dataset.json')) throw Error('Report must stay in the ignored evaluation directory');
 const baseline = 'weekday-history-v1', weekly = 'weekly-block-bootstrap-v6', combined = 'equal-current-weekly-v8';
-const variants = [[combined, 1, 2], ...(compareQuarters ? [['current75-weekly25-v9', 3, 4], ['current25-weekly75-v9', 1, 4]] : compareFifths ? [['current60-weekly40-v10', 3, 5], ['current40-weekly60-v10', 2, 5]] : [])];
+const variants = [[combined, 1, 2], ...(compareQuarters ? [['current75-weekly25-v9', 3, 4], ['current25-weekly75-v9', 1, 4]] : compareFifths ? [['current60-weekly40-v10', 3, 5], ['current40-weekly60-v10', 2, 5]] : compareTwentieths ? [['current55-weekly45-v11', 11, 20], ['current45-weekly55-v11', 9, 20]] : [])];
 const models = [baseline, weekly, ...variants.map(([model]) => model)], origins = [7, 14, 21, 28];
 assert.equal(source.method.candidate, weekly);
 assert.deepEqual(source.method.origins, origins);
@@ -32,7 +33,7 @@ assert.equal(new Set(months).size, 38);
 const round = value => Math.round(value * 100) / 100;
 const server = await createServer({ configFile: false, server: { middlewareMode: true, watch: null }, optimizeDeps: { noDiscovery: true }, appType: 'custom' });
 try {
-  const { equalWeightForecastTotal, quarterWeightForecastTotal, fifthWeightForecastTotal } = await server.ssrLoadModule('/server/forecast-combination.ts');
+  const { equalWeightForecastTotal, quarterWeightForecastTotal, fifthWeightForecastTotal, twentiethWeightForecastTotal } = await server.ssrLoadModule('/server/forecast-combination.ts');
   function combine(rows, expectedMonths) {
     assert.equal(rows.length, expectedMonths.length * origins.length);
     const dates = new Set();
@@ -46,7 +47,8 @@ try {
       const predictions = { [baseline]: first, [weekly]: second };
       assert(first + 0.00001 >= f.spent + f.scheduled && second + 0.00001 >= f.spent + f.scheduled);
       for (const [model, numerator, denominator] of variants) {
-        const total = denominator === 5 ? fifthWeightForecastTotal(first, second, numerator)
+        const total = denominator === 20 ? twentiethWeightForecastTotal(first, second, numerator)
+          : denominator === 5 ? fifthWeightForecastTotal(first, second, numerator)
           : denominator === 4 ? quarterWeightForecastTotal(first, second, numerator) : equalWeightForecastTotal(first, second);
         assert(total + 0.00001 >= f.spent + f.scheduled);
         assert(total >= Math.min(first, second) && total <= Math.max(first, second));
@@ -89,8 +91,8 @@ try {
     }
   }
   const report = { inputSha256: source.inputSha256, componentReportSha256: crypto.createHash('sha256').update(sourceRaw).digest('hex'), snapshotAt: source.snapshotAt,
-    method: { candidate: compareFifths ? 'fifth-combinations-v10' : compareQuarters ? 'quarter-combinations-v9' : combined, components: [baseline, weekly],
-      weights: compareWeights ? Object.fromEntries(variants.map(([model, n, d]) => [model, [n / d, 1 - n / d]])) : [0.5, 0.5], origins, months,
+    method: { candidate: compareTwentieths ? 'twentieth-combinations-v11' : compareFifths ? 'fifth-combinations-v10' : compareQuarters ? 'quarter-combinations-v9' : combined, components: [baseline, weekly],
+      weights: compareWeights ? Object.fromEntries(variants.map(([model, n, d]) => [model, [n / d, (d - n) / d]])) : [0.5, 0.5], origins, months,
       point: 'weighted sum of cent-rounded point forecasts; one final cent rounding, half-cent upwards',
       componentPredictionsReusedExactly: true, weightsFixedBeforeEvaluation: true, weightSearchPerformed: compareWeights, userRequestedFixedComparison: true, weightOptimizationPerformed: false,
       independentHoldout: false, uncertaintyIntervalsComputed: false, baselineDefaultUnchanged: true,

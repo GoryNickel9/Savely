@@ -27,6 +27,12 @@ export function fifthWeightForecastTotal(current: number, weekly: number, curren
   return fractionForecastTotal(current, weekly, currentFifths, 5);
 }
 
+/** Offline fixed weights: currentTwentieths=11 means 55% current / 45% weekly. */
+export function twentiethWeightForecastTotal(current: number, weekly: number, currentTwentieths: 9 | 11): number {
+  if (![9, 11].includes(currentTwentieths)) throw new Error('Invalid forecast weights');
+  return fractionForecastTotal(current, weekly, currentTwentieths, 20);
+}
+
 /** Compatibility entry point for the fixed 50/50 experiment. */
 export function equalWeightForecastTotal(current: number, weekly: number): number {
   return quarterWeightForecastTotal(current, weekly, 2);
