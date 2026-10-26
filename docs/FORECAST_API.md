@@ -36,7 +36,17 @@ Il campo è opzionale nei decoder per conservare la lettura delle fixture e risp
 
 Il divisore fisso presume che lo storico dei 12 mesi sia completo. Un mese senza movimenti non si distingue da uno non importato: uno storico parziale può sottostimare la media. I nuovi test coprono esplicitamente questa convenzione. La previsione mantiene i propri requisiti di storico; il confronto su 12 mesi viene restituito anche quando la previsione non è disponibile.
 
-Verifiche locali del 26 ottobre 2026: suite Vitest completa, test aggiuntivi dei form Categorie e Impostazioni, TypeScript, lint dei file modificati, build web e caricamento ESM della funzione server superati. Il selettore reale è stato controllato in Chromium a 375, 812 e 1280 px, nei due temi, con apertura da tastiera, selezione, movimento ridotto e testo al 125%; nessun overflow orizzontale. Android: 400 test JUnit, compilazione e `lintDebug` superati. Non erano collegati emulatori o dispositivi; non è stato verificato il nuovo form su Android in esecuzione. Migrazione e rilasci non eseguiti.
+Verifiche locali del 26 ottobre 2026: suite Vitest completa, test aggiuntivi dei form Categorie e Impostazioni, TypeScript, lint dei file modificati, build web e caricamento ESM della funzione server superati. Il selettore reale è stato controllato in Chromium a 375, 812 e 1280 px, nei due temi, con apertura da tastiera, selezione, movimento ridotto e testo al 125%; nessun overflow orizzontale. Android: 400 test JUnit, compilazione e `lintDebug` superati. Non erano collegati emulatori o dispositivi; non è stato verificato il nuovo form su Android in esecuzione. Queste prove precedono l'attivazione descritta sotto.
+
+## Attivazione — 26 ottobre 2026
+
+Migrazione `20261026220000` applicata al progetto condiviso: le 112 categorie esistenti risultavano regolari dopo il backfill. Il test SQL transazionale `supabase/tests/category_spending_pattern.sql` verifica default, salvataggio, valori non ammessi, NOT NULL e permanenza della RLS, senza modificare dati degli utenti.
+
+Backend e web pubblicati dal commit funzionale `71541f05a447e94d80df800943bf6b9194c6c878`, deployment `dpl_Aej8BJfQqHNu2xdLpWWTPoRzkqGn`, pronto e associato a `www.savely.cc`. La copia di rilascio, basata sul ramo di produzione, supera 347 test web con un test live opzionale saltato, TypeScript, lint, build e caricamento ESM. Gli esperimenti previsionali del ramo di ricerca non sono inclusi. La CI supera test, TypeScript, quality ed E2E; il solo audit delle dipendenze resta negativo con 5 segnalazioni moderate e 6 high, già presenti nel commit precedente. Il lockfile non cambia.
+
+Verifica remota con account QA: categoria saltuaria e budget atteso di 25 EUR letti dal backend, media 0,00 EUR senza movimenti, finestra dal 1 novembre 2025 al 26 ottobre 2026, risposta autenticata 200 e `private, no-store`. Categoria e budget sintetici rimossi e sessione di test chiusa con logout locale. Il calcolo con tre pagamenti da 100 EUR resta coperto dai test del server; nessuna spesa fittizia è stata inserita nel database per questa prova remota.
+
+Android [1.0.8 / code46](https://github.com/GoryNickel9/Savely-Android/releases/tag/v1.0.8) pubblicata nel canale stabile dal commit `995ae22a94db24525ac759e1762664b6d60d6484`. Passano 400 test debug e 400 release; lint release senza errori. APK di 2.418.814 byte, SHA-256 `ba3e3a0a99d284cd2341a60a779235d368fdaca965c09ec1006b424771aa86c9`, certificato di distribuzione invariato. Metadati stabili 200, download anonimo 401, download autenticato dal proxy 200 e digest della copia scaricata uguale all'APK locale. La UI Android in esecuzione e il telefono fisico restano non verificati per questo rilascio.
 
 ## Errori e aggiornamento
 
