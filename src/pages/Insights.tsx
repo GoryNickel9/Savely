@@ -1,6 +1,5 @@
 import { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link } from 'react-router';
 import MainLayout from '@/components/layout/MainLayout';
 import { useInsights } from '@/hooks/useInsights';
 import type { Insight, InsightKind, InsightSeverity } from '@/lib/insights';
@@ -10,7 +9,6 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
 import {
-  ArrowLeft,
   TrendingDown,
   TrendingUp,
   AlertTriangle,
@@ -77,9 +75,6 @@ export default function Insights() {
               </p>
             </div>
           </div>
-          <Link to="/" className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1">
-            <ArrowLeft className="w-4 h-4" /> {t('Dashboard')}
-          </Link>
         </div>
 
         {isLoading ? (
