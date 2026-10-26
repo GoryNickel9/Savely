@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { validCalendarDate } from './spendingForecast';
+import { validCalendarDate } from './spendingForecast.js';
 
 const money = z.string().regex(/^(0|[1-9]\d{0,13})\.\d{2}$/).refine(value => Number.isSafeInteger(Math.round(Number(value) * 100)));
 const date = z.string().refine(validCalendarDate);

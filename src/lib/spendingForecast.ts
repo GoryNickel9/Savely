@@ -1,4 +1,4 @@
-import type { Transaction } from './types';
+import type { Transaction } from './types.js';
 export const FORECAST_DAYS = 180;
 export const MIN_FORECAST_DAYS = 56;
 const cents = (value: number) => Math.round(value * 100) / 100;
