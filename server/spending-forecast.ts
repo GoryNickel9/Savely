@@ -2,6 +2,7 @@ import { addDays, addMonths, differenceInCalendarDays, differenceInCalendarMonth
 import { FORECAST_DAYS, MIN_FORECAST_DAYS, transactionEUR, validTransactions, validCalendarDate, type SpendingForecast, type ForecastPoint } from '../src/lib/spendingForecast.js';
 import type { Budget, Transaction } from '../src/lib/types.js';
 import { detectRecurringCandidates, normalizeDescription } from '../src/lib/recurringDetection.js';
+import { recentDailyRates, type ForecastModel } from './recent-spending.js';
 export interface RecurringExpense {
   id: string; name: string; category_id: string | null; amount: number; currency: string;
   frequency: string; next_due_date: string; is_active: boolean; week_interval?: number; deleted_at?: string | null;
@@ -36,7 +37,9 @@ export function forecastSpending(
   budgets: Budget[],
   recurringExpenses: RecurringExpense[],
   referenceDate: string = new Date().toISOString().slice(0, 10),
+  model: ForecastModel = 'weekday-history-v1',
 ): SpendingForecast {
+  if (!['weekday-history-v1', 'recent-weekday-v2', 'robust-recent-weekday-v2'].includes(model)) throw new Error('Invalid forecast model');
   if (!validCalendarDate(referenceDate)) throw new Error('Invalid forecast date');
   const today = parseLocalDate(referenceDate);
   if (!Number.isFinite(today.getTime())) throw new Error('Invalid forecast date');
@@ -82,9 +85,11 @@ export function forecastSpending(
   for (const item of historical) {
     if (recurringKeys.has(normalizeDescription(item.description))) continue;
     const totals = variableByCategory.get(item.category_id) ?? Array<number>(7).fill(0);
-    totals[parseLocalDate(item.date).getDay()] += transactionEUR(item);
+    totals[parseLocalDate(item.date).getUTCDay()] += transactionEUR(item);
     variableByCategory.set(item.category_id, totals);
   }
+  const recentRates = model === 'weekday-history-v1' ? null : recentDailyRates(
+    historical.filter(item => !recurringKeys.has(normalizeDescription(item.description))), historyStart, today, model === 'robust-recent-weekday-v2');
   const dailyScheduled = new Map<string, Map<string | null, number>>();
   function scheduleAmount(date: string, category: string | null, amount: number) {
     const categories = dailyScheduled.get(date) ?? new Map<string | null, number>();
@@ -141,7 +146,7 @@ export function forecastSpending(
       for (const category of categories) {
         const committed = scheduledCategories.get(category) ?? 0;
         const totals = variableByCategory.get(category);
-        const expectation = available && totals ? totals[date.getUTCDay()] / weekdayCounts[date.getUTCDay()] : 0;
+        const expectation = !available ? 0 : recentRates?.get(category)?.[date.getUTCDay()] ?? (totals ? totals[date.getUTCDay()] / weekdayCounts[date.getUTCDay()] : 0);
         const plannedVariable = planned.filter(item => item.date === iso && item.category_id === category && !recurringKeys.has(normalizeDescription(item.description))).reduce((sum, item) => sum + transactionEUR(item), 0);
         const remaining = Math.max(0, expectation - plannedVariable);
         scheduled += committed;

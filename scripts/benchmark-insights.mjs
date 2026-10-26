@@ -10,6 +10,7 @@ try {
   const { forecastSpending } = await server.ssrLoadModule('/server/spending-forecast.ts');
   const { generateInsights } = await server.ssrLoadModule('/src/lib/insights.ts');
   const referenceDate = new Date(2026, 9, 20);
+  const model = process.argv[2] ?? 'weekday-history-v1';
   const transactions = [];
   for (let offset = 180; offset >= 0; offset--) {
     const date = new Date(2026, 9, 20 - offset);
@@ -21,7 +22,7 @@ try {
     });
   }
   const run = () => {
-    const forecast = forecastSpending(transactions, [], [], '2026-10-20');
+    const forecast = forecastSpending(transactions, [], [], '2026-10-20', model);
     assert.equal(forecast.total, 3100);
     assert.equal(forecast.spent, 2000);
     assert.equal(forecast.variable, 1100);
@@ -33,7 +34,7 @@ try {
     const start = performance.now(); run(); times.push(performance.now() - start);
   }
   times.sort((a, b) => a - b);
-  console.log(JSON.stringify({ benchmark: 'forecast-and-insights', transactions: transactions.length, samples: times.length, medianMs: +((times[4] + times[5]) / 2).toFixed(2), maxMs: +times.at(-1).toFixed(2), cpu: cpus()[0]?.model, logicalCPUs: cpus().length, ramGiB: +(totalmem() / 1024 ** 3).toFixed(1), os: platform(), node: process.version, precision: 'float64', seed: 'deterministic fixture', threads: 1 }, null, 2));
+  console.log(JSON.stringify({ benchmark: 'forecast-and-insights', model, transactions: transactions.length, samples: times.length, medianMs: +((times[4] + times[5]) / 2).toFixed(2), maxMs: +times.at(-1).toFixed(2), cpu: cpus()[0]?.model, logicalCPUs: cpus().length, ramGiB: +(totalmem() / 1024 ** 3).toFixed(1), os: platform(), node: process.version, precision: 'float64', seed: 'deterministic fixture', threads: 1 }, null, 2));
 } finally {
   await server.close();
 }
