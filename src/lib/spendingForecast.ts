@@ -45,6 +45,7 @@ export interface SpendingForecast {
   unsupportedRecurring: number;
   unsupportedBudgets: number;
   /** Offline candidate diagnostics; not part of the published response schema. */
+  bootstrap?: { weeks: number; samples: number; seed: number; fallback: boolean; points: { date: string; median: number; lower80: number; upper80: number; mean: number }[] };
   segmentation?: { ordinary: number; extraordinary: number; categories: {
     categoryId: string | null; kind: 'ordinary' | 'occasional'; positiveDays: number; activeWeeks: number;
     observedOrdinary: number; observedExtraordinary: number;

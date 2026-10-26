@@ -6,6 +6,7 @@ import { recentDailyRates, type ForecastModel } from './recent-spending.js';
 import { ordinaryExtraDailyRates } from './ordinary-extra-spending.js';
 import { monthlyAnalogueDailyRates } from './monthly-analogue-spending.js';
 import { paceDailyRates } from './pace-spending.js';
+import { weeklyBootstrapRemainder } from './weekly-bootstrap-spending.js';
 export interface RecurringExpense {
   id: string; name: string; category_id: string | null; amount: number; currency: string;
   frequency: string; next_due_date: string; is_active: boolean; week_interval?: number; deleted_at?: string | null;
@@ -42,7 +43,7 @@ export function forecastSpending(
   referenceDate: string = new Date().toISOString().slice(0, 10),
   model: ForecastModel = 'weekday-history-v1',
 ): SpendingForecast {
-  if (!['weekday-history-v1', 'recent-weekday-v2', 'robust-recent-weekday-v2', 'ordinary-extra-v3', 'monthly-analogue-v4', 'pace-shrink-v5'].includes(model)) throw new Error('Invalid forecast model');
+  if (!['weekday-history-v1', 'recent-weekday-v2', 'robust-recent-weekday-v2', 'ordinary-extra-v3', 'monthly-analogue-v4', 'pace-shrink-v5', 'weekly-block-bootstrap-v6'].includes(model)) throw new Error('Invalid forecast model');
   if (!validCalendarDate(referenceDate)) throw new Error('Invalid forecast date');
   const today = parseLocalDate(referenceDate);
   if (!Number.isFinite(today.getTime())) throw new Error('Invalid forecast date');
@@ -95,7 +96,7 @@ export function forecastSpending(
   const segmented = model === 'ordinary-extra-v3' ? ordinaryExtraDailyRates(variableHistory, historyStart, today) : null;
   const analogue = model === 'monthly-analogue-v4' ? monthlyAnalogueDailyRates(known.filter(item => item.type === 'expense' && !recurringKeys.has(normalizeDescription(item.description))), historyStart, today) : null;
   const pace = model === 'pace-shrink-v5' ? paceDailyRates(known.filter(item => item.type === 'expense' && !recurringKeys.has(normalizeDescription(item.description))), historyStart, today) : null;
-  const recentRates = pace ?? analogue ?? segmented?.rates ?? (model === 'weekday-history-v1' || model === 'monthly-analogue-v4' ? null : recentDailyRates(
+  const recentRates = pace ?? analogue ?? segmented?.rates ?? (model === 'weekday-history-v1' || model === 'monthly-analogue-v4' || model === 'weekly-block-bootstrap-v6' ? null : recentDailyRates(
     variableHistory, historyStart, today, model === 'robust-recent-weekday-v2'));
   const segmentsByCategory = new Map(segmented?.categories.map(category => [category.categoryId, category]) ?? []);
   let ordinaryRemainder = 0;
@@ -107,6 +108,9 @@ export function forecastSpending(
   }
   const planned = tx.filter(item => item.type === 'expense' && parseLocalDate(item.date) > today && parseLocalDate(item.date) <= monthEnd);
   planned.forEach(item => scheduleAmount(item.date, item.category_id, transactionEUR(item)));
+  const bootstrap = available && model === 'weekly-block-bootstrap-v6'
+    ? weeklyBootstrapRemainder(variableHistory, historyStart, today, planned.filter(item => !recurringKeys.has(normalizeDescription(item.description)))) : null;
+  const bootstrapPoints = new Map(bootstrap?.points.map(point => [point.date, point]) ?? []);
   const usedPayments = new Set<string>();
   for (const schedule of schedules) {
     const first = Math.max(0, schedule.weeks
@@ -163,6 +167,7 @@ export function forecastSpending(
         variable += remaining;
       }
     }
+    if (bootstrap && date > today) variable = bootstrapPoints.get(iso)!.median;
     points.push({ day: date.getUTCDate(), actual: date <= today ? cents(spent) : null,
       projected: available && date >= today ? cents(spent + scheduled + variable) : null });
   }
@@ -174,5 +179,6 @@ export function forecastSpending(
       categories: segmented.categories.map(category => ({ categoryId: category.categoryId, kind: category.kind,
         positiveDays: category.positiveDays, activeWeeks: category.activeWeeks,
         observedOrdinary: cents(category.observedOrdinary), observedExtraordinary: cents(category.observedExtraordinary) })) } } : {}),
+    ...(model === 'weekly-block-bootstrap-v6' ? { bootstrap: { weeks: bootstrap?.weeks ?? 0, samples: bootstrap?.samples ?? 0, seed: bootstrap?.seed ?? 0, fallback: bootstrap === null, points: bootstrap?.points ?? [] } } : {}),
     points: complete ? points : points.map(point => ({ ...point, projected: null })), unsupportedRecurring, unsupportedBudgets };
 }
