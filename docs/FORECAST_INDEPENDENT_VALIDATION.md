@@ -38,3 +38,7 @@ Commit dei sorgenti: `0dc3cf41e168e7534e133a1ceffa7bb3fd8ea0f6`.
 SHA-256 protocollo: `7cd8be5414815f4b3296bfea965584010e86099001a67d32bb2fb44d6fbdd271`.
 
 SHA-256 archivio: `fd345038941899c8cb6ba398815005ea5511e44a23b1b1ae4983f70d7cab0b3f`.
+
+## Aggiornamento operativo
+
+L’utente ha scelto lo stesso account e mesi futuri. La raccolta prospettica è ora attiva nella chat; il protocollo congelato originale resta invariato. Iscrizione, calendario e snapshot futuri sono conservati nella cartella privata durevole esterna al repository. [Calendario, modalità di acquisizione e verifiche](FORECAST_PROSPECTIVE_COLLECTION.md).
