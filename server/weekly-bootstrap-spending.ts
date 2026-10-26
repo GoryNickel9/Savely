@@ -2,26 +2,12 @@ import type { Transaction } from '../src/lib/types.js';
 import { transactionEUR } from '../src/lib/spendingForecast.js';
 import { addDays, endOfMonth, parseLocalDate, todayLocalISO } from './forecast-calendar.js';
 
+import { dateSeed, quantile, randomGenerator, type SimulationPoint } from './forecast-simulation.js';
+
 export const WEEKLY_BOOTSTRAP_SAMPLES = 4096;
 export const WEEKLY_BOOTSTRAP_SEED = 0x5a172026;
 export const MIN_BOOTSTRAP_WEEKS = 8;
-export interface BootstrapPoint { date: string; median: number; lower80: number; upper80: number; mean: number }
-export interface WeeklyBootstrap { weeks: number; samples: number; seed: number; points: BootstrapPoint[] }
-
-function quantile(sorted: number[], fraction: number): number {
-  const position = (sorted.length - 1) * fraction, low = Math.floor(position), weight = position - low;
-  return sorted[low] * (1 - weight) + sorted[Math.ceil(position)] * weight;
-}
-function randomGenerator(seed: number): () => number {
-  let state = seed >>> 0;
-  // Mulberry32: fixed integer arithmetic, reproducible across Node and browser runtimes.
-  return () => {
-    state = (state + 0x6d2b79f5) >>> 0;
-    let value = Math.imul(state ^ (state >>> 15), 1 | state);
-    value ^= value + Math.imul(value ^ (value >>> 7), 61 | value);
-    return ((value ^ (value >>> 14)) >>> 0) / 4294967296;
-  };
-}
+export interface WeeklyBootstrap { weeks: number; samples: number; seed: number; points: SimulationPoint[] }
 
 /** Offline candidate. Samples whole joint category vectors, never medians per day/category. */
 export function weeklyBootstrapRemainder(
@@ -47,9 +33,7 @@ export function weeklyBootstrapRemainder(
   const weeks = starts.map(start => Array.from({ length: 7 }, (_, day) => amounts.get(todayLocalISO(addDays(start, day))) ?? new Map<string | null, number>()));
   const dates: Date[] = [];
   for (let date = addDays(today, 1); date <= endOfMonth(today); date = addDays(date, 1)) dates.push(date);
-  let dateSeed = seed >>> 0;
-  for (const char of todayLocalISO(today)) dateSeed = Math.imul(dateSeed ^ char.charCodeAt(0), 16777619) >>> 0;
-  const random = randomGenerator(dateSeed);
+  const random = randomGenerator(dateSeed(seed, todayLocalISO(today)));
   const cumulative = dates.map(() => Array<number>(samples).fill(0));
   for (let path = 0; path < samples; path++) {
     let donor = 0, total = 0;
