@@ -13,13 +13,15 @@
  */
 
 import i18n from '@/i18n';
+import { subMonths as calendarSubMonths } from 'date-fns';
 import type { Transaction, Budget, Category, PortfolioAsset } from './types';
 import type { NetWorthSnapshot } from '@/hooks/useNetWorthHistory';
 import type { RecurringCandidate } from './recurringDetection';
-import { normalizeDescription } from './recurringDetection';
+import { detectRecurringCandidates, normalizeDescription } from './recurringDetection';
 import { calculateMedian } from './statistics';
 import { parseLocalDate } from './utils';
 import { MEDIAN_CALCULATION_DAYS } from './constants';
+import { FORECAST_DAYS, transactionEUR, validTransactions } from './spendingForecast';
 
 // --- Public types -----------------------------------------------------------
 
@@ -46,6 +48,9 @@ export interface Insight {
   value?: number;
   /** Category name when the insight is category-scoped (optional). */
   category?: string;
+  categoryId?: string;
+  details?: { label: string; value: string }[];
+  href?: string;
 }
 
 export interface InsightsInput {
@@ -93,11 +98,11 @@ const NET_WORTH_MILESTONE_DELTA = 1;
  *
  * Detectors are independent: each returns its own slice of insights, which
  * are then merged and sorted by severity (warning → positive → info) and,
- * within the same severity, by descending absolute value.
+ * within the same severity, by explicit kind priority and stable ID.
  */
 export function generateInsights(input: InsightsInput): Insight[] {
   const {
-    transactions,
+    transactions: rawTransactions,
     budgets,
     categories,
     openAssets,
@@ -106,20 +111,46 @@ export function generateInsights(input: InsightsInput): Insight[] {
     referenceDate = new Date(),
   } = input;
 
+  const transactions = validTransactions(rawTransactions)
+    .filter(transaction => parseLocalDate(transaction.date) <= referenceDate)
+    .map(transaction => ({ ...transaction, amount: transactionEUR(transaction), currency: 'EUR' as const }));
+
   const categoryName = buildCategoryNameMap(categories);
+  // Infer the usual price BEFORE the last charge, including already tracked series.
+  const latestDates = new Map<string, string>();
+  for (const transaction of transactions) {
+    if (transaction.type !== 'expense') continue;
+    const key = normalizeDescription(transaction.description);
+    if (key && transaction.date > (latestDates.get(key) ?? '')) latestDates.set(key, transaction.date);
+  }
+  const previousCharges = transactions.filter(transaction => transaction.type === 'expense'
+    && transaction.date < (latestDates.get(normalizeDescription(transaction.description)) ?? '')
+    && parseLocalDate(transaction.date) >= subDays(referenceDate, FORECAST_DAYS));
+  const priceCandidates = new Map(recurringCandidates.map(candidate => [candidate.normalizedKey, candidate]));
+  for (const candidate of detectRecurringCandidates(previousCharges)) priceCandidates.set(candidate.normalizedKey, candidate);
 
   const insights: Insight[] = [
     ...detectSpendingAnomalies(transactions, categoryName, referenceDate),
-    ...detectBudgetExceeded(transactions, budgets, categoryName, referenceDate),
+    ...detectBudgetExceeded(transactions, budgets.filter(budget => budget.currency === 'EUR'), categoryName, referenceDate),
     ...detectPortfolioLoss(openAssets),
-    ...detectNetWorthMilestone(netWorthHistory),
+    ...detectNetWorthMilestone(netWorthHistory.filter(snapshot => parseLocalDate(snapshot.date) <= referenceDate)),
     ...detectSavingMonth(transactions, referenceDate),
     ...detectCategoryTrend(transactions, categoryName, referenceDate),
     ...detectNewRecurring(recurringCandidates),
-    ...detectRecurringPriceChange(transactions, recurringCandidates),
+    ...detectRecurringPriceChange(transactions, [...priceCandidates.values()]),
   ];
 
-  return insights.sort(compareInsights);
+  // One category card: budget warnings take precedence, comparisons remain in details.
+  const grouped = new Map<string, Insight>();
+  for (const insight of insights) {
+    const key = insight.categoryId ?? insight.id;
+    const existing = grouped.get(key);
+    if (!existing) { grouped.set(key, insight); continue; }
+    const primary = insight.kind === 'budget_exceeded' ? insight : existing;
+    const secondary = primary === insight ? existing : insight;
+    grouped.set(key, { ...primary, details: [...(primary.details ?? []), ...(secondary.details ?? [])] });
+  }
+  return [...grouped.values()].sort(compareInsights);
 }
 
 // --- Detectors --------------------------------------------------------------
@@ -141,8 +172,8 @@ function detectSpendingAnomalies(
     (t) => t.type === 'expense' && t.category_id && parseLocalDate(t.date) >= windowStart
   );
 
-  // Group monthly totals by category (exclude the current month from the baseline).
-  const monthlyByCategory = new Map<string, number[]>();
+  // Sum each historical month BEFORE taking a median; match the elapsed days.
+  const monthlyByCategory = new Map<string, Map<string, number>>();
   const currentByCategory = new Map<string, number>();
 
   for (const t of expenses) {
@@ -151,16 +182,17 @@ function detectSpendingAnomalies(
     const amount = Number(t.amount);
     if (mk === currentMonthKey) {
       currentByCategory.set(cat, (currentByCategory.get(cat) ?? 0) + amount);
-    } else {
-      if (!monthlyByCategory.has(cat)) monthlyByCategory.set(cat, []);
-      monthlyByCategory.get(cat)!.push(amount);
+    } else if (parseLocalDate(t.date).getDate() <= referenceDate.getDate()) {
+      const months = monthlyByCategory.get(cat) ?? new Map<string, number>();
+      months.set(mk, (months.get(mk) ?? 0) + amount);
+      monthlyByCategory.set(cat, months);
     }
   }
 
   const insights: Insight[] = [];
   for (const [catId, currentAmount] of currentByCategory) {
     if (currentAmount < ANOMALY_MIN_AMOUNT) continue;
-    const medians = monthlyByCategory.get(catId);
+    const medians = comparableMonths(transactions, monthlyByCategory.get(catId) ?? new Map(), referenceDate, windowStart);
     if (!medians || medians.length === 0) continue;
     const median = calculateMedian(medians);
     if (median <= 0) continue;
@@ -172,13 +204,21 @@ function detectSpendingAnomalies(
         kind: 'spending_anomaly',
         severity: 'warning',
         title: i18n.t('Spesa anomala in {{name}}', { name }),
-        message: i18n.t('Hai speso {{amount}} questo mese, +{{pct}}% rispetto alla mediana mensile ({{median}}).', {
+        message: i18n.t('Hai speso {{amount}} nei primi {{days}} giorni: +{{pct}}% rispetto agli stessi giorni dei mesi precedenti ({{median}}).', {
+          days: referenceDate.getDate(),
           amount: formatEur(currentAmount),
           pct,
           median: formatEur(median),
         }),
         value: currentAmount - median,
         category: name,
+        categoryId: catId,
+        href: '/transactions',
+        details: [
+          { label: i18n.t('Spesa nel periodo corrente'), value: formatEur(currentAmount) },
+          { label: i18n.t('Mediana degli stessi giorni'), value: formatEur(median) },
+          { label: i18n.t('Mesi confrontati'), value: String(medians.length) },
+        ],
       });
     }
   }
@@ -224,6 +264,13 @@ function detectBudgetExceeded(
         }),
         value: over,
         category: name,
+        categoryId: b.category_id,
+        href: '/budget',
+        details: [
+          { label: i18n.t('Spesa del mese'), value: formatEur(spent) },
+          { label: i18n.t('Budget della categoria'), value: formatEur(b.amount) },
+          { label: i18n.t('Superamento'), value: formatEur(over) },
+        ],
       });
     }
   }
@@ -253,6 +300,7 @@ function detectPortfolioLoss(openAssets: PortfolioAsset[]): Insight[] {
           pct,
         }),
         value: plPct,
+        href: '/portfolio',
       });
     }
   }
@@ -301,6 +349,7 @@ function detectSavingMonth(transactions: Transaction[], referenceDate: Date): In
     const d = parseLocalDate(t.date);
     if (d < windowStart) continue;
     const mk = monthKey(d);
+    if (mk !== currentMonthKey && d.getDate() > referenceDate.getDate()) continue;
     const signed = t.type === 'income' ? Number(t.amount) : -Number(t.amount);
     if (mk === currentMonthKey) {
       currentNet += signed;
@@ -320,7 +369,7 @@ function detectSavingMonth(transactions: Transaction[], referenceDate: Date): In
         kind: 'saving_month',
         severity: 'positive',
         title: i18n.t('Ottimo mese di risparmio! 💪'),
-        message: i18n.t('Stai risparmiando {{amount}} questo mese, +{{pct}}% rispetto alla media annua ({{average}}).', {
+        message: i18n.t('Stai risparmiando {{amount}} questo mese: +{{pct}}% rispetto agli stessi giorni dei mesi precedenti ({{average}}).', {
           amount: formatEur(currentNet),
           pct,
           average: formatEur(avgMonthly),
@@ -341,12 +390,11 @@ function detectCategoryTrend(
   categoryName: Map<string, string>,
   referenceDate: Date
 ): Insight[] {
-  const windowStart = subMonths(referenceDate, 12);
-  const recentStart = subMonths(referenceDate, 3);
+  const windowStart = new Date(referenceDate.getFullYear(), referenceDate.getMonth() - 12, 1);
+  const recentStart = new Date(referenceDate.getFullYear(), referenceDate.getMonth() - 3, 1);
   const recentMonthKey = monthKey(referenceDate);
 
-  const totals12 = new Map<string, number[]>();
-  const totals3 = new Map<string, number[]>();
+  const totals12 = new Map<string, Map<string, number>>();
 
   for (const t of transactions) {
     if (t.type !== 'expense' || !t.category_id) continue;
@@ -355,14 +403,16 @@ function detectCategoryTrend(
     const mk = monthKey(d);
     const amount = Number(t.amount);
     if (mk === recentMonthKey) continue; // exclude current (incomplete) month
-    pushToMap(totals12, t.category_id, amount);
-    if (d >= recentStart) pushToMap(totals3, t.category_id, amount);
+    const months = totals12.get(t.category_id) ?? new Map<string, number>();
+    months.set(mk, (months.get(mk) ?? 0) + amount);
+    totals12.set(t.category_id, months);
   }
 
   const insights: Insight[] = [];
-  for (const [catId, recent] of totals3) {
+  for (const [catId, months] of totals12) {
+    const recent = comparableMonths(transactions, months, referenceDate, recentStart);
     if (recent.length < 2) continue;
-    const baseline = totals12.get(catId);
+    const baseline = comparableMonths(transactions, months, referenceDate, windowStart);
     if (!baseline || baseline.length === 0) continue;
     const median3 = calculateMedian(recent);
     const median12 = calculateMedian(baseline);
@@ -383,6 +433,12 @@ function detectCategoryTrend(
         }),
         value: median3 - median12,
         category: name,
+        categoryId: catId,
+        href: '/transactions',
+        details: [
+          { label: i18n.t('Mediana mensile recente'), value: formatEur(median3) },
+          { label: i18n.t('Mediana mensile storica'), value: formatEur(median12) },
+        ],
       });
     }
   }
@@ -412,6 +468,7 @@ function detectNewRecurring(candidates: RecurringCandidate[]): Insight[] {
       num: c.occurrenceCount,
     }),
     value: c.medianAmount,
+    href: '/recurring',
   }));
 }
 
@@ -446,19 +503,25 @@ function detectRecurringPriceChange(
     const change = (latest.amount - c.medianAmount) / c.medianAmount;
     if (Math.abs(change) >= RECURRING_PRICE_CHANGE) {
       const pct = Math.round(change * 100);
-      const dir = change > 0 ? i18n.t('aumentato') : i18n.t('diminuito');
+      const dir = change > 0 ? i18n.t('aumentata') : i18n.t('diminuita');
       const severity = change > 0 ? 'warning' : 'info';
       insights.push({
         id: `recurring_price_change:${c.normalizedKey}`,
         kind: 'recurring_price_change',
         severity,
         title: i18n.t('Spesa ricorrente {{dir}}: {{description}}', { dir, description: c.description }),
-        message: i18n.t("L'ultimo importo ({{latest}}) è {{pct}}% rispetto al solito ({{median}}).", {
+        message: i18n.t("L'ultimo addebito è {{latest}}: {{pct}}% rispetto all'importo abituale di {{median}}.", {
           latest: formatEur(latest.amount),
-          pct,
+          pct: change > 0 ? `+${pct}` : String(pct),
           median: formatEur(c.medianAmount),
         }),
         value: latest.amount - c.medianAmount,
+        href: '/recurring',
+        details: [
+          { label: i18n.t('Ultimo addebito'), value: formatEur(latest.amount) },
+          { label: i18n.t('Importo abituale'), value: formatEur(c.medianAmount) },
+          { label: i18n.t('Variazione'), value: `${pct}%` },
+        ],
       });
     }
   }
@@ -476,7 +539,9 @@ const SEVERITY_RANK: Record<InsightSeverity, number> = {
 function compareInsights(a: Insight, b: Insight): number {
   const sev = SEVERITY_RANK[a.severity] - SEVERITY_RANK[b.severity];
   if (sev !== 0) return sev;
-  return Math.abs(b.value ?? 0) - Math.abs(a.value ?? 0);
+  // Explicit kind priority avoids comparing euros with ratios or portfolio values.
+  const order: InsightKind[] = ['budget_exceeded', 'spending_anomaly', 'recurring_price_change', 'portfolio_loss', 'saving_month', 'net_worth_milestone', 'category_trend', 'new_recurring_detected'];
+  return order.indexOf(a.kind) - order.indexOf(b.kind) || a.id.localeCompare(b.id);
 }
 
 // --- Helpers ----------------------------------------------------------------
@@ -498,14 +563,22 @@ function subDays(d: Date, days: number): Date {
 }
 
 function subMonths(d: Date, months: number): Date {
-  const r = new Date(d.getTime());
-  r.setMonth(r.getMonth() - months);
-  return r;
+  return calendarSubMonths(d, months);
 }
 
-function pushToMap(map: Map<string, number[]>, key: string, value: number): void {
-  if (!map.has(key)) map.set(key, []);
-  map.get(key)!.push(value);
+/** Complete historical months, including zero-spend months in the observed window. */
+function comparableMonths(transactions: Transaction[], totals: Map<string, number>, reference: Date, windowStart: Date): number[] {
+  const earliest = transactions.reduce((value, transaction) => Math.min(value, parseLocalDate(transaction.date).getTime()), reference.getTime());
+  const start = new Date(Math.max(earliest, windowStart.getTime()));
+  const cursor = new Date(start.getFullYear(), start.getMonth(), 1);
+  if (cursor < start) cursor.setMonth(cursor.getMonth() + 1);
+  const end = new Date(reference.getFullYear(), reference.getMonth(), 1);
+  const values: number[] = [];
+  while (cursor < end) {
+    values.push(totals.get(monthKey(cursor)) ?? 0);
+    cursor.setMonth(cursor.getMonth() + 1);
+  }
+  return values;
 }
 
 function frequencyLabel(f: RecurringCandidate['frequency']): string {
@@ -524,6 +597,7 @@ function frequencyLabel(f: RecurringCandidate['frequency']): string {
 /** Format a EUR amount the same way the Dashboard does. */
 export function formatEur(n: number): string {
   return `${n.toLocaleString('it-IT', {
+    useGrouping: true,
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   })}€`;

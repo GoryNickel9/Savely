@@ -1,1 +1,4 @@
-{}
+{
+  "{{count}} segnali_one": "{{count}} segnale",
+  "{{count}} segnali_other": "{{count}} segnali"
+}

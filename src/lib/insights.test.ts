@@ -413,3 +413,52 @@ describe('ordinamento', () => {
     expect(warningIdx).toBeLessThan(positiveIdx);
   });
 });
+
+describe('regressioni sui confronti', () => {
+  it('rileva un rincaro anche quando la ricorrenza è già tracciata e non compare tra i suggerimenti', () => {
+    const transactions = ['2026-02-01', '2026-03-01', '2026-04-01', '2026-05-01'].map(date => tx({ type: 'expense', amount: 12, date, description: 'Streaming' }));
+    transactions.push(tx({ type: 'expense', amount: 15, date: '2026-06-01', description: 'Streaming' }));
+    const insight = generateInsights(baseInput({ transactions })).find(item => item.kind === 'recurring_price_change');
+    expect(insight?.severity).toBe('warning');
+    expect(insight?.details?.find(detail => detail.label === 'Variazione')?.value).toBe('25%');
+  });
+  it('non scambia quattro transazioni da 50 euro per una mediana mensile di 50 euro', () => {
+    const transactions = ['2026-02', '2026-03', '2026-04', '2026-05', '2026-06'].flatMap(month =>
+      [1, 4, 8, 12].map(day => tx({ type: 'expense', amount: 50, date: `${month}-${String(day).padStart(2, '0')}` })),
+    );
+    expect(generateInsights(baseInput({ transactions })).some(insight => insight.kind === 'spending_anomaly')).toBe(false);
+  });
+
+  it('confronta gli stessi giorni ed esclude spese successive al giorno di riferimento', () => {
+    const transactions = ['2026-02', '2026-03', '2026-04', '2026-05'].flatMap(month => [
+      tx({ type: 'expense', amount: 100, date: `${month}-01` }),
+      tx({ type: 'expense', amount: 900, date: `${month}-25` }),
+    ]);
+    transactions.push(tx({ type: 'expense', amount: 200, date: '2026-06-10' }));
+    transactions.push(tx({ type: 'expense', amount: 9000, date: '2026-06-30' }));
+    const anomaly = generateInsights(baseInput({ transactions })).find(insight => insight.kind === 'spending_anomaly');
+    expect(anomaly?.message).toContain('+100%');
+    expect(anomaly?.details?.[0].value).toBe('200,00€');
+  });
+
+  it('raggruppa budget e anomalia della stessa categoria, conservando i confronti', () => {
+    const transactions = ['2026-02-01', '2026-03-01', '2026-04-01', '2026-05-01'].map(date => tx({ type: 'expense', amount: 100, date }));
+    transactions.push(tx({ type: 'expense', amount: 500, date: '2026-06-10' }));
+    const categoryInsights = generateInsights(baseInput({ transactions, budgets: [budget()] })).filter(insight => insight.categoryId === 'cat1');
+    expect(categoryInsights).toHaveLength(1);
+    expect(categoryInsights[0].kind).toBe('budget_exceeded');
+    expect(categoryInsights[0].details?.some(detail => detail.label === 'Mediana degli stessi giorni')).toBe(true);
+  });
+
+  it('somma le transazioni mensili anche per il trend', () => {
+    const transactions = ['2025-11', '2025-12', '2026-01', '2026-02', '2026-03', '2026-04', '2026-05'].flatMap(month =>
+      [1, 10, 20].map(day => tx({ type: 'expense', amount: 100, date: `${month}-${String(day).padStart(2, '0')}` })),
+    );
+    expect(generateInsights(baseInput({ transactions })).some(insight => insight.kind === 'category_trend')).toBe(false);
+  });
+
+  it('converte in euro prima di confrontare il budget', () => {
+    const transactions = [tx({ type: 'expense', amount: 250, currency: 'USD', exchange_rate_eur: 0.5, date: '2026-06-10' })];
+    expect(generateInsights(baseInput({ transactions, budgets: [budget()] })).some(insight => insight.kind === 'budget_exceeded')).toBe(false);
+  });
+});

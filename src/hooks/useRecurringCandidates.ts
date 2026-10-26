@@ -40,10 +40,11 @@ export function useRecurringCandidates(): {
   candidates: RecurringCandidate[];
   ignore: (normalizedKey: string) => void;
   isLoading: boolean;
+  isError: boolean;
 } {
   const { user } = useAuth();
-  const { transactions, isLoading: txLoading } = useTransactions();
-  const { recurringExpenses } = useRecurringExpenses();
+  const { transactions, isLoading: txLoading, isError: txError } = useTransactions();
+  const { recurringExpenses, isLoading: recurringLoading, isError: recurringError } = useRecurringExpenses();
   const [ignored, setIgnored] = useState<Set<string>>(new Set());
 
   useEffect(() => {
@@ -83,7 +84,7 @@ export function useRecurringCandidates(): {
     });
   };
 
-  return { candidates, ignore, isLoading: txLoading };
+  return { candidates, ignore, isLoading: txLoading || recurringLoading, isError: txError || recurringError };
 }
 
 // Mirror of normalizeDescription from the lib, kept locally to avoid importing

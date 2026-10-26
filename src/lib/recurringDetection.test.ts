@@ -10,6 +10,16 @@ function tx(date: string, amount: number, description: string): DetectionTransac
   return { date, amount, description, type: 'expense' };
 }
 
+it('mantiene opzionalmente la cadenza dopo un ultimo rincaro senza cambiare i suggerimenti standard', () => {
+  const transactions = ['2026-05-10', '2026-06-10', '2026-07-10', '2026-08-10'].map(date => tx(date, 12, 'Streaming'));
+  transactions.push(tx('2026-09-10', 15, 'Streaming'));
+  expect(detectRecurringCandidates(transactions)).toHaveLength(0);
+  const candidates = detectRecurringCandidates(transactions, { allowLatestPriceChange: true });
+  expect(candidates).toHaveLength(1);
+  expect(candidates[0].medianAmount).toBe(15);
+  expect(candidates[0].confidence).toBe('medium');
+});
+
 describe('normalizeDescription', () => {
   it('lowercase + trim + collapse spazi', () => {
     expect(normalizeDescription('  NETFLIX   COM  ')).toBe('netflix com');

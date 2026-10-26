@@ -33,7 +33,7 @@ export function useRecurringExpenses() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
-  const { data: recurringExpenses = [], isLoading } = useQuery({
+  const { data: recurringExpenses = [], isLoading, isError } = useQuery({
     queryKey: ['recurring_expenses', user?.id],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -195,6 +195,7 @@ export function useRecurringExpenses() {
 
   return {
     recurringExpenses,
+    isError,
     isLoading,
     createRecurringExpense,
     updateRecurringExpense,

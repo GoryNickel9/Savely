@@ -9,7 +9,7 @@ export function useTransactions() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
-  const { data: transactions = [], isLoading } = useQuery({
+  const { data: transactions = [], isLoading, isError } = useQuery({
     queryKey: ['transactions', user?.id],
     queryFn: async ({ signal }) => {
       const allTransactions: Transaction[] = [];
@@ -122,6 +122,7 @@ export function useTransactions() {
   return {
     transactions,
     isLoading,
+    isError,
     createTransaction,
     updateTransaction,
     deleteTransaction,

@@ -22,7 +22,7 @@ export function usePortfolio() {
   const queryClient = useQueryClient();
   const [isUpdatingPrices, setIsUpdatingPrices] = useState(false);
 
-  const { data: assets = [], isLoading } = useQuery({
+  const { data: assets = [], isLoading, isError } = useQuery({
     queryKey: ['portfolio', user?.id],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -146,6 +146,7 @@ export function usePortfolio() {
     openAssets,
     closedAssets,
     isLoading,
+    isError,
     createAsset,
     updateAsset,
     deleteAsset,

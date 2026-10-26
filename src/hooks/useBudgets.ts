@@ -7,7 +7,7 @@ export function useBudgets() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
-  const { data: budgets = [], isLoading } = useQuery({
+  const { data: budgets = [], isLoading, isError } = useQuery({
     queryKey: ['budgets', user?.id],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -82,6 +82,7 @@ export function useBudgets() {
   return {
     budgets,
     isLoading,
+    isError,
     createBudget,
     updateBudget,
     deleteBudget,

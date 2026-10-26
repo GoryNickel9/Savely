@@ -66,6 +66,8 @@ L'app è organizzata in **moduli**. Le sezioni base sono disponibili per ogni ut
 
 Il menu laterale, condiviso da desktop e drawer mobile, raggruppa le voci in Dashboard (Dashboard, Transazioni), Budgeting (Budget, Budget Familiare), Finance (Portfolio, Insights, Grafici) e Altro (Poker, Fumo, FIRE, TCG, Libreria). Le voci riservate compaiono solo con il relativo permesso; i gruppi vuoti sono nascosti. Uscite Ricorrenti resta disponibile alla route `/recurring`, ma non compare nel menu.
 
+Insights mostra una previsione di fine mese basata sugli ultimi 180 giorni, il budget mensile ottenuto sommando i budget delle categorie e segnali con confronti espandibili. Il modello, le verifiche e i limiti sono descritti in [Insights e previsione delle spese](docs/INSIGHTS.md).
+
 ### 🧩 Moduli base (tutti gli utenti autenticati)
 
 #### 📊 Dashboard (`/`)

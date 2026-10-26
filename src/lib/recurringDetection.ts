@@ -97,7 +97,8 @@ export function matchFrequency(gaps: number[]): FrequencyMatch | null {
  *     - compute the suggested next due date from the last occurrence.
  */
 export function detectRecurringCandidates(
-  transactions: DetectionTransaction[]
+  transactions: DetectionTransaction[],
+  options: { allowLatestPriceChange?: boolean } = {},
 ): RecurringCandidate[] {
   // Filter expenses with descriptions.
   const expenses = transactions.filter(
@@ -124,7 +125,14 @@ export function detectRecurringCandidates(
     const amounts = group.map((t) => Number(t.amount));
     const minAmt = Math.min(...amounts);
     const maxAmt = Math.max(...amounts);
-    if (minAmt <= 0 || maxAmt / minAmt > AMOUNT_VARIANCE) continue;
+    if (minAmt <= 0 || !Number.isFinite(maxAmt)) continue;
+    const priceChanged = maxAmt / minAmt > AMOUNT_VARIANCE;
+    if (priceChanged) {
+      // Forecasts may retain an established cadence after one changed charge.
+      const previous = amounts.slice(0, -1);
+      if (!options.allowLatestPriceChange || previous.length < MIN_OCCURRENCES
+        || Math.max(...previous) / Math.min(...previous) > AMOUNT_VARIANCE) continue;
+    }
 
     // Compute day-gaps between consecutive occurrences.
     const dates = group.map((t) => new Date(t.date + 'T00:00:00Z').getTime());
@@ -141,7 +149,7 @@ export function detectRecurringCandidates(
     const suggestedNextMs = lastDateMs + match.expectedDays * 24 * 60 * 60 * 1000;
     const suggestedNextDueDate = new Date(suggestedNextMs).toISOString().slice(0, 10);
 
-    const medianAmount = median(amounts);
+    const medianAmount = priceChanged ? amounts[amounts.length - 1] : median(amounts);
     const confidence: RecurringCandidate['confidence'] =
       group.length >= 4 && maxAmt / minAmt <= 1.001 ? 'high' : 'medium';
 
