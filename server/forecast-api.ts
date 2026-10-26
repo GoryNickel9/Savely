@@ -3,7 +3,7 @@ import type { VercelRequest } from '../api/vercel.js';
 import { forecastResponseSchema } from '../src/lib/forecastContract.js';
 import type { Transaction, Budget, Category } from '../src/lib/types.js';
 import { occasionalSpending } from './occasional-spending.js';
-import { forecastSpending, type RecurringExpense } from './spending-forecast.js';
+import { FORECAST_MODEL_VERSION, forecastSpending, type RecurringExpense } from './spending-forecast.js';
 
 export class ForecastError extends Error {
   constructor(public readonly status: number, message: string) { super(message); }
@@ -77,14 +77,14 @@ export async function getForecast(req: VercelRequest, now = new Date()) {
     categories.some(row => !['regular', 'occasional'].includes(String(row.spending_pattern)) || !['income', 'expense'].includes(String(row.type)))) {
     throw new ForecastError(422, 'Invalid financial data');
   }
-  const forecast = forecastSpending(transactions as unknown as Transaction[], budgets as unknown as Budget[], recurring as unknown as RecurringExpense[], asOf);
+  const forecast = forecastSpending(transactions as unknown as Transaction[], budgets as unknown as Budget[], recurring as unknown as RecurringExpense[], asOf, categories as unknown as Category[]);
   const money = (value: number | null) => {
     if (value === null) return null;
     if (!Number.isFinite(value) || value < 0 || !Number.isSafeInteger(Math.round(value * 100))) throw new ForecastError(422, 'Forecast amount outside supported range');
     return value.toFixed(2);
   };
   return forecastResponseSchema.parse({
-    schemaVersion: 1, modelVersion: 'weekday-history-v1', userId, timeZone, generatedAt: now.toISOString(),
+    schemaVersion: 1, modelVersion: FORECAST_MODEL_VERSION, userId, timeZone, generatedAt: now.toISOString(),
     inputSha256: createHash('sha256').update(JSON.stringify([asOf, timeZone, transactions, budgets, recurring, categories])).digest('hex'),
     occasionalSpending: occasionalSpending(transactions as unknown as Transaction[], budgets as unknown as Budget[], categories as unknown as Category[], asOf),
     forecast: { ...forecast, spent: money(forecast.spent), scheduled: money(forecast.scheduled), variable: money(forecast.variable),

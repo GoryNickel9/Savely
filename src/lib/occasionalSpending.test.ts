@@ -33,6 +33,7 @@ describe('server-owned occasional budget comparison', () => {
     expect(run(rows).categories[0]).toMatchObject({ averageMonthly: '30.00', exceeded: true, over: '5.00' });
     expect(insights(rows).find(signal => signal.kind === 'budget_exceeded')).toMatchObject({ value: 5 });
     expect(insights(rows)[0].message).toContain('12 mesi');
+    expect(insights(rows)[0].message).not.toContain('Sono inclusi i mesi a zero');
   });
   it('keeps the fixed divisor with sparse history and excludes old, future, deleted, income and unrelated rows', () => {
     const rows = [tx(asOf, 100), tx('2025-10-31', 900), tx('2026-10-27', 900), tx(asOf, 900, { deleted_at: asOf }),

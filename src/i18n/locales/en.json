@@ -1232,8 +1232,7 @@
   "Andamento della spesa registrata e prevista nel mese": "Actual and projected spending during the month",
   "Giorno {{day}}": "Day {{day}}",
   "Previsto": "Projected",
-  "Abitudini degli ultimi {{days}} giorni": "Spending habits over the last {{days}} days",
-  "Storico disponibile: {{days}} giorni": "Available history: {{days}} days",
+  "Storico disponibile per le spese regolari: {{days}} giorni": "Available history for regular expenses: {{days}} days",
   "Da guardare questo mese": "Worth checking this month",
   "{{count}} segnali_one": "{{count}} signal",
   "{{count}} segnali_other": "{{count}} signals",
@@ -1277,5 +1276,6 @@
   "Spesa mensile di riferimento": "Reference monthly spending",
   "Calcolo in corso…": "Calculating…",
   "Confronto delle spese saltuarie non disponibile. Riprova.": "Occasional spending comparison unavailable. Please retry.",
-  "La media mensile su 12 mesi è {{spent}}, rispetto a {{budget}} attesi ({{over}} oltre). Sono inclusi i mesi a zero e il mese corrente fino a oggi.": "The 12-month monthly average is {{spent}}, compared with {{budget}} expected ({{over}} over). Zero-spend months and the current month through today are included."
+  "La media mensile su 12 mesi è {{spent}}, rispetto a {{budget}} attesi ({{over}} oltre).": "The 12-month monthly average is {{spent}}, compared with {{budget}} expected ({{over}} over).",
+  "Regolari: {{days}} giorni; saltuarie: media su 12 mesi.": "Regular: {{days}} days; occasional: 12-month average."
 }

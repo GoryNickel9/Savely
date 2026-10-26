@@ -20,12 +20,16 @@ try {
       description: `merchant-${merchant}`, deleted_at: null, created_at: iso, updated_at: iso,
     });
   }
+  const mixed = process.argv.includes('--mixed');
+  const categories = mixed ? Array.from({ length: 10 }, (_, index) => ({
+    id: `category-${index}`, type: 'expense', spending_pattern: index < 5 ? 'occasional' : 'regular', deleted_at: null,
+  })) : [];
   const run = () => {
-    const forecast = forecastSpending(transactions, [], [], '2026-10-20');
-    assert.equal(forecast.total, 3100);
+    const forecast = forecastSpending(transactions, [], [], '2026-10-20', categories);
+    assert.equal(forecast.total, mixed ? 2817.61 : 3100);
     assert.equal(forecast.spent, 2000);
-    assert.equal(forecast.variable, 1100);
-    generateInsights({ transactions, budgets: [], categories: [], openAssets: [], netWorthHistory: [], referenceDate });
+    assert.equal(forecast.variable, mixed ? 817.61 : 1100);
+    generateInsights({ transactions, budgets: [], categories, openAssets: [], netWorthHistory: [], referenceDate });
   };
   for (let warmup = 0; warmup < 3; warmup++) run();
   const times = [];
@@ -33,7 +37,7 @@ try {
     const start = performance.now(); run(); times.push(performance.now() - start);
   }
   times.sort((a, b) => a - b);
-  console.log(JSON.stringify({ benchmark: 'forecast-and-insights', transactions: transactions.length, samples: times.length, medianMs: +((times[4] + times[5]) / 2).toFixed(2), maxMs: +times.at(-1).toFixed(2), cpu: cpus()[0]?.model, logicalCPUs: cpus().length, ramGiB: +(totalmem() / 1024 ** 3).toFixed(1), os: platform(), node: process.version, precision: 'float64', seed: 'deterministic fixture', threads: 1 }, null, 2));
+  console.log(JSON.stringify({ benchmark: 'forecast-and-insights', scenario: mixed ? 'regular-and-occasional' : 'regular', transactions: transactions.length, samples: times.length, medianMs: +((times[4] + times[5]) / 2).toFixed(2), maxMs: +times.at(-1).toFixed(2), cpu: cpus()[0]?.model, logicalCPUs: cpus().length, ramGiB: +(totalmem() / 1024 ** 3).toFixed(1), os: platform(), node: process.version, precision: 'float64', seed: 'deterministic fixture', threads: 1 }, null, 2));
 } finally {
   await server.close();
 }

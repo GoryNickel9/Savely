@@ -63,7 +63,7 @@ it('reads complete owned pages and returns a versioned exact-cent response', asy
   const result = await getForecast(req, now);
   expect(result.forecast.spent).toBe('0.00'); expect(result.forecast.historyDays).toBe(167);
   expect(calls.some(url => url.searchParams.get('offset') === '500')).toBe(true);
-  expect(result.modelVersion).toBe('weekday-history-v1');
+  expect(result.modelVersion).toBe('weekday-regular-occasional-v2');
   expect(decodeForecast(result, owner, 'Europe/Rome').forecast.total).not.toBeNull();
 });
 it('serves the same 12-month comparison to both clients from owned data and includes classification in the hash', async () => {
@@ -75,6 +75,8 @@ it('serves the same 12-month comparison to both clients from owned data and incl
     categories: [{ categoryId: 'dentist', averageMonthly: '25.00', expectedMonthly: '25.00', exceeded: false }],
   });
   expect(result.forecast.spent).toBe('100.00');
+  expect(result.forecast.variable).toBe('12.90');
+  expect(result.forecast.total).toBe('112.90');
   expect(result.inputSha256).not.toBe(baseline.inputSha256);
 });
 it('rejects missing authentication and user-supplied datasets before any read', async () => {

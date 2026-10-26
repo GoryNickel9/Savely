@@ -1,6 +1,16 @@
 # Previsione condivisa — schema 1
 
-Web e Android consumano lo stesso motore in `server/spending-forecast.ts`. La migrazione conserva il modello `weekday-history-v1`: massimo 180 giorni, minimo 56, media delle spese variabili per categoria e giorno della settimana, con programmate e ricorrenze deduplicate. Il confronto con il budget delle categorie saltuarie viene calcolato dal server in `server/occasional-spending.ts`. Gli altri segnali mantengono i calcoli esistenti nei client.
+Web e Android consumano lo stesso motore in `server/spending-forecast.ts`. Il modello `weekday-regular-occasional-v2` distingue categorie regolari e saltuarie. Le regolari conservano la media variabile per giorno della settimana su 180 giorni, con minimo 56 giorni di storico. Le saltuarie usano la media variabile su 12 mesi di calendario per stimare soltanto i giorni restanti. Il confronto con il budget continua a essere calcolato dal server in `server/occasional-spending.ts`. Gli altri segnali mantengono i calcoli esistenti nei client.
+
+## Previsione per le categorie saltuarie
+
+La finestra è il mese corrente fino alla data del server e gli 11 precedenti, compresi i mesi a zero. Il server somma in centesimi le spese effettive variabili della categoria nella finestra; i movimenti appartenenti a ricorrenti configurate sono esclusi dalla base variabile. La media mensile non arrotondata è `M = somma / 12`. Indicati con `D` i giorni del mese e con `d` quelli dopo la data di riferimento, la stima restante è `E = M × d / D`.
+
+Le transazioni future variabili già programmate per la categoria, per un totale `P`, sono aggiunte per intero alle programmate. La componente ancora da stimare è `max(0, E − P)`, distribuita uniformemente sui giorni restanti. Le categorie regolari conservano invece la sostituzione della stima del singolo giorno. Le ricorrenti configurate mantengono priorità e deduplicazione con i pagamenti; una categoria esplicitamente saltuaria è esclusa dal rilevamento automatico delle ricorrenze.
+
+Esempio indipendente, coperto dalla fixture `occasional-forecast.json`: tre pagamenti da 100 EUR producono `M = 25 EUR/mese`. Al 26 ottobre restano 5 giorni su 31: `E = 4,032258… EUR`. Se questo mese sono stati pagati 100 EUR, il totale previsto è 104,03 EUR. Una transazione futura della stessa categoria da 100 EUR porta invece a 200 EUR: 100 già spesi, 100 programmati e nessuna aggiunta variabile. Una programmata da 1 EUR lascia 3,03 EUR di variabili e conserva il totale previsto di 104,03 EUR. I totali sono arrotondati dopo l'accumulo; nessuna spesa già sostenuta viene diluita nella media.
+
+Questo modello presume una frequenza stazionaria delle spese saltuarie e uno storico completo. Non dichiara un miglioramento di accuratezza senza backtest, né una fascia di confidenza. Il pagamento già sostenuto non rende impossibili altri pagamenti nel mese: l'attesa residua può rimanere positiva. A fine mese il residuo è zero. Il contratto resta schema 1; il nuovo `modelVersion` permette di riconoscere la regola applicata anche nei decoder Android precedenti.
 
 ## Richiesta e autenticazione
 

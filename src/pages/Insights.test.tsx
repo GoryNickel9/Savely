@@ -36,6 +36,9 @@ it('mostra previsione, somma dei budget e margine senza testi dimostrativi o lin
   expect(screen.getByText('1.800,00€')).toBeTruthy();
   expect(screen.getByText('Somma dei budget mensili delle categorie')).toBeTruthy();
   expect(screen.getByText('Margine previsto:')).toBeTruthy();
+  expect(screen.getByText('Regolari: 180 giorni; saltuarie: media su 12 mesi.')).toBeTruthy();
+  expect(screen.getByText('Storico disponibile per le spese regolari: 180 giorni')).toBeTruthy();
+  expect(screen.queryByText('Abitudini degli ultimi 180 giorni')).toBeNull();
   expect(screen.queryByRole('link', { name: 'Dashboard' })).toBeNull();
   expect(screen.queryByText(/Il totale unisce|In questa anteprima|vengono trattate separatamente|non vengono contate due volte/)).toBeNull();
 });

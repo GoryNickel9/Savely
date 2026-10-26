@@ -68,7 +68,7 @@ export default function SpendingForecastCard({ forecast }: { forecast: SpendingF
         </div>
       </CardContent>
       <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border/60 px-5 py-3 text-xs text-muted-foreground sm:px-6">
-        <span className="inline-flex items-center gap-1.5"><CalendarDays className="h-3.5 w-3.5" aria-hidden />{t('Abitudini degli ultimi {{days}} giorni', { days: FORECAST_DAYS })}</span><span>{t('Storico disponibile: {{days}} giorni', { days: forecast.historyDays })}</span>
+        <span className="inline-flex items-center gap-1.5"><CalendarDays className="h-3.5 w-3.5" aria-hidden />{t('Regolari: {{days}} giorni; saltuarie: media su 12 mesi.', { days: FORECAST_DAYS })}</span><span>{t('Storico disponibile per le spese regolari: {{days}} giorni', { days: forecast.historyDays })}</span>
       </div>
     </Card>
   );

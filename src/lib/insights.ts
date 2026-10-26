@@ -270,7 +270,7 @@ function detectBudgetExceeded(
         severity: 'warning',
         title: i18n.t('Budget superato in {{name}}', { name }),
         message: i18n.t(occasional
-          ? 'La media mensile su 12 mesi è {{spent}}, rispetto a {{budget}} attesi ({{over}} oltre). Sono inclusi i mesi a zero e il mese corrente fino a oggi.'
+          ? 'La media mensile su 12 mesi è {{spent}}, rispetto a {{budget}} attesi ({{over}} oltre).'
           : 'Hai speso {{spent}} su un budget di {{budget}} ({{over}} oltre).', {
           spent: formatEur(spent),
           budget: formatEur(b.amount),
