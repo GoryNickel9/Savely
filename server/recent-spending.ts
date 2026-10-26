@@ -2,7 +2,7 @@ import type { Transaction } from '../src/lib/types.js';
 import { transactionEUR } from '../src/lib/spendingForecast.js';
 import { addDays, parseLocalDate, todayLocalISO, differenceInCalendarDays } from './forecast-calendar.js';
 
-export type ForecastModel = 'weekday-history-v1' | 'recent-weekday-v2' | 'robust-recent-weekday-v2';
+export type ForecastModel = 'weekday-history-v1' | 'recent-weekday-v2' | 'robust-recent-weekday-v2' | 'ordinary-extra-v3';
 export const RECENT_HALF_LIFE_DAYS = 56;
 export const WEEKDAY_PRIOR_DAYS = 4;
 

@@ -16,7 +16,7 @@ if (envelope.rows && envelope.rows.length !== 1) throw Error('Exactly one accoun
 const data = envelope.rows?.[0]?.dataset ?? envelope;
 if (!Array.isArray(data.transactions) || !Array.isArray(data.budgets) || !Array.isArray(data.recurringExpenses)) throw Error('Invalid account snapshot');
 const asOf = process.argv[4] ?? '2026-10-26';
-const models = ['weekday-history-v1', 'recent-weekday-v2', 'robust-recent-weekday-v2'];
+const models = ['weekday-history-v1', 'recent-weekday-v2', 'robust-recent-weekday-v2', 'ordinary-extra-v3'];
 const origins = [7, 14, 21, 26];
 const server = await createServer({ configFile: false, server: { middlewareMode: true, watch: null }, optimizeDeps: { noDiscovery: true }, appType: 'custom' });
 const started = performance.now();
@@ -100,7 +100,7 @@ try {
   const report = { asOf, snapshotAt:data.extractedAt, inputSha256:crypto.createHash('sha256').update(raw).digest('hex'),
     rows:rows.length, current, scores, intervals, conservativeReplay:Object.fromEntries(models.map(model=>[model,metrics(conservative,model)])),
     method:{lookbackDays:180,halfLifeDays:56,weekdayPriorDays:4,robustMinimumPositiveDays:12,robustMinimumActiveWeeks:8,robustCap:'Q3+3*(Q3-Q1)',origins,
-      developmentThrough:'2025-12',holdout:'2026-01 through 2026-09',configurationExcludedFromRetrospective:true,unavailableHistoricalRevisions:true},
+      developmentThrough:'2025-12',holdout:'2026-01 through 2026-09',configurationExcludedFromRetrospective:true,unavailableHistoricalRevisions:true, ordinaryExtraV3:{minPositiveDays:12,minActiveWeekShare:0.5,minCompleteWeeks:8,ordinary:'median full-week spending with half-smoothed weekday profile',extraordinary:'event frequency times average event amount',independentHoldout:false}},
     elapsedMs:round(performance.now()-started),folds };
   fs.writeFileSync(output,`${JSON.stringify(report,null,2)}\n`);
   console.log(JSON.stringify({...report,folds:undefined},null,2));
