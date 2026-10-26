@@ -11,11 +11,18 @@ const sourceRaw = fs.readFileSync(sourceFile, 'utf8').replace(/^\uFEFF/, '');
 const source = JSON.parse(sourceRaw);
 const snapshot = fs.readFileSync(path.join(root, 'private-dataset.json'), 'utf8').replace(/^\uFEFF/, '');
 assert.equal(crypto.createHash('sha256').update(snapshot).digest('hex'), source.inputSha256, 'Snapshot differs from previous comparison');
-const output = path.resolve(process.argv[2] ?? path.join(root, 'v8-comparison-7-14-21-28.json'));
+const compareQuarters = process.argv[2] === '--quarter-weights';
+const output = path.resolve(process.argv[compareQuarters ? 3 : 2] ?? path.join(root, `${compareQuarters ? 'v9' : 'v8'}-comparison-7-14-21-28.json`));
+const prior = compareQuarters ? JSON.parse(fs.readFileSync(path.join(root, 'v8-comparison-7-14-21-28.json'), 'utf8').replace(/^\uFEFF/, '')) : null;
+if (prior) {
+  assert.equal(prior.inputSha256, source.inputSha256);
+  assert.equal(prior.componentReportSha256, crypto.createHash('sha256').update(sourceRaw).digest('hex'));
+}
 const relative = path.relative(root, output);
 if (!relative || relative.startsWith('..') || path.isAbsolute(relative) || output === sourceFile || output === path.join(root, 'private-dataset.json')) throw Error('Report must stay in the ignored evaluation directory');
 const baseline = 'weekday-history-v1', weekly = 'weekly-block-bootstrap-v6', combined = 'equal-current-weekly-v8';
-const models = [baseline, weekly, combined], origins = [7, 14, 21, 28];
+const variants = [[combined, 2], ...(compareQuarters ? [['current75-weekly25-v9', 3], ['current25-weekly75-v9', 1]] : [])];
+const models = [baseline, weekly, ...variants.map(([model]) => model)], origins = [7, 14, 21, 28];
 assert.equal(source.method.candidate, weekly);
 assert.deepEqual(source.method.origins, origins);
 const months = source.method.months;
@@ -23,7 +30,7 @@ assert.equal(new Set(months).size, 38);
 const round = value => Math.round(value * 100) / 100;
 const server = await createServer({ configFile: false, server: { middlewareMode: true, watch: null }, optimizeDeps: { noDiscovery: true }, appType: 'custom' });
 try {
-  const { equalWeightForecastTotal } = await server.ssrLoadModule('/server/forecast-combination.ts');
+  const { quarterWeightForecastTotal } = await server.ssrLoadModule('/server/forecast-combination.ts');
   function combine(rows, expectedMonths) {
     assert.equal(rows.length, expectedMonths.length * origins.length);
     const dates = new Set();
@@ -34,12 +41,15 @@ try {
       assert(Number.isFinite(f.actual) && f.actual >= 0 && Number.isFinite(f.spent) && f.spent >= 0 && Number.isFinite(f.scheduled) && f.scheduled >= 0);
       const first = f.predictions[baseline], second = f.predictions[weekly];
       assert(Number.isFinite(first) && Number.isFinite(second));
-      const total = equalWeightForecastTotal(first, second);
+      const predictions = { [baseline]: first, [weekly]: second };
       assert(first + 0.00001 >= f.spent + f.scheduled && second + 0.00001 >= f.spent + f.scheduled);
-      assert(total + 0.00001 >= f.spent + f.scheduled);
-      assert(total >= Math.min(first, second) && total <= Math.max(first, second));
-      return { month: f.month, date: f.date, day: f.day, actual: f.actual, spent: f.spent, scheduled: f.scheduled,
-        predictions: { [baseline]: first, [weekly]: second, [combined]: total } };
+      for (const [model, quarters] of variants) {
+        const total = quarterWeightForecastTotal(first, second, quarters);
+        assert(total + 0.00001 >= f.spent + f.scheduled);
+        assert(total >= Math.min(first, second) && total <= Math.max(first, second));
+        predictions[model] = total;
+      }
+      return { month: f.month, date: f.date, day: f.day, actual: f.actual, spent: f.spent, scheduled: f.scheduled, predictions };
     });
   }
   const folds = combine(source.folds, months);
@@ -67,10 +77,19 @@ try {
     assert.deepEqual(scores[model], source.scores[model]);
     assert.deepEqual(conservativeReplay[model], source.conservativeReplay[model]);
   }
+  if (prior) {
+    assert.deepEqual(scores[combined], prior.scores[combined]);
+    assert.deepEqual(conservativeReplay[combined], prior.conservativeReplay[combined]);
+    for (const key of ['folds', 'conservativeFolds']) {
+      const evaluated = key === 'folds' ? folds : conservative;
+      for (const f of evaluated) assert.equal(f.predictions[combined], prior[key].find(p => p.date === f.date)?.predictions[combined]);
+    }
+  }
   const report = { inputSha256: source.inputSha256, componentReportSha256: crypto.createHash('sha256').update(sourceRaw).digest('hex'), snapshotAt: source.snapshotAt,
-    method: { candidate: combined, components: [baseline, weekly], weights: [0.5, 0.5], origins, months,
-      point: 'arithmetic mean of rounded point forecasts; one final cent rounding, half-cent upwards',
-      componentPredictionsReusedExactly: true, weightsFixedBeforeEvaluation: true, weightSearchPerformed: false,
+    method: { candidate: compareQuarters ? 'quarter-combinations-v9' : combined, components: [baseline, weekly],
+      weights: compareQuarters ? Object.fromEntries(variants.map(([model, q]) => [model, [q / 4, 1 - q / 4]])) : [0.5, 0.5], origins, months,
+      point: 'weighted sum of cent-rounded point forecasts; one final cent rounding, half-cent upwards',
+      componentPredictionsReusedExactly: true, weightsFixedBeforeEvaluation: true, weightSearchPerformed: compareQuarters, userRequestedFixedComparison: true, weightOptimizationPerformed: false,
       independentHoldout: false, uncertaintyIntervalsComputed: false, baselineDefaultUnchanged: true,
       historicalConfigurationExcluded: true, conservativeReplayIncludesPlannedRowsKnownAtOrigin: true, importedHistoryAndUnavailableRevisions: true },
     scores, conservativeReplay, folds, conservativeFolds: conservative };
