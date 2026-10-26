@@ -69,6 +69,7 @@ L'app è organizzata in **moduli**. Le sezioni base sono disponibili per ogni ut
 #### 📊 Dashboard (`/`)
 La pagina di benvenuto che riassume lo stato delle tue finanze in un colpo d'occhio:
 - **Saldo totale** cumulato fino alla fine del periodo selezionato, calcolato su Supabase usando tutte le transazioni attive e il cambio in EUR registrato. La card non dipende dal numero di movimenti caricati nel browser.
+- **Andamento entrate e uscite** con aggregazione giornaliera per tutto il periodo selezionato nella Dashboard.
 - **Statistiche del mese corrente** — entrate e uscite del mese in corso.
 - **Statistiche dell'anno corrente** — entrate e uscite da inizio anno.
 - **Performance Portfolio** — valore, P&L (assoluto e percentuale) delle posizioni aperte (solo strumenti di investimento).
