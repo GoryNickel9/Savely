@@ -1,5 +1,5 @@
 import { expect, it } from 'vitest';
-import { equalWeightForecastTotal, quarterWeightForecastTotal } from '../../server/forecast-combination';
+import { equalWeightForecastTotal, quarterWeightForecastTotal, fifthWeightForecastTotal } from '../../server/forecast-combination';
 
 it('uses fixed equal weights on the two published-scale component totals', () => {
   expect(equalWeightForecastTotal(800, 1000)).toBe(900);
@@ -52,4 +52,34 @@ it('rejects unsupported weights and unsafe weighted cent sums', () => {
   expect(() => quarterWeightForecastTotal(1, 2, 0 as 1)).toThrow('Invalid forecast weights');
   expect(() => quarterWeightForecastTotal(1, 2, 1.5 as 1)).toThrow('Invalid forecast weights');
   expect(() => quarterWeightForecastTotal(3e13, 3e13, 3)).toThrow('Forecast combination overflow');
+});
+it('distinguishes 60% current from 60% weekly with fixed fifth weights', () => {
+  expect(fifthWeightForecastTotal(800, 1000, 3)).toBe(880);
+  expect(fifthWeightForecastTotal(800, 1000, 2)).toBe(920);
+});
+it('rounds fifth-cent values once without duplicating shared commitments', () => {
+  expect(fifthWeightForecastTotal(0.28, 0.29, 3)).toBe(0.28);
+  expect(fifthWeightForecastTotal(0.28, 0.29, 2)).toBe(0.29);
+  expect(fifthWeightForecastTotal(0, 0.01, 3)).toBe(0);
+  expect(fifthWeightForecastTotal(0, 0.01, 2)).toBe(0.01);
+  expect(fifthWeightForecastTotal(340, 380, 3)).toBe(356);
+  expect(fifthWeightForecastTotal(340, 380, 2)).toBe(364);
+  // Exact numerator 8,000,000,000,000,002 cents: remainder 2/5 must round down.
+  expect(fifthWeightForecastTotal(16e12, 16e12 + 0.01, 3)).toBe(16e12);
+});
+it('preserves identical inputs and symmetry under exchanging fifth-weight components', () => {
+  expect(fifthWeightForecastTotal(123.45, 123.45, 3)).toBe(123.45);
+  expect(fifthWeightForecastTotal(123.45, 123.45, 2)).toBe(123.45);
+  for (const [a, b] of [[10.01, 20.03], [45, 12.99], [0, 1000], [42, 42]]) {
+    const value = fifthWeightForecastTotal(a, b, 3);
+    expect(value).toBe(fifthWeightForecastTotal(b, a, 2));
+    expect(value).toBeGreaterThanOrEqual(Math.min(a, b));
+    expect(value).toBeLessThanOrEqual(Math.max(a, b));
+  }
+});
+it('rejects unsupported fifth weights, invalid amounts and unsafe weighted sums', () => {
+  expect(() => fifthWeightForecastTotal(1, 2, 1 as 2)).toThrow('Invalid forecast weights');
+  expect(() => fifthWeightForecastTotal(1, 2, 2.5 as 2)).toThrow('Invalid forecast weights');
+  expect(() => fifthWeightForecastTotal(NaN, 2, 3)).toThrow('Invalid forecast amount');
+  expect(() => fifthWeightForecastTotal(3e13, 3e13, 3)).toThrow('Forecast combination overflow');
 });
