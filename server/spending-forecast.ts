@@ -4,6 +4,8 @@ import type { Budget, Transaction } from '../src/lib/types.js';
 import { detectRecurringCandidates, normalizeDescription } from '../src/lib/recurringDetection.js';
 import { recentDailyRates, type ForecastModel } from './recent-spending.js';
 import { ordinaryExtraDailyRates } from './ordinary-extra-spending.js';
+import { monthlyAnalogueDailyRates } from './monthly-analogue-spending.js';
+import { paceDailyRates } from './pace-spending.js';
 export interface RecurringExpense {
   id: string; name: string; category_id: string | null; amount: number; currency: string;
   frequency: string; next_due_date: string; is_active: boolean; week_interval?: number; deleted_at?: string | null;
@@ -40,7 +42,7 @@ export function forecastSpending(
   referenceDate: string = new Date().toISOString().slice(0, 10),
   model: ForecastModel = 'weekday-history-v1',
 ): SpendingForecast {
-  if (!['weekday-history-v1', 'recent-weekday-v2', 'robust-recent-weekday-v2', 'ordinary-extra-v3'].includes(model)) throw new Error('Invalid forecast model');
+  if (!['weekday-history-v1', 'recent-weekday-v2', 'robust-recent-weekday-v2', 'ordinary-extra-v3', 'monthly-analogue-v4', 'pace-shrink-v5'].includes(model)) throw new Error('Invalid forecast model');
   if (!validCalendarDate(referenceDate)) throw new Error('Invalid forecast date');
   const today = parseLocalDate(referenceDate);
   if (!Number.isFinite(today.getTime())) throw new Error('Invalid forecast date');
@@ -91,7 +93,9 @@ export function forecastSpending(
   }
   const variableHistory = historical.filter(item => !recurringKeys.has(normalizeDescription(item.description)));
   const segmented = model === 'ordinary-extra-v3' ? ordinaryExtraDailyRates(variableHistory, historyStart, today) : null;
-  const recentRates = segmented?.rates ?? (model === 'weekday-history-v1' ? null : recentDailyRates(
+  const analogue = model === 'monthly-analogue-v4' ? monthlyAnalogueDailyRates(known.filter(item => item.type === 'expense' && !recurringKeys.has(normalizeDescription(item.description))), historyStart, today) : null;
+  const pace = model === 'pace-shrink-v5' ? paceDailyRates(known.filter(item => item.type === 'expense' && !recurringKeys.has(normalizeDescription(item.description))), historyStart, today) : null;
+  const recentRates = pace ?? analogue ?? segmented?.rates ?? (model === 'weekday-history-v1' || model === 'monthly-analogue-v4' ? null : recentDailyRates(
     variableHistory, historyStart, today, model === 'robust-recent-weekday-v2'));
   const segmentsByCategory = new Map(segmented?.categories.map(category => [category.categoryId, category]) ?? []);
   let ordinaryRemainder = 0;
@@ -147,7 +151,7 @@ export function forecastSpending(
       }
     } else {
       const scheduledCategories = dailyScheduled.get(iso) ?? new Map<string | null, number>();
-      const categories = new Set([...variableByCategory.keys(), ...scheduledCategories.keys()]);
+      const categories = new Set([...variableByCategory.keys(), ...(recentRates?.keys() ?? []), ...scheduledCategories.keys()]);
       for (const category of categories) {
         const committed = scheduledCategories.get(category) ?? 0;
         const totals = variableByCategory.get(category);
