@@ -103,6 +103,11 @@ export default function TcgCollectionPage({
     [results, searchSetFilter]
   );
 
+  const handleSearch = () => {
+    setSearchSetFilter('all');
+    void searchCardTrader(query);
+  };
+
   const handleSelect = (card: CardTraderCard) => {
     setSelected(card);
   };
@@ -225,9 +230,9 @@ export default function TcgCollectionPage({
                       value={query}
                       onChange={(e) => setQuery(e.target.value)}
                       placeholder={t(searchPlaceholder)}
-                      onKeyDown={(e) => e.key === 'Enter' && searchCardTrader(query)}
+                      onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                     />
-                    <Button type="button" variant="outline" onClick={() => searchCardTrader(query)} disabled={searching}>
+                    <Button type="button" variant="outline" onClick={handleSearch} disabled={searching}>
                       {searching ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
                     </Button>
                   </div>
