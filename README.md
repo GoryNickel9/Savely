@@ -187,6 +187,7 @@ Gestione della collezione di carte da gioco, con valore di mercato:
 - Sotto-sezioni dedicate per **Magic: The Gathering**, **Pokémon TCG** e **Yu-Gi-Oh!** (`/tcg/magic`, `/tcg/pokemon`, `/tcg/yugioh`), basate su un componente collezione generico.
 - Per ogni carta: nome, set/espansione, numero collezione, **condizione** (Near Mint → Damaged), lingua (EN, IT, JP, DE, FR, ES, PT, KOR, ZHS), quantità, prezzo d'acquisto, prezzo corrente, data, immagine e note.
 - **Ricerca via API CardTrader**: cerca carte reali con prezzo di mercato (CT Zero) e aggiungile alla collezione in pochi click.
+- Il filtro del set torna a «Tutti i set» a ogni nuova ricerca, sia con il pulsante sia con Invio.
 - **Dashboard collezione**: valore totale (attuale vs costo), P&L assoluto e percentuale, numero di pezzi; pie chart per gioco.
 - **Aggiornamento automatico dei prezzi** via Edge Function (`update-tcg-prices`).
 - Le carte con valore di mercato **confluiscono nel Portfolio** finanziario.
