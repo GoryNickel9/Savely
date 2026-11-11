@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { AlertTriangle, BellRing, CalendarDays, Info, Lightbulb, PiggyBank, Receipt, Repeat, TrendingDown, TrendingUp, Trophy } from 'lucide-react';
 import MainLayout from '@/components/layout/MainLayout';
 import SpendingForecastCard from '@/components/insights/SpendingForecastCard';
+import CategoryForecastTable from '@/components/insights/CategoryForecastTable';
 import { useInsights } from '@/hooks/useInsights';
 import type { Insight, InsightKind, InsightSeverity } from '@/lib/insights';
 import { Card, CardContent } from '@/components/ui/card';
@@ -29,7 +30,7 @@ const SEVERITY_BADGE: Record<InsightSeverity, { variant: 'destructive' | 'defaul
 
 export default function Insights() {
   const { t, i18n } = useTranslation();
-  const { insights, forecast, referenceDate, isLoading, isError, dataError, hasTransactions, retry } = useInsights();
+  const { insights, forecast, categories, referenceDate, isLoading, isError, dataError, hasTransactions, retry } = useInsights();
   const [filter, setFilter] = useState<FilterKey>('all');
   const counts = useMemo(() => {
     const result = { warning: 0, positive: 0, info: 0 };
@@ -58,6 +59,7 @@ export default function Insights() {
         ) : (
           <>
             {forecast && <SpendingForecastCard forecast={forecast} />}
+            {forecast && <CategoryForecastTable forecast={forecast} categories={categories} />}
             <section aria-labelledby="insights-signals-heading">
               <div className="mb-4 flex items-center justify-between gap-4">
                 <h2 id="insights-signals-heading" className="text-lg font-display font-semibold">{t('Da guardare questo mese')}</h2>

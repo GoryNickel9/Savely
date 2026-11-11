@@ -66,7 +66,7 @@ L'app è organizzata in **moduli**. Le sezioni base sono disponibili per ogni ut
 
 Il menu laterale, condiviso da desktop e drawer mobile, raggruppa le voci in Dashboard (Dashboard, Transazioni), Budgeting (Budget, Budget Familiare), Finance (Portfolio, Insights, Grafici) e Altro (Poker, Fumo, FIRE, TCG, Libreria). Le voci riservate compaiono solo con il relativo permesso; i gruppi vuoti sono nascosti. Uscite Ricorrenti resta disponibile alla route `/recurring`, ma non compare nel menu.
 
-Insights mostra una previsione di fine mese basata sugli ultimi 180 giorni, il budget mensile ottenuto sommando i budget delle categorie e segnali con confronti espandibili. Il modello, le verifiche e i limiti sono descritti in [Insights e previsione delle spese](docs/INSIGHTS.md).
+Insights mostra una previsione di fine mese basata su 180 giorni per le ordinarie e 730 per le saltuarie, il dettaglio per categoria, il budget mensile ottenuto sommando i budget delle categorie e i segnali sulle spese. Il modello, le verifiche e i limiti sono descritti in [Insights e previsione delle spese](docs/INSIGHTS.md).
 
 ### 🧩 Moduli base (tutti gli utenti autenticati)
 
@@ -77,7 +77,7 @@ La pagina di benvenuto che riassume lo stato delle tue finanze in un colpo d'occ
 - **Statistiche del mese corrente** — entrate e uscite del mese in corso.
 - **Statistiche dell'anno corrente** — entrate e uscite da inizio anno.
 - **Performance Portfolio** — valore, P&L (assoluto e percentuale) delle posizioni aperte (solo strumenti di investimento).
-- **Budget mensili** confrontati con la mediana delle spese mensili degli ultimi 730 giorni, come nella pagina Budget. Il widget mostra le quattro categorie con la percentuale di utilizzo più alta, indipendentemente dal periodo selezionato nella Dashboard.
+- **Budget mensili** confrontati con la media mensile su 180 giorni delle spese ordinarie o su 730 giorni delle saltuarie, come nella pagina Budget. Il widget mostra le quattro categorie con la percentuale di utilizzo più alta, indipendentemente dal periodo selezionato nella Dashboard.
 - Le barre budget sono verdi sotto il 75%, gialle dal 75% a meno del 100% e rosse dal 100%. Oltre il limite, la barra resta piena e il widget mostra la percentuale reale.
 - **Ultime transazioni** inserite.
 
@@ -100,9 +100,10 @@ Per gestire le spese che si ripetono nel tempo (affitto, abbonamenti, rate):
 #### 🐷 Budget (`/budget`)
 Per pianificare e monitorare la spesa mensile:
 - Impostazione di un **budget mensile per categoria**.
-- **Suggerimento basato sui dati**: per ogni categoria viene mostrata la **spesa mensile mediana** calcolata sulle transazioni degli ultimi 730 giorni, come riferimento per impostare il budget.
+- In **Nuovo Budget**, il selettore delle categorie espande la finestra nel limite dell'altezza dello schermo. La lista resta scorrevole; ricerca, selezione da tastiera ed Escape funzionano dentro la finestra. Lo stesso selettore viene usato nei form Transazioni e Uscite Ricorrenti.
+- **Riferimento per categoria**: media mensile su 180 giorni per le spese ordinarie e 730 per le saltuarie, condivisa con gli Insights. Il badge “Spesa saltuaria” identifica le categorie impostate così nei form Categorie; le schede non mostrano più i sottotitoli con le formule.
 - **Monitoraggio in tempo reale** dell'avanzamento con barre di progresso e indicatori visivi (sotto/sopra budget).
-- Riepilogo dei totali: budget atteso totale vs. spesa effettiva (mediana globale) e differenza.
+- Riepilogo dei totali: budget atteso totale vs. spesa mensile di riferimento (media) e differenza.
 
 #### 📁 Categorie (`/categories`)
 Gestione delle categorie personalizzate in una pagina dedicata: creazione, modifica ed eliminazione con **icona (emoji)**, **colore** e tipo (entrata/uscita). Le stesse funzioni restano disponibili anche dalle Impostazioni.
@@ -134,12 +135,12 @@ Tracciamento storico del **Patrimonio Netto** nel tempo:
 
 #### 💡 Insights (`/insights`)
 Segnali automatici generati dai tuoi dati finanziari, senza query aggiuntive (tutto derivato dai dati già in cache):
-- **Anomalie di spesa** — categorie il cui mese corrente è ≥ 1.4× la mediana storica e ≥ 50€, con indicazione della % di scostamento.
-- **Budget superato** — categorie in cui la spesa del mese supera il budget configurato.
+- **Anomalie di spesa** — categorie il cui mese corrente è ≥ 1.4× la media storica e ≥ 50€, con indicazione della % di scostamento.
+- **Budget superato** — categorie in cui la media mensile nella finestra di 180 o 730 giorni supera il budget configurato.
 - **Posizioni in perdita** — asset del portfolio con P&L non realizzato ≤ −15%.
 - **Milestone patrimonio** — nuovo massimo storico di patrimonio netto.
 - **Mese di risparmio** — mese corrente con risparmio ≥ 1.2× la media annua.
-- **Trend crescente** — categorie la cui spesa degli ultimi 3 mesi è ≥ 1.25× la mediana a 12 mesi.
+- **Trend crescente** — categorie ordinarie la cui media degli ultimi 3 mesi conclusi supera di almeno il 25% il riferimento dei 180 giorni.
 - **Nuove ricorrenze** — le migliori candidate a spesa ricorrente rilevate automaticamente (top 3).
 - **Variazione prezzo ricorrenti** — aumento o ribasso ≥ 10% rispetto all'importo abituale di una spesa ricorrente (es. rincaro abbonamento).
 
@@ -156,7 +157,7 @@ Gestione del proprio account e dei dati (pagina suddivisa in sezioni dedicate):
 - **Mappature ISIN** (per portfolio): collegamento dei simboli agli ISIN per l'aggiornamento automatico dei prezzi.
 - **Sicurezza**:
   - **Autenticazione a due fattori (2FA)** opt-in via TOTP (Google Authenticator, Authy, 1Password…). Enrollment con QR code + secret testuale, verifica, rimozione. Al login, se l'utente ha un fattore attivo viene richiesto il codice a 6 cifre (livello AAL2).
-  - **Accessi attuali**: sessione corrente e storico degli accessi con dispositivo e browser riconosciuti (Parsing dello user-agent), e pulsante "Disconnetti altre sessioni".
+  - **Accessi attuali**: una riga per sessione presente in `auth.sessions`, esclusa una scadenza `not_after` già trascorsa, con aggiornamento ogni 30 secondi. La sessione corrente è riconosciuta dal claim `session_id`; browser identici restano distinti. La data indica l'inizio dell'accesso, non l'ultima attività. Sono disponibili disconnessione individuale e “Disconnetti altre sessioni”; i token già emessi possono restare validi fino alla scadenza.
 
 ---
 
@@ -202,9 +203,10 @@ Catalogo della propria collezione libreria, con valutazione:
 #### 💞 Budget Familiare (permesso `couple_expenses`)
 Per gestire le finanze condivise con un partner:
 - **Accoppiamento**: sistema di invito/accettazione (richiesta → connessione) tra due utenti.
-- **Spese condivise**: una transazione può essere condivisa con il partner con **due modalità di divisione**: 50/50 (predefinito) oppure **importi personalizzati** (quota tua / quota partner esplicite); il partner vede l'importo, la valuta, la descrizione e la data, ma **mai la categoria personale** del creatore (per proteggerne la privacy).
+- **Spese condivise**: una transazione può essere condivisa con il partner con **due modalità di divisione**: 50/50 (predefinito) oppure **importi personalizzati** (quota tua / quota partner esplicite); il partner vede l'importo, la valuta, la descrizione, la data e l'icona della categoria di origine, senza il nome o l'ID della categoria personale del creatore.
 - **Budget condiviso** (`/couple-budget`): budget mensili per "categoria di coppia" (nome testuale condiviso, non legato ai category_id personali).
-- **Suggerimento basato sui dati**: spesa mediana mensile condivisa calcolata sugli storici.
+- **Icone delle categorie**: prima l'icona della categoria di spesa personale con lo stesso nome, ignorando maiuscole e spazi esterni; altrimenti l'icona dell'ultima spesa condivisa valida. Per nomi senza corrispondenza o metadati viene mostrata una cartella. La view espone l'icona, senza aggiungere nome o ID della categoria personale del partner.
+- **Suggerimento basato sui dati**: spesa media mensile condivisa calcolata sugli storici.
 - **Audit log immutabile** di tutte le azioni sulla connessione (creazione, revoca, ecc.).
 
 ---

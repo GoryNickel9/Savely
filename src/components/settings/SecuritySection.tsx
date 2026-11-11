@@ -14,6 +14,8 @@ import { useFactors, useEnrollTotp, useVerifyEnrollment, useUnenrollFactor, chal
 import { useActiveSessions, useDeleteSession } from '@/hooks/useActiveSessions';
 import { supabase } from '@/integrations/supabase/client';
 import { parseUserAgent } from '@/lib/userAgent';
+import { useAuth } from '@/hooks/useAuth';
+import { getSessionId } from '@/lib/authSession';
 import { validateTotpCode, extractSecretFromUri } from '@/lib/mfa';
 
 /**
@@ -37,7 +39,8 @@ export default function SecuritySection() {
   const [unenrollCode, setUnenrollCode] = useState('');
   const [unenrollVerifying, setUnenrollVerifying] = useState(false);
 
-  const currentUa = typeof navigator !== 'undefined' ? navigator.userAgent : '';
+  const { session: authSession } = useAuth();
+  const currentSessionId = getSessionId(authSession);
   const [signingOutOthers, setSigningOutOthers] = useState(false);
   const [disconnectingId, setDisconnectingId] = useState<string | null>(null);
 
@@ -207,7 +210,7 @@ export default function SecuritySection() {
             {sessions.map((session) => {
               const ua = parseUserAgent(session.user_agent);
               const Icon = ua.kind === 'mobile' ? Smartphone : Monitor;
-              const isCurrent = session.user_agent === currentUa;
+              const isCurrent = currentSessionId !== null && session.session_id === currentSessionId;
               return (
                 <li
                   key={session.id}
@@ -228,11 +231,12 @@ export default function SecuritySection() {
                         onClick={() => handleDisconnectSession(session.session_id!)}
                         disabled={disconnectingId === session.session_id}
                         title={t('Disconnetti questo dispositivo')}
+                        aria-label={t('Disconnetti questo dispositivo')}
                       >
                         {disconnectingId === session.session_id ? <Loader2 className="w-3 h-3 animate-spin" /> : <LogOut className="w-3 h-3" />}
                       </Button>
                     )}
-                    <span className="text-xs text-muted-foreground">
+                    <span className="text-xs text-muted-foreground" title={t('Accesso effettuato il')}>
                       {new Date(session.created_at).toLocaleString('it-IT', { dateStyle: 'short', timeStyle: 'short' })}
                     </span>
                   </div>

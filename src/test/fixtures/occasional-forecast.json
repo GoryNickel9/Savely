@@ -72,19 +72,22 @@
     ]
   },
   "response": {
-    "schemaVersion": 1,
-    "modelVersion": "weekday-regular-occasional-v2",
+    "schemaVersion": 2,
+    "modelVersion": "regular180-occasional730-mean-v3",
     "userId": "11111111-1111-4111-8111-111111111111",
     "timeZone": "Europe/Rome",
     "generatedAt": "2026-10-26T12:00:00.000Z",
-    "inputSha256": "0000000000000000000000000000000000000000000000000000000000000000",
-    "occasionalSpending": {
-      "startDate": "2025-11-01",
+    "inputSha256": "769f08dead7f378ee8906da7cd3622bab5fc3cff3d01e46bc47bea05a8c6524a",
+    "budgetSpending": {
       "endDate": "2026-10-26",
-      "months": 12,
       "categories": [
         {
           "categoryId": "dentist",
+          "spendingPattern": "occasional",
+          "startDate": "2025-11-01",
+          "endDate": "2026-10-26",
+          "historyDays": 730,
+          "months": 12,
           "total": "300.00",
           "averageMonthly": "25.00",
           "expectedMonthly": "25.00",
@@ -95,17 +98,27 @@
     },
     "forecast": {
       "date": "2026-10-26",
-      "historyDays": 180,
+      "historyDays": 359,
       "available": true,
       "spent": "100.00",
       "scheduled": "0.00",
-      "variable": "4.03",
-      "total": "104.03",
+      "variable": "2.69",
+      "categories": [
+        {
+          "categoryId": "dentist",
+          "spent": "100.00",
+          "scheduled": "0.00",
+          "variable": "2.69",
+          "total": "102.69",
+          "budget": {
+            "limit": "25.00"
+          }
+        }
+      ],
+      "total": "102.69",
       "budget": {
         "limit": "25.00"
       },
-      "unsupportedRecurring": 0,
-      "unsupportedBudgets": 0,
       "points": [
         {
           "day": 1,
@@ -240,29 +253,31 @@
         {
           "day": 27,
           "actual": null,
-          "projected": "100.81"
+          "projected": "100.54"
         },
         {
           "day": 28,
           "actual": null,
-          "projected": "101.61"
+          "projected": "101.08"
         },
         {
           "day": 29,
           "actual": null,
-          "projected": "102.42"
+          "projected": "101.61"
         },
         {
           "day": 30,
           "actual": null,
-          "projected": "103.23"
+          "projected": "102.15"
         },
         {
           "day": 31,
           "actual": null,
-          "projected": "104.03"
+          "projected": "102.69"
         }
-      ]
+      ],
+      "unsupportedRecurring": 0,
+      "unsupportedBudgets": 0
     }
   }
 }

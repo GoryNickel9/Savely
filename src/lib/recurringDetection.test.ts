@@ -17,7 +17,14 @@ it('mantiene opzionalmente la cadenza dopo un ultimo rincaro senza cambiare i su
   const candidates = detectRecurringCandidates(transactions, { allowLatestPriceChange: true });
   expect(candidates).toHaveLength(1);
   expect(candidates[0].medianAmount).toBe(15);
+  expect(candidates[0].meanAmount).toBe(12.6);
   expect(candidates[0].confidence).toBe('medium');
+});
+
+it('exposes an arithmetic mean distinct from the legacy median', () => {
+  const [candidate] = detectRecurringCandidates([tx('2026-04-10', 100, 'Test'), tx('2026-05-10', 100, 'Test'), tx('2026-06-10', 109, 'Test')]);
+  expect(candidate.meanAmount).toBe(103);
+  expect(candidate.medianAmount).toBe(100);
 });
 
 describe('normalizeDescription', () => {

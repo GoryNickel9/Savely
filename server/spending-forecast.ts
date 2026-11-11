@@ -1,13 +1,13 @@
 import { addDays, addMonths, differenceInCalendarDays, differenceInCalendarMonths, endOfMonth, startOfDay, startOfMonth, subDays, parseLocalDate, todayLocalISO } from './forecast-calendar.js';
 import { FORECAST_DAYS, MIN_FORECAST_DAYS, transactionEUR, validTransactions, validCalendarDate, type SpendingForecast, type ForecastPoint } from '../src/lib/spendingForecast.js';
 import type { Budget, Category, Transaction } from '../src/lib/types.js';
-import { occasionalExpenseTotals } from './occasional-spending.js';
 import { detectRecurringCandidates, normalizeDescription } from '../src/lib/recurringDetection.js';
+import { spendingWindow, OCCASIONAL_SPENDING_DAYS } from '../src/lib/spendingWindow.js';
+import { categoryForecasts, type CategoryAmounts } from './category-forecast.js';
 export interface RecurringExpense {
   id: string; name: string; category_id: string | null; amount: number; currency: string;
   frequency: string; next_due_date: string; is_active: boolean; week_interval?: number; deleted_at?: string | null;
 }
-export const FORECAST_MODEL_VERSION = 'weekday-regular-occasional-v2';
 const cents = (value: number) => Math.round(value * 100) / 100;
 interface Schedule {
   key: string;
@@ -31,9 +31,6 @@ function occurrence(schedule: Schedule, index: number): Date {
  * calendar occurrences of that weekday, including days with zero expenditure.
  * Remaining total = planned transactions + unmatched recurring dues + variable.
  * Recorded future expenses replace the variable expectation for their category/day.
- * Occasional categories use their 12-calendar-month variable total / 12, prorated
- * to days remaining; future planned variable payments replace that category's
- * remaining expectation across the month. Actual spending is never smoothed.
  * No uncertainty interval is claimed; this estimator has no fitted error model.
  */
 export function forecastSpending(
@@ -42,7 +39,9 @@ export function forecastSpending(
   recurringExpenses: RecurringExpense[],
   referenceDate: string = new Date().toISOString().slice(0, 10),
   categories: Category[] = [],
+  model: 'regular180-occasional730-mean-v3' | 'weekday-history-v1' | 'weekday-history-mean-v2' = 'regular180-occasional730-mean-v3',
 ): SpendingForecast {
+  if (!['regular180-occasional730-mean-v3', 'weekday-history-v1', 'weekday-history-mean-v2'].includes(model)) throw new Error('Invalid forecast model');
   if (!validCalendarDate(referenceDate)) throw new Error('Invalid forecast date');
   const today = parseLocalDate(referenceDate);
   if (!Number.isFinite(today.getTime())) throw new Error('Invalid forecast date');
@@ -51,18 +50,15 @@ export function forecastSpending(
   const tx = validTransactions(transactions);
   const known = tx.filter(item => parseLocalDate(item.date) <= today);
   const oldest = known.reduce((date, item) => Math.min(date, parseLocalDate(item.date).getTime()), today.getTime());
-  const historyStart = new Date(Math.max(subDays(today, FORECAST_DAYS).getTime(), oldest));
+  const modern = model === 'regular180-occasional730-mean-v3';
+  const occasional = new Set(modern ? categories.filter(category => !category.deleted_at && category.type === 'expense' && category.spending_pattern === 'occasional').map(category => category.id) : []);
+  const regularStart = new Date(Math.max(subDays(today, FORECAST_DAYS).getTime(), oldest));
+  const historyStart = new Date(Math.max(subDays(today, occasional.size ? OCCASIONAL_SPENDING_DAYS : FORECAST_DAYS).getTime(), oldest));
   const historyDays = differenceInCalendarDays(today, historyStart);
   const available = historyDays >= MIN_FORECAST_DAYS;
-  const historical = known.filter(item => item.type === 'expense' && parseLocalDate(item.date) >= historyStart && parseLocalDate(item.date) < today);
+  const historical = known.filter(item => item.type === 'expense' && parseLocalDate(item.date) >= (occasional.has(item.category_id ?? '') ? historyStart : regularStart) && parseLocalDate(item.date) < today);
   const configured = recurringExpenses.filter(item => !item.deleted_at);
   const configuredKeys = new Set(configured.map(item => normalizeDescription(item.name)).filter(Boolean));
-  const occasionalCategories = categories.filter(category => !category.deleted_at && category.type === 'expense'
-    && category.spending_pattern === 'occasional');
-  const occasionalTotals = occasionalCategories.length
-    ? occasionalExpenseTotals(known.filter(item => !configuredKeys.has(normalizeDescription(item.description))), occasionalCategories, referenceDate).totals
-    : new Map<string, number>();
-  const occasionalIds = new Set(occasionalTotals.keys());
   const schedules: Schedule[] = [];
   let unsupportedRecurring = 0;
   for (const item of configured) {
@@ -79,24 +75,31 @@ export function forecastSpending(
       months: item.frequency === 'monthly' ? 1 : item.frequency === 'quarterly' ? 3 : 12 });
   }
   // Detect on historical data only; future/planned transactions cannot train the model.
-  const regularHistorical = historical.filter(item => !occasionalIds.has(item.category_id ?? ''));
-  const detected = detectRecurringCandidates(regularHistorical.map(item => ({ ...item, amount: transactionEUR(item) })), { allowLatestPriceChange: true });
+  const detected = detectRecurringCandidates(historical.filter(item => !occasional.has(item.category_id ?? '')).map(item => ({ ...item, amount: transactionEUR(item) })), { allowLatestPriceChange: true });
   for (const candidate of detected) {
     if (configuredKeys.has(candidate.normalizedKey)) continue;
-    const last = regularHistorical.filter(item => normalizeDescription(item.description) === candidate.normalizedKey).sort((a, b) => b.date.localeCompare(a.date))[0];
-    schedules.push({ key: candidate.normalizedKey, category: last.category_id, amount: candidate.medianAmount,
+    const last = historical.filter(item => normalizeDescription(item.description) === candidate.normalizedKey).sort((a, b) => b.date.localeCompare(a.date))[0];
+    schedules.push({ key: candidate.normalizedKey, category: last.category_id, amount: (modern || model === 'weekday-history-mean-v2') ? candidate.meanAmount : candidate.medianAmount,
       anchor: parseLocalDate(candidate.lastDate), weeks: candidate.frequency === 'weekly' ? 1 : 0,
       months: candidate.frequency === 'monthly' ? 1 : candidate.frequency === 'quarterly' ? 3 : 12 });
   }
   const recurringKeys = new Set([...configuredKeys, ...schedules.map(item => item.key)]);
   const variableByCategory = new Map<string | null, number[]>();
   const weekdayCounts = Array<number>(7).fill(0);
-  for (let date = historyStart; date < today; date = addDays(date, 1)) weekdayCounts[date.getUTCDay()]++;
-  for (const item of regularHistorical) {
+  for (let date = regularStart; date < today; date = addDays(date, 1)) weekdayCounts[date.getUTCDay()]++;
+  for (const item of historical) {
     if (recurringKeys.has(normalizeDescription(item.description))) continue;
     const totals = variableByCategory.get(item.category_id) ?? Array<number>(7).fill(0);
-    totals[parseLocalDate(item.date).getDay()] += transactionEUR(item);
+    totals[parseLocalDate(item.date).getUTCDay()] += transactionEUR(item);
     variableByCategory.set(item.category_id, totals);
+  }
+  const variableHistory = historical.filter(item => !recurringKeys.has(normalizeDescription(item.description)));
+  const occasionalDaily = new Map<string, number>();
+  for (const id of occasional) {
+    const amounts = variableHistory.filter(item => item.category_id === id).map(item => ({ date: item.date, amount: transactionEUR(item) }));
+    const mean = spendingWindow(amounts, known, referenceDate, OCCASIONAL_SPENDING_DAYS).averageMonthly;
+    occasionalDaily.set(id, mean / monthEnd.getUTCDate());
+    if (amounts.length) variableByCategory.set(id, Array<number>(7).fill(0));
   }
   const dailyScheduled = new Map<string, Map<string | null, number>>();
   function scheduleAmount(date: string, category: string | null, amount: number) {
@@ -106,19 +109,6 @@ export function forecastSpending(
   }
   const planned = tx.filter(item => item.type === 'expense' && parseLocalDate(item.date) > today && parseLocalDate(item.date) <= monthEnd);
   planned.forEach(item => scheduleAmount(item.date, item.category_id, transactionEUR(item)));
-  const plannedOccasional = new Map<string, number>();
-  for (const item of planned) {
-    if (!item.category_id || !occasionalIds.has(item.category_id) || configuredKeys.has(normalizeDescription(item.description))) continue;
-    plannedOccasional.set(item.category_id, (plannedOccasional.get(item.category_id) ?? 0) + transactionEUR(item));
-  }
-  const daysLeft = monthEnd.getUTCDate() - today.getUTCDate();
-  const occasionalDaily = new Map<string, number>();
-  if (available && daysLeft > 0) {
-    for (const [category, totalCents] of occasionalTotals) {
-      const expectedRemaining = totalCents / 1200 * daysLeft / monthEnd.getUTCDate();
-      occasionalDaily.set(category, Math.max(0, expectedRemaining - (plannedOccasional.get(category) ?? 0)) / daysLeft);
-    }
-  }
   const usedPayments = new Set<string>();
   for (const schedule of schedules) {
     const first = Math.max(0, schedule.weeks
@@ -138,15 +128,24 @@ export function forecastSpending(
     }
   }
   const limits = new Map<string, number>();
+  const budgetAmounts = new Map<string, number>();
   let unsupportedBudgets = 0;
   for (const budget of budgets) {
     if (budget.currency !== 'EUR') { unsupportedBudgets++; continue; }
     const amount = Number(budget.amount);
     if (!Number.isFinite(amount) || amount < 0) throw new Error('Invalid budget');
-    if (limits.has(budget.category_id)) throw new Error('Duplicate category budget');
+    if (budgetAmounts.has(budget.category_id)) throw new Error('Duplicate category budget');
+    budgetAmounts.set(budget.category_id, amount);
     if (amount > 0) limits.set(budget.category_id, amount);
   }
   let spent = 0, scheduled = 0, variable = 0;
+  const byCategory = new Map<string | null, CategoryAmounts>();
+  function categoryAmounts(categoryId: string | null): CategoryAmounts {
+    let amounts = byCategory.get(categoryId);
+    if (!amounts) { amounts = { spent: 0, scheduled: 0, variable: 0 }; byCategory.set(categoryId, amounts); }
+    return amounts;
+  }
+  for (const categoryId of budgetAmounts.keys()) categoryAmounts(categoryId);
   const points: ForecastPoint[] = [];
   const currentByDay = new Map<string, Transaction[]>();
   for (const item of known) {
@@ -160,20 +159,22 @@ export function forecastSpending(
       for (const item of currentByDay.get(iso) ?? []) {
         const amount = transactionEUR(item);
         spent += amount;
+        categoryAmounts(item.category_id).spent += amount;
       }
     } else {
       const scheduledCategories = dailyScheduled.get(iso) ?? new Map<string | null, number>();
-      const remainingCategories = new Set([...variableByCategory.keys(), ...occasionalDaily.keys(), ...scheduledCategories.keys()]);
-      for (const category of remainingCategories) {
+      const categories = new Set([...variableByCategory.keys(), ...scheduledCategories.keys()]);
+      for (const category of categories) {
         const committed = scheduledCategories.get(category) ?? 0;
         const totals = variableByCategory.get(category);
-        const isOccasional = category !== null && occasionalIds.has(category);
-        const expectation = isOccasional ? occasionalDaily.get(category) ?? 0
-          : available && totals ? totals[date.getUTCDay()] / weekdayCounts[date.getUTCDay()] : 0;
+        const expectation = !available ? 0 : occasionalDaily.get(category ?? '') ?? (totals ? totals[date.getUTCDay()] / weekdayCounts[date.getUTCDay()] : 0);
         const plannedVariable = planned.filter(item => item.date === iso && item.category_id === category && !recurringKeys.has(normalizeDescription(item.description))).reduce((sum, item) => sum + transactionEUR(item), 0);
-        const remaining = isOccasional ? expectation : Math.max(0, expectation - plannedVariable);
+        const remaining = Math.max(0, expectation - plannedVariable);
         scheduled += committed;
         variable += remaining;
+        const amounts = categoryAmounts(category);
+        amounts.scheduled += committed;
+        amounts.variable += remaining;
       }
     }
     points.push({ day: date.getUTCDate(), actual: date <= today ? cents(spent) : null,
@@ -181,6 +182,7 @@ export function forecastSpending(
   }
   const complete = available && unsupportedRecurring === 0 && unsupportedBudgets === 0;
   return { date: todayLocalISO(today), historyDays, available: complete, spent: cents(spent), scheduled: cents(scheduled), variable: cents(variable),
+    categories: categoryForecasts(byCategory, budgetAmounts, { spent, scheduled, variable }, complete),
     total: complete ? cents(cents(spent) + cents(scheduled) + cents(variable)) : null,
     budget: limits.size && unsupportedBudgets === 0 ? { limit: cents([...limits.values()].reduce((sum, value) => sum + value, 0)) } : null,
     points: complete ? points : points.map(point => ({ ...point, projected: null })), unsupportedRecurring, unsupportedBudgets };

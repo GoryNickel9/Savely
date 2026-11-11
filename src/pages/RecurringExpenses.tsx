@@ -111,7 +111,7 @@ export default function RecurringExpenses() {
     // Pre-fill the create form with the detected values and open it.
     setEditingExpense(null);
     setName(c.description);
-    setAmount(String(c.medianAmount));
+    setAmount(String(c.meanAmount));
     setCategoryId('');
     setFrequency(c.frequency);
     setWeekInterval(1);
@@ -268,7 +268,7 @@ export default function RecurringExpenses() {
                   <div className="min-w-0">
                     <p className="font-medium truncate">{c.description}</p>
                     <p className="text-sm text-muted-foreground">
-                      {CURRENCY_SYMBOLS.EUR}{c.medianAmount.toLocaleString('it-IT', { minimumFractionDigits: 2 })} ·{' '}
+                      {CURRENCY_SYMBOLS.EUR}{c.meanAmount.toLocaleString('it-IT', { minimumFractionDigits: 2 })} ·{' '}
                       {t(FREQUENCY_LABELS[c.frequency])} · {t('{{num}} occorrenze', { num: c.occurrenceCount })}
                       {c.confidence === 'high' && t(' · alta affidabilità')}
                     </p>

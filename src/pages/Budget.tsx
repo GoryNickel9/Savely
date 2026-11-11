@@ -8,13 +8,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import BudgetProgress from '@/components/BudgetProgress';
+import { Badge } from '@/components/ui/badge';
 import { CURRENCY_SYMBOLS } from '@/lib/constants';
 import { Plus, Edit2, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { getGlobalMedianMonthlySpending, parseAmount, todayLocalISO } from '@/lib/utils';
+import { parseAmount, todayLocalISO } from '@/lib/utils';
 import { getBudgetReferenceSpending } from '@/lib/budgetSpending';
 import { useSpendingForecast } from '@/hooks/useSpendingForecast';
-import { MEDIAN_CALCULATION_DAYS } from '@/lib/constants';
 import { CategorySelect } from '@/components/CategorySelect';
 
 export default function Budget() {
@@ -33,8 +33,8 @@ export default function Budget() {
 
   const occasionalCategories = expenseCategories.filter(category => category.spending_pattern === 'occasional');
   const hasOccasional = occasionalCategories.length > 0;
-  const remote = useSpendingForecast(todayLocalISO(), hasOccasional);
-  const comparisons = remote.isError ? undefined : remote.data?.occasionalSpending;
+  const remote = useSpendingForecast(todayLocalISO());
+  const comparisons = remote.isError ? undefined : remote.data?.budgetSpending;
 
   // Sort budgets alphabetically by category name
   const sortedBudgets = useMemo(() => {
@@ -48,15 +48,10 @@ export default function Budget() {
   // Calculate totals
   const totals = useMemo(() => {
     const totalExpected = budgets.reduce((sum, b) => sum + Number(b.amount), 0);
-    // Keep the regular-spending median and add the server-owned occasional averages.
-    const occasionalIds = new Set(expenseCategories.filter(category => category.spending_pattern === 'occasional').map(category => category.id));
-    const averages = [...occasionalIds].map(id => comparisons?.categories.find(category => category.categoryId === id));
-    const totalActual = averages.some(value => !value) ? null
-      : getGlobalMedianMonthlySpending(transactions.filter(transaction => !occasionalIds.has(transaction.category_id ?? '')), MEDIAN_CALCULATION_DAYS)
-        + averages.reduce((sum, value) => sum + Number(value!.averageMonthly), 0);
+    const totalActual = comparisons ? comparisons.categories.reduce((sum, row) => sum + Number(row.averageMonthly), 0) : null;
     const difference = totalActual === null ? null : totalActual - totalExpected;
     return { totalExpected, totalActual, difference };
-  }, [budgets, transactions, expenseCategories, comparisons]);
+  }, [budgets, comparisons]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -108,7 +103,6 @@ export default function Budget() {
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
             <h1 className="text-3xl font-display font-bold">{t('Budget')}</h1>
-            <p className="text-muted-foreground">{t(hasOccasional ? 'Spese regolari: mediana su 730 giorni. Spese saltuarie: media su 12 mesi, inclusi i mesi a zero.' : 'Mediana mensile (ultimi 730 giorni)')}</p>
           </div>
           <div className="flex gap-2">
             {/* Create Budget Dialog */}
@@ -141,7 +135,7 @@ export default function Budget() {
               <p className="text-2xl font-bold">{CURRENCY_SYMBOLS.EUR}{totals.totalExpected.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
             </div>
             <div className="glass rounded-xl p-6">
-              <p className="text-sm text-muted-foreground mb-1">{t(hasOccasional ? 'Spesa mensile di riferimento' : 'Spesa mediana mensile reale')}</p>
+              <p className="text-sm text-muted-foreground mb-1">{t(hasOccasional ? 'Spesa mensile di riferimento' : 'Spesa media mensile reale')}</p>
               <p className="text-2xl font-bold">{totals.totalActual === null ? '—' : `${CURRENCY_SYMBOLS.EUR}${totals.totalActual.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}</p>
             </div>
             <div className="glass rounded-xl p-6">
@@ -167,7 +161,7 @@ export default function Budget() {
                   <div className="flex items-center gap-3">
                     <span className="text-2xl">{b.category?.icon}</span>
                     <div><span className="font-medium">{b.category?.name}</span>
-                      <p className="text-xs text-muted-foreground">{t(b.category?.spending_pattern === 'occasional' ? 'Media mensile su 12 mesi' : 'Mediana mensile (ultimi 730 giorni)')}</p>
+                      {b.category?.spending_pattern === 'occasional' && <Badge variant="secondary" className="mt-1 block w-fit">{t('Spesa saltuaria')}</Badge>}
                     </div>
                   </div>
                   <div className="flex items-center gap-3">

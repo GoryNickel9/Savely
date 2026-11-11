@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router';
 import { useQueryClient } from '@tanstack/react-query';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { getSessionId } from '@/lib/authSession';
 
 interface AuthContextType {
   user: User | null;
@@ -40,18 +41,6 @@ function authEventToLoginType(
       return 'mfa_challenge';
     default:
       return null;
-  }
-}
-
-/**
- * Decode the session ID from the access_token JWT payload.
- */
-function getSessionId(session: Session | null): string | null {
-  if (!session?.access_token) return null;
-  try {
-    return JSON.parse(atob(session.access_token.split('.')[1])).sid ?? null;
-  } catch {
-    return null;
   }
 }
 

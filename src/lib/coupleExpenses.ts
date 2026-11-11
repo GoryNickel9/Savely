@@ -1,3 +1,6 @@
+import { monthlyAverage } from './monthlyAverage';
+import { REGULAR_SPENDING_DAYS } from './spendingWindow';
+
 /**
  * Pure utility functions for the Couple Expenses feature.
  * No Supabase calls here — these functions are safe to unit-test in isolation.
@@ -130,6 +133,12 @@ export interface SharedExpenseForStats {
   my_share_amount: number;
   date: string; // YYYY-MM-DD
   tx_deleted_at: string | null;
+}
+
+export function getAverageMonthlySpendingShared(expenses: SharedExpenseForStats[], categoryName?: string | null, referenceDate = new Date(), historyDays = REGULAR_SPENDING_DAYS): number {
+  const coverage = filterSharedExpensesForBudget(expenses);
+  const selected = categoryName === undefined ? coverage : coverage.filter(expense => expense.couple_category_name === categoryName);
+  return monthlyAverage(selected.map(expense => ({ date: expense.date, amount: expense.my_share_amount })), coverage, referenceDate, historyDays);
 }
 
 /**

@@ -3,7 +3,8 @@ import type { VercelRequest } from '../api/vercel.js';
 import { forecastResponseSchema } from '../src/lib/forecastContract.js';
 import type { Transaction, Budget, Category } from '../src/lib/types.js';
 import { occasionalSpending } from './occasional-spending.js';
-import { FORECAST_MODEL_VERSION, forecastSpending, type RecurringExpense } from './spending-forecast.js';
+import { budgetSpending } from './budget-spending.js';
+import { forecastSpending, type RecurringExpense } from './spending-forecast.js';
 
 export class ForecastError extends Error {
   constructor(public readonly status: number, message: string) { super(message); }
@@ -33,7 +34,7 @@ async function json(response: Response): Promise<unknown> {
 export async function getForecast(req: VercelRequest, now = new Date()) {
   const auth = req.headers.authorization;
   if (typeof auth !== 'string' || !/^Bearer [^\s]+$/.test(auth) || auth.length > 16384) throw new ForecastError(401, 'Sign in required');
-  if (!req.body || req.body.schemaVersion !== 1 || Object.keys(req.body).some(key => !['schemaVersion', 'timeZone'].includes(key))) throw new ForecastError(400, 'Invalid forecast request');
+  if (!req.body || req.body.schemaVersion !== 1 && req.body.schemaVersion !== 2 || Object.keys(req.body).some(key => !['schemaVersion', 'timeZone'].includes(key))) throw new ForecastError(400, 'Invalid forecast request');
   const timeZone = req.body.timeZone;
   const asOf = forecastDate(timeZone, now);
   const key = process.env.SUPABASE_ANON_KEY ?? process.env.VITE_SUPABASE_ANON_KEY;
@@ -77,18 +78,25 @@ export async function getForecast(req: VercelRequest, now = new Date()) {
     categories.some(row => !['regular', 'occasional'].includes(String(row.spending_pattern)) || !['income', 'expense'].includes(String(row.type)))) {
     throw new ForecastError(422, 'Invalid financial data');
   }
-  const forecast = forecastSpending(transactions as unknown as Transaction[], budgets as unknown as Budget[], recurring as unknown as RecurringExpense[], asOf, categories as unknown as Category[]);
+  const modern = req.body.schemaVersion === 2;
+  const modelVersion = modern ? 'regular180-occasional730-mean-v3' : 'weekday-history-mean-v2';
+  const forecast = forecastSpending(transactions as unknown as Transaction[], budgets as unknown as Budget[], recurring as unknown as RecurringExpense[], asOf, categories as unknown as Category[], modelVersion);
   const money = (value: number | null) => {
     if (value === null) return null;
     if (!Number.isFinite(value) || value < 0 || !Number.isSafeInteger(Math.round(value * 100))) throw new ForecastError(422, 'Forecast amount outside supported range');
     return value.toFixed(2);
   };
   return forecastResponseSchema.parse({
-    schemaVersion: 1, modelVersion: FORECAST_MODEL_VERSION, userId, timeZone, generatedAt: now.toISOString(),
+    schemaVersion: req.body.schemaVersion, modelVersion, userId, timeZone, generatedAt: now.toISOString(),
     inputSha256: createHash('sha256').update(JSON.stringify([asOf, timeZone, transactions, budgets, recurring, categories])).digest('hex'),
-    occasionalSpending: occasionalSpending(transactions as unknown as Transaction[], budgets as unknown as Budget[], categories as unknown as Category[], asOf),
+    ...(modern ? { budgetSpending: budgetSpending(transactions as unknown as Transaction[], budgets as unknown as Budget[], categories as unknown as Category[], asOf) }
+      : { occasionalSpending: occasionalSpending(transactions as unknown as Transaction[], budgets as unknown as Budget[], categories as unknown as Category[], asOf) }),
     forecast: { ...forecast, spent: money(forecast.spent), scheduled: money(forecast.scheduled), variable: money(forecast.variable),
       total: money(forecast.total), budget: forecast.budget && { limit: money(forecast.budget.limit) },
+      categories: forecast.categories?.map(category => ({ ...category,
+        spent: money(category.spent), scheduled: money(category.scheduled), variable: money(category.variable),
+        total: money(category.total), budget: category.budget && { limit: money(category.budget.limit) },
+      })),
       points: forecast.points.map(p => ({ ...p, actual: money(p.actual), projected: money(p.projected) })),
     },
   });

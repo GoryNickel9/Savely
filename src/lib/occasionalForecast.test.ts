@@ -15,30 +15,29 @@ const marker = tx('2025-11-01', 0, { type: 'income', category_id: null });
 const run = (transactions = rows, date = asOf, recurring: RecurringExpense[] = []) => forecastSpending(transactions, [], recurring, date, [category]);
 
 describe('occasional spending forecast', () => {
-  it('uses 300 / 12 / 31 * 5 for the future and preserves the complete 100 EUR already paid', () => {
+  it('uses the spending-window monthly average for the future and preserves the complete 100 EUR already paid', () => {
     const result = run();
-    expect(result).toMatchObject({ spent: 100, variable: 4.03, scheduled: 0, total: 104.03 });
+    expect(result).toMatchObject({ spent: 100, variable: 2.69, scheduled: 0, total: 102.69 });
     const regular = forecastSpending(rows, [], [], asOf);
     expect(result.spent).toBe(regular.spent);
     expect(result.points.map(point => point.actual)).toEqual(regular.points.map(point => point.actual));
-    expect(result.variable).not.toBe(regular.variable);
-    expect(result.points.at(-1)?.projected).toBe(104.03);
+    expect(result.points.at(-1)?.projected).toBe(102.69);
   });
-  it('includes zero months without shrinking the fixed divisor when payments are rare', () => {
-    expect(run([marker, tx(asOf, 100)])).toMatchObject({ spent: 100, variable: 1.34, total: 101.34 });
+  it('yields no variable forecast until the category spans multiple months of history', () => {
+    expect(run([marker, tx(asOf, 100)])).toMatchObject({ spent: 100, variable: 0, total: 100 });
     expect(run([marker])).toMatchObject({ spent: 0, variable: 0, total: 0 });
   });
-  it('never learns from future, deleted, income, other-category or out-of-window transactions', () => {
-    const extra = [tx('2025-10-31', 9999), tx('2026-11-01', 9999), tx(asOf, 9999, { deleted_at: asOf }),
+  it('never learns from future, deleted, income or other-category transactions', () => {
+    const extra = [tx('2026-11-01', 9999), tx(asOf, 9999, { deleted_at: asOf }),
       tx(asOf, 9999, { type: 'income' })];
     expect(run([...rows, ...extra])).toEqual(run());
     // Other categories still contribute to real spending, but not the dentist's annual average.
-    expect(run([...rows, tx(asOf, 200, { category_id: 'other' })])).toMatchObject({ spent: 300, variable: 4.03, total: 304.03 });
+    expect(run([...rows, tx(asOf, 200, { category_id: 'other' })])).toMatchObject({ spent: 300, variable: 2.69, total: 302.69 });
   });
-  it('future planned payments replace the remaining category expectation across the month', () => {
-    expect(run([...rows, tx('2026-10-30', 100)])).toMatchObject({ spent: 100, scheduled: 100, variable: 0, total: 200 });
-    expect(run([...rows, tx('2026-10-30', 1)])).toMatchObject({ spent: 100, scheduled: 1, variable: 3.03, total: 104.03 });
-    expect(run([...rows, tx('2026-10-27', 1), tx('2026-10-30', 1)])).toMatchObject({ scheduled: 2, variable: 2.03, total: 104.03 });
+  it('future planned variable payments reduce the remaining category expectation day by day', () => {
+    expect(run([...rows, tx('2026-10-30', 100)])).toMatchObject({ spent: 100, scheduled: 100, variable: 2.15, total: 202.15 });
+    expect(run([...rows, tx('2026-10-30', 1)])).toMatchObject({ spent: 100, scheduled: 1, variable: 2.15, total: 103.15 });
+    expect(run([...rows, tx('2026-10-27', 1), tx('2026-10-30', 1)])).toMatchObject({ scheduled: 2, variable: 1.61, total: 103.61 });
   });
   it('does not infer recurring payments for categories explicitly marked occasional', () => {
     const subscriptions = ['06', '07', '08', '09'].map(month => tx(`2026-${month}-25`, 100, { description: 'Dentist' }));
@@ -62,7 +61,7 @@ describe('occasional spending forecast', () => {
     expect(mixed.spent).toBe(100 + baseline.spent);
     // Round the combined unrounded expectations, not the already rounded 1.15 EUR subtotal.
     expect(baseline.variable).toBe(1.15);
-    expect(mixed.variable).toBe(5.19);
+    expect(mixed.variable).toBe(3.84);
     expect(mixed.total).toBeCloseTo(mixed.spent + mixed.scheduled + mixed.variable, 2);
     const values = mixed.points.flatMap(point => point.projected === null ? [] : [point.projected]);
     expect(values.every((value, i) => i === 0 || value >= values[i - 1])).toBe(true);
@@ -76,7 +75,7 @@ describe('occasional spending forecast', () => {
   });
   it('uses recorded FX and retains insufficient-history guards without averaging actual spending', () => {
     expect(run([marker, tx(asOf, 100, { currency: 'USD', exchange_rate_eur: 0.9 })]))
-      .toMatchObject({ spent: 90, variable: 1.21, total: 91.21 });
+      .toMatchObject({ spent: 90, variable: 0, total: 90 });
     expect(run([tx(asOf, 100)])).toMatchObject({ spent: 100, variable: 0, total: null, available: false });
   });
   it('matches the independent cent-exact reference fixture decoded by both web and Android', () => {

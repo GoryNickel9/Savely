@@ -26,7 +26,7 @@ export function useBudgets() {
       category_id: string;
       amount: number;
     }) => {
-      // Use fixed month/year since budgets are now based on median, not specific month
+      // Use fixed month/year since budgets are now based on a monthly reference, not specific month
       const { data, error } = await supabase
         .from('budgets')
         .insert({

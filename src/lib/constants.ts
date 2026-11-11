@@ -52,7 +52,9 @@ export const MEAN_CALCULATION_DAYS = 365;
 /**
  * Numero di giorni da considerare per il calcolo della mediana delle spese
  */
-export const MEDIAN_CALCULATION_DAYS = 730;
+export const SPENDING_HISTORY_DAYS = 730;
+// Legacy name retained for the independent Poker median calculations.
+export const MEDIAN_CALCULATION_DAYS = SPENDING_HISTORY_DAYS;
 
 /**
  * Numero di giorni da considerare per il calcolo della media winsorizzata delle spese

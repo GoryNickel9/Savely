@@ -2,7 +2,7 @@
  * Insights / anomaly detection.
  *
  * Pure functions that analyze the user's financial data and surface notable
- * signals: spending anomalies vs the per-category median, budget overruns,
+ * signals: spending anomalies vs the per-category average, budget overruns,
  * portfolio positions in heavy loss, net-worth milestones, above-average
  * saving months, growing category trends, and recurring-expense hints.
  *
@@ -18,11 +18,12 @@ import type { Transaction, Budget, Category, PortfolioAsset } from './types';
 import type { NetWorthSnapshot } from '@/hooks/useNetWorthHistory';
 import type { RecurringCandidate } from './recurringDetection';
 import { detectRecurringCandidates, normalizeDescription } from './recurringDetection';
-import { calculateMedian } from './statistics';
+import { calculateMean } from './statistics';
 import { parseLocalDate, todayLocalISO } from './utils';
-import { MEDIAN_CALCULATION_DAYS } from './constants';
+import { REGULAR_SPENDING_DAYS } from './spendingWindow';
+import { getAverageMonthlySpending } from './budgetSpending';
 import { FORECAST_DAYS, transactionEUR, validTransactions } from './spendingForecast';
-import type { OccasionalSpending } from './forecastContract';
+import type { BudgetSpending, OccasionalSpending } from './forecastContract';
 
 // --- Public types -----------------------------------------------------------
 
@@ -65,12 +66,13 @@ export interface InsightsInput {
   /** Reference date — defaults to now(). Pass explicitly in tests. */
   referenceDate?: Date;
   occasionalSpending?: OccasionalSpending;
+  budgetSpending?: BudgetSpending;
 }
 
 // --- Tunable thresholds -----------------------------------------------------
 
 /** A category is anomalous if its current-month spend is at least this factor
- *  of the median monthly spend, AND ≥ ANOMALY_MIN_AMOUNT. */
+ *  of the average monthly spend, AND ≥ ANOMALY_MIN_AMOUNT. */
 const ANOMALY_FACTOR = 1.4;
 const ANOMALY_MIN_AMOUNT = 50;
 
@@ -81,12 +83,12 @@ const PORTFOLIO_LOSS_THRESHOLD = -0.15;
  *  average monthly saving over the past 12 months. */
 const SAVING_FACTOR = 1.2;
 
-/** A category is trending up if its 3-month median ≥ TREND_FACTOR × the
- *  12-month median. */
+/** A category is trending up if its 3-month average ≥ TREND_FACTOR × the
+ *  12-month average. */
 const TREND_FACTOR = 1.25;
 
 /** A recurring expense's latest amount is flagged if it differs from the
- *  group median by at least this fraction. */
+ *  group average by at least this fraction. */
 const RECURRING_PRICE_CHANGE = 0.1;
 
 /** Net-worth milestone requires the latest snapshot to beat the previous max
@@ -112,6 +114,7 @@ export function generateInsights(input: InsightsInput): Insight[] {
     recurringCandidates = [],
     referenceDate = new Date(),
     occasionalSpending,
+    budgetSpending,
   } = input;
 
   const transactions = validTransactions(rawTransactions)
@@ -122,6 +125,7 @@ export function generateInsights(input: InsightsInput): Insight[] {
   const occasionalIds = new Set([...categories, ...budgets.flatMap(budget => budget.category ? [budget.category] : [])]
     .filter(category => !category.deleted_at && category.type === 'expense' && category.spending_pattern === 'occasional').map(category => category.id));
   for (const category of occasionalSpending?.categories ?? []) occasionalIds.add(category.categoryId);
+  for (const category of budgetSpending?.categories ?? []) if (category.categoryId && category.spendingPattern === 'occasional') occasionalIds.add(category.categoryId);
   // Infer the usual price BEFORE the last charge, including already tracked series.
   const latestDates = new Map<string, string>();
   for (const transaction of transactions) {
@@ -137,7 +141,7 @@ export function generateInsights(input: InsightsInput): Insight[] {
 
   const insights: Insight[] = [
     ...detectSpendingAnomalies(transactions, categoryName, referenceDate).filter(insight => !occasionalIds.has(insight.categoryId ?? '')),
-    ...detectBudgetExceeded(transactions, budgets.filter(budget => budget.currency === 'EUR'), categoryName, referenceDate, occasionalIds, occasionalSpending),
+    ...detectBudgetExceeded(transactions, budgets.filter(budget => budget.currency === 'EUR'), categoryName, referenceDate, occasionalIds, occasionalSpending, budgetSpending),
     ...detectPortfolioLoss(openAssets),
     ...detectNetWorthMilestone(netWorthHistory.filter(snapshot => parseLocalDate(snapshot.date) <= referenceDate)),
     ...detectSavingMonth(transactions, referenceDate),
@@ -162,23 +166,23 @@ export function generateInsights(input: InsightsInput): Insight[] {
 // --- Detectors --------------------------------------------------------------
 
 /**
- * For each category, compare the current-month expense total to the median
- * monthly expense over the trailing MEDIAN_CALCULATION_DAYS window. Flag when
- * the current month is ≥ ANOMALY_FACTOR × median and ≥ ANOMALY_MIN_AMOUNT.
+ * For each category, compare the current-month expense total to the average
+ * monthly expense over the trailing REGULAR_SPENDING_DAYS window. Flag when
+ * the current month is ≥ ANOMALY_FACTOR × average and ≥ ANOMALY_MIN_AMOUNT.
  */
 function detectSpendingAnomalies(
   transactions: Transaction[],
   categoryName: Map<string, string>,
   referenceDate: Date
 ): Insight[] {
-  const windowStart = subDays(referenceDate, MEDIAN_CALCULATION_DAYS);
+  const windowStart = subDays(referenceDate, REGULAR_SPENDING_DAYS);
   const currentMonthKey = monthKey(referenceDate);
 
   const expenses = transactions.filter(
     (t) => t.type === 'expense' && t.category_id && parseLocalDate(t.date) >= windowStart
   );
 
-  // Sum each historical month BEFORE taking a median; match the elapsed days.
+  // Sum each historical month BEFORE taking a average; match the elapsed days.
   const monthlyByCategory = new Map<string, Map<string, number>>();
   const currentByCategory = new Map<string, number>();
 
@@ -198,32 +202,32 @@ function detectSpendingAnomalies(
   const insights: Insight[] = [];
   for (const [catId, currentAmount] of currentByCategory) {
     if (currentAmount < ANOMALY_MIN_AMOUNT) continue;
-    const medians = comparableMonths(transactions, monthlyByCategory.get(catId) ?? new Map(), referenceDate, windowStart);
-    if (!medians || medians.length === 0) continue;
-    const median = calculateMedian(medians);
-    if (median <= 0) continue;
-    if (currentAmount >= median * ANOMALY_FACTOR) {
-      const pct = Math.round(((currentAmount - median) / median) * 100);
+    const monthlySamples = comparableMonths(transactions, monthlyByCategory.get(catId) ?? new Map(), referenceDate, windowStart);
+    if (!monthlySamples || monthlySamples.length === 0) continue;
+    const average = calculateMean(monthlySamples);
+    if (average <= 0) continue;
+    if (currentAmount >= average * ANOMALY_FACTOR) {
+      const pct = Math.round(((currentAmount - average) / average) * 100);
       const name = categoryName.get(catId) ?? i18n.t('Senza categoria');
       insights.push({
         id: `spending_anomaly:${catId}`,
         kind: 'spending_anomaly',
         severity: 'warning',
         title: i18n.t('Spesa anomala in {{name}}', { name }),
-        message: i18n.t('Hai speso {{amount}} nei primi {{days}} giorni: +{{pct}}% rispetto agli stessi giorni dei mesi precedenti ({{median}}).', {
+        message: i18n.t('Hai speso {{amount}} nei primi {{days}} giorni: +{{pct}}% rispetto agli stessi giorni dei mesi precedenti ({{average}}).', {
           days: referenceDate.getDate(),
           amount: formatEur(currentAmount),
           pct,
-          median: formatEur(median),
+          average: formatEur(average),
         }),
-        value: currentAmount - median,
+        value: currentAmount - average,
         category: name,
         categoryId: catId,
         href: '/transactions',
         details: [
           { label: i18n.t('Spesa nel periodo corrente'), value: formatEur(currentAmount) },
-          { label: i18n.t('Mediana degli stessi giorni'), value: formatEur(median) },
-          { label: i18n.t('Mesi confrontati'), value: String(medians.length) },
+          { label: i18n.t('Media degli stessi giorni'), value: formatEur(average) },
+          { label: i18n.t('Mesi confrontati'), value: String(monthlySamples.length) },
         ],
       });
     }
@@ -232,8 +236,7 @@ function detectSpendingAnomalies(
 }
 
 /**
- * Regular categories use current-month spending; occasional categories read
- * the server's twelve-month mean and comparison flag, without recomputing them.
+ * Schema 2 uses the same server-owned 180/730-day means shown by Budget.
  */
 function detectBudgetExceeded(
   transactions: Transaction[],
@@ -242,35 +245,27 @@ function detectBudgetExceeded(
   referenceDate: Date,
   occasionalIds: Set<string>,
   remote?: OccasionalSpending,
+  averages?: BudgetSpending,
 ): Insight[] {
-  const currentMonthKey = monthKey(referenceDate);
-  const spentByCategory = new Map<string, number>();
-  for (const t of transactions) {
-    if (t.type !== 'expense' || !t.category_id) continue;
-    if (monthKey(parseLocalDate(t.date)) !== currentMonthKey) continue;
-    spentByCategory.set(
-      t.category_id,
-      (spentByCategory.get(t.category_id) ?? 0) + Number(t.amount)
-    );
-  }
-
   const insights: Insight[] = [];
   for (const b of budgets) {
     const occasional = occasionalIds.has(b.category_id);
+    const average = averages?.categories.find(row => row.categoryId === b.category_id);
+    if (averages && (averages.endDate !== todayLocalISO(referenceDate) || !average || average.expectedMonthly !== Number(b.amount).toFixed(2))) throw new Error('Budget comparison unavailable');
     const comparison = remote?.categories.find(category => category.categoryId === b.category_id);
-    if (occasional && (!comparison || comparison.expectedMonthly !== Number(b.amount).toFixed(2)
+    if (!average && occasional && (!comparison || comparison.expectedMonthly !== Number(b.amount).toFixed(2)
       || remote!.endDate !== todayLocalISO(referenceDate))) throw new Error('Occasional budget comparison unavailable');
-    const spent = occasional ? Number(comparison!.averageMonthly) : spentByCategory.get(b.category_id) ?? 0;
-    if (b.amount > 0 && (occasional ? comparison!.exceeded : spent > b.amount)) {
+    const spent = average ? Number(average.averageMonthly) : occasional ? Number(comparison!.averageMonthly) : getAverageMonthlySpending({ transactions, categoryId: b.category_id, referenceDate });
+    if (b.amount > 0 && (average ? average.exceeded : occasional ? comparison!.exceeded : spent > b.amount)) {
       const name = categoryName.get(b.category_id) ?? b.category?.name ?? i18n.t('Categoria');
-      const over = occasional ? Number(comparison!.over) : spent - b.amount;
+      const over = average ? Number(average.over) : occasional ? Number(comparison!.over) : spent - b.amount;
       insights.push({
         id: `budget_exceeded:${b.category_id}`,
         kind: 'budget_exceeded',
         severity: 'warning',
         title: i18n.t('Budget superato in {{name}}', { name }),
-        message: i18n.t(occasional
-          ? 'La media mensile su 12 mesi è {{spent}}, rispetto a {{budget}} attesi ({{over}} oltre).'
+        message: average ? i18n.t('La media mensile degli ultimi {{days}} giorni è {{spent}}, rispetto a {{budget}} attesi ({{over}} oltre).', { days: average.historyDays, spent: formatEur(spent), budget: formatEur(Number(b.amount)), over: formatEur(over) }) : i18n.t(occasional
+          ? 'La media mensile su 12 mesi è {{spent}}, rispetto a {{budget}} attesi ({{over}} oltre). Sono inclusi i mesi a zero e il mese corrente fino a oggi.'
           : 'Hai speso {{spent}} su un budget di {{budget}} ({{over}} oltre).', {
           spent: formatEur(spent),
           budget: formatEur(b.amount),
@@ -281,7 +276,7 @@ function detectBudgetExceeded(
         categoryId: b.category_id,
         href: '/budget',
         details: [
-          { label: i18n.t(occasional ? 'Media mensile su 12 mesi' : 'Spesa del mese'), value: formatEur(spent) },
+          { label: average ? i18n.t('Media mensile su {{days}} giorni', { days: average.historyDays }) : i18n.t(occasional ? 'Media mensile su 12 mesi' : 'Media mensile su 180 giorni'), value: formatEur(spent) },
           { label: i18n.t('Budget della categoria'), value: formatEur(b.amount) },
           { label: i18n.t('Superamento'), value: formatEur(over) },
         ],
@@ -396,15 +391,15 @@ function detectSavingMonth(transactions: Transaction[], referenceDate: Date): In
 }
 
 /**
- * Flag categories whose 3-month median spend grew by at least TREND_FACTOR
- * compared to their 12-month median (emerging cost areas).
+ * Flag categories whose 3-month average spend grew by at least TREND_FACTOR
+ * compared to their 12-month average (emerging cost areas).
  */
 function detectCategoryTrend(
   transactions: Transaction[],
   categoryName: Map<string, string>,
   referenceDate: Date
 ): Insight[] {
-  const windowStart = new Date(referenceDate.getFullYear(), referenceDate.getMonth() - 12, 1);
+  const windowStart = subDays(referenceDate, REGULAR_SPENDING_DAYS);
   const recentStart = new Date(referenceDate.getFullYear(), referenceDate.getMonth() - 3, 1);
   const recentMonthKey = monthKey(referenceDate);
 
@@ -428,12 +423,12 @@ function detectCategoryTrend(
     if (recent.length < 2) continue;
     const baseline = comparableMonths(transactions, months, referenceDate, windowStart);
     if (!baseline || baseline.length === 0) continue;
-    const median3 = calculateMedian(recent);
-    const median12 = calculateMedian(baseline);
-    if (median12 <= 0 || median3 < ANOMALY_MIN_AMOUNT) continue;
-    if (median3 >= median12 * TREND_FACTOR) {
+    const mean3 = calculateMean(recent);
+    const mean12 = calculateMean(baseline);
+    if (mean12 <= 0 || mean3 < ANOMALY_MIN_AMOUNT) continue;
+    if (mean3 >= mean12 * TREND_FACTOR) {
       const name = categoryName.get(catId) ?? i18n.t('Senza categoria');
-      const pct = Math.round(((median3 - median12) / median12) * 100);
+      const pct = Math.round(((mean3 - mean12) / mean12) * 100);
       insights.push({
         id: `category_trend:${catId}`,
         kind: 'category_trend',
@@ -442,16 +437,16 @@ function detectCategoryTrend(
         message: i18n.t('La spesa mensile in {{name}} è cresciuta del {{pct}}% negli ultimi 3 mesi ({{recent}} vs {{baseline}}).', {
           name,
           pct,
-          recent: formatEur(median3),
-          baseline: formatEur(median12),
+          recent: formatEur(mean3),
+          baseline: formatEur(mean12),
         }),
-        value: median3 - median12,
+        value: mean3 - mean12,
         category: name,
         categoryId: catId,
         href: '/transactions',
         details: [
-          { label: i18n.t('Mediana mensile recente'), value: formatEur(median3) },
-          { label: i18n.t('Mediana mensile storica'), value: formatEur(median12) },
+          { label: i18n.t('Media mensile recente'), value: formatEur(mean3) },
+          { label: i18n.t('Media mensile storica'), value: formatEur(mean12) },
         ],
       });
     }
@@ -478,17 +473,17 @@ function detectNewRecurring(candidates: RecurringCandidate[]): Insight[] {
     title: i18n.t('Possibile spesa ricorrente: {{description}}', { description: c.description }),
     message: i18n.t('Rilevata {{frequency}} di {{amount}} ({{num}} occorrenze). Vuoi tenerla tracciata?', {
       frequency: frequencyLabel(c.frequency),
-      amount: formatEur(c.medianAmount),
+      amount: formatEur(c.meanAmount),
       num: c.occurrenceCount,
     }),
-    value: c.medianAmount,
+    value: c.meanAmount,
     href: '/recurring',
   }));
 }
 
 /**
  * For each recurring candidate, check whether the most recent transaction's
- * amount deviates from the group median by at least RECURRING_PRICE_CHANGE
+ * amount deviates from the group average by at least RECURRING_PRICE_CHANGE
  * (e.g. a subscription price hike).
  */
 function detectRecurringPriceChange(
@@ -513,8 +508,8 @@ function detectRecurringPriceChange(
   const insights: Insight[] = [];
   for (const c of candidates) {
     const latest = latestByKey.get(c.normalizedKey);
-    if (!latest || c.medianAmount <= 0) continue;
-    const change = (latest.amount - c.medianAmount) / c.medianAmount;
+    if (!latest || c.meanAmount <= 0) continue;
+    const change = (latest.amount - c.meanAmount) / c.meanAmount;
     if (Math.abs(change) >= RECURRING_PRICE_CHANGE) {
       const pct = Math.round(change * 100);
       const dir = change > 0 ? i18n.t('aumentata') : i18n.t('diminuita');
@@ -524,16 +519,16 @@ function detectRecurringPriceChange(
         kind: 'recurring_price_change',
         severity,
         title: i18n.t('Spesa ricorrente {{dir}}: {{description}}', { dir, description: c.description }),
-        message: i18n.t("L'ultimo addebito è {{latest}}: {{pct}}% rispetto all'importo abituale di {{median}}.", {
+        message: i18n.t("L'ultimo addebito è {{latest}}: {{pct}}% rispetto all'importo abituale di {{average}}.", {
           latest: formatEur(latest.amount),
           pct: change > 0 ? `+${pct}` : String(pct),
-          median: formatEur(c.medianAmount),
+          average: formatEur(c.meanAmount),
         }),
-        value: latest.amount - c.medianAmount,
+        value: latest.amount - c.meanAmount,
         href: '/recurring',
         details: [
           { label: i18n.t('Ultimo addebito'), value: formatEur(latest.amount) },
-          { label: i18n.t('Importo abituale'), value: formatEur(c.medianAmount) },
+          { label: i18n.t('Importo abituale'), value: formatEur(c.meanAmount) },
           { label: i18n.t('Variazione'), value: `${pct}%` },
         ],
       });

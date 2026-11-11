@@ -17,6 +17,8 @@ export interface RecurringCandidate {
   /** Normalized key used for grouping. */
   normalizedKey: string;
   medianAmount: number;
+  /** Arithmetic mean of the observed charges; medianAmount is legacy v1 only. */
+  meanAmount: number;
   frequency: DetectedFrequency;
   lastDate: string; // YYYY-MM-DD
   suggestedNextDueDate: string; // YYYY-MM-DD
@@ -157,6 +159,7 @@ export function detectRecurringCandidates(
       description: group[group.length - 1].description!,
       normalizedKey: key,
       medianAmount: Math.round(medianAmount * 100) / 100,
+      meanAmount: Math.round(amounts.reduce((sum, amount) => sum + amount, 0) / amounts.length * 100) / 100,
       frequency: match.frequency,
       lastDate,
       suggestedNextDueDate,

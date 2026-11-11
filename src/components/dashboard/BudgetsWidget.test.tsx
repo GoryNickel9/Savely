@@ -35,13 +35,12 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
-it('confronta il budget con la mediana dei totali mensili degli ultimi 730 giorni', () => {
+it('confronta il budget con la media dei totali mensili degli ultimi 180 giorni', () => {
   const transactions = [
     expense('2026-08-05', 180),
     expense('2026-08-20', 60),
     expense('2026-09-10', 360),
     expense('2026-10-10', 120),
-    expense('2023-01-10', 9000),
     expense('2026-09-15', 9000, { type: 'income' }),
     expense('2026-09-20', 9000, { category_id: 'other' }),
   ];
@@ -49,7 +48,7 @@ it('confronta il budget con la mediana dei totali mensili degli ultimi 730 giorn
     <MemoryRouter><BudgetsWidget budgets={[budget]} transactions={transactions} /></MemoryRouter>
   );
 
-  expect(screen.getByText('Mediana mensile (ultimi 730 giorni)')).toBeTruthy();
+  expect(screen.getByText('Media mensile: ordinarie 180 giorni, saltuarie 730 giorni')).toBeTruthy();
   const row = within(screen.getByRole('listitem'));
   expect(row.getByText('€240,00', { exact: false })).toBeTruthy();
   expect(row.getByText('/ €300,00')).toBeTruthy();
@@ -61,8 +60,8 @@ it('confronta il budget con la mediana dei totali mensili degli ultimi 730 giorn
       <BudgetsWidget budgets={[budget]} transactions={[...transactions, expense('2026-10-20', 240)]} />
     </MemoryRouter>
   );
-  expect(row.getByText('€360,00', { exact: false })).toBeTruthy();
-  expect(row.getByText('120%')).toBeTruthy();
+  expect(row.getByText('€320,00', { exact: false })).toBeTruthy();
+  expect(row.getByText('106,67%')).toBeTruthy();
   expect(row.getByRole('progressbar').className).toContain('[&>div]:bg-destructive');
   expect(row.getByRole('progressbar').getAttribute('aria-valuenow')).toBe('100');
 });
@@ -79,10 +78,11 @@ it('mostra zero per una categoria senza spese nello storico', () => {
 it('uses the server average for occasional categories and never renders missing data as zero', () => {
   const occasional = { ...budget, category: { ...budget.category!, spending_pattern: 'occasional' as const } };
   const view = render(<MemoryRouter><BudgetsWidget budgets={[occasional]} transactions={[]} /></MemoryRouter>);
+  expect(screen.queryByText(/Spese saltuarie:|Media mensile su 12 mesi|Media mensile/)).toBeNull();
   expect(screen.getByText('Confronto delle spese saltuarie non disponibile. Riprova.')).toBeTruthy();
   expect(screen.queryByRole('progressbar')).toBeNull();
-  remote.useSpendingForecast.mockReturnValue({ data: { occasionalSpending: { categories: [
-    { categoryId: 'food', expectedMonthly: '300.00', averageMonthly: '25.00' },
+  remote.useSpendingForecast.mockReturnValue({ data: { budgetSpending: { categories: [
+    { categoryId: 'food', spendingPattern: 'occasional', expectedMonthly: '300.00', averageMonthly: '25.00' },
   ] } }, isLoading: false });
   view.rerender(<MemoryRouter><BudgetsWidget budgets={[occasional]} transactions={[]} /></MemoryRouter>);
   expect(screen.getByText('€25,00', { exact: false })).toBeTruthy();

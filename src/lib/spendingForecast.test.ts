@@ -24,6 +24,11 @@ function budget(category_id = 'food', amount = 500): Budget {
 }
 
 describe('forecastSpending', () => {
+  it('uses the arithmetic mean of detected charges in the published v2 model', () => {
+    const rows = ['2026-04-10', '2026-05-10', '2026-06-10'].map((date, index) => tx(date, index === 2 ? 109 : 100, { description: 'Streaming' }));
+    expect(serverForecast(rows, [], [], '2026-07-01', [], 'weekday-history-mean-v2').scheduled).toBe(103);
+    expect(serverForecast(rows, [], [], '2026-07-01', [], 'weekday-history-v1').scheduled).toBe(100);
+  });
   it('prevede i giorni restanti su 180 giorni, senza estrapolare due volte lo speso', () => {
     const result = forecastSpending([...history(), tx('2026-10-20')], [budget()], [], today);
     expect(result.historyDays).toBe(180);
@@ -74,6 +79,7 @@ describe('forecastSpending', () => {
     expect(result.available).toBe(false);
     expect(result.total).toBeNull();
     expect(result.points.every(point => point.projected === null)).toBe(true);
+    expect(result.categories?.every(category => category.total === null)).toBe(true);
   });
 
   it('non usa transazioni future per apprendere abitudini o disponibilità dello storico', () => {
@@ -144,5 +150,24 @@ describe('forecastSpending', () => {
       const projected = result.points.map(point => point.projected).filter((value): value is number => value !== null);
       expect(projected.every((value, index) => index === 0 || value >= projected[index-1])).toBe(true);
     }
+  });
+
+  it('breaks down paid, scheduled and variable amounts without duplicating a planned recurring payment', () => {
+    const subscriptions = ['2026-05-25', '2026-06-25', '2026-07-25', '2026-08-25', '2026-09-25']
+      .map(date => tx(date, 15, { description: 'Streaming', category_id: 'streaming' }));
+    const result = forecastSpending([...history(), ...subscriptions,
+      tx('2026-10-25', 17, { description: 'Streaming', category_id: 'streaming' }),
+      tx('2026-10-10', 30, { category_id: null }),
+    ], [budget('unused', 0)], [recurring()], today);
+    expect(result.categories).toContainEqual({ categoryId: 'streaming', spent: 0, scheduled: 17, variable: 0, total: 17, budget: null });
+    expect(result.categories).toContainEqual(expect.objectContaining({ categoryId: null, spent: 30, budget: null }));
+    expect(result.categories).toContainEqual({ categoryId: 'unused', spent: 0, scheduled: 0, variable: 0, total: 0, budget: { limit: 0 } });
+    for (const key of ['spent', 'scheduled', 'variable', 'total'] as const) {
+      expect(result.categories!.reduce((sum, category) => sum + Math.round(category[key]! * 100), 0)).toBe(Math.round(result[key]! * 100));
+    }
+  });
+
+  it('rejects duplicate budgets even when the first budget is zero', () => {
+    expect(() => forecastSpending(history(), [budget('food', 0), budget('food', 100)], [], today)).toThrow('Duplicate category budget');
   });
 });

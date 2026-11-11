@@ -110,10 +110,28 @@ describe('generateInsights - edge cases', () => {
 });
 
 describe('detectSpendingAnomalies', () => {
-  it('rileva spesa molto sopra la mediana mensile', () => {
-    // Mediana storica: ~100€/mese per diversi mesi.
+  it('uses three-month and 180-day means for trends when their medians would be equal', () => {
+    const transactions = Array.from({ length: 12 }, (_, index) => {
+      const date = new Date(2025, 5 + index, 1);
+      return tx({ type: 'expense', date: `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-01`, amount: index === 11 ? 1000 : 100 });
+    });
+    const trend = generateInsights(baseInput({ transactions })).find(insight => insight.kind === 'category_trend')!;
+    expect(trend.details).toContainEqual({ label: 'Media mensile recente', value: '400,00€' });
+    expect(trend.details).toContainEqual({ label: 'Media mensile storica', value: '280,00€' });
+  });
+  it('uses the mean of comparable monthly totals including zero months, even when the median differs', () => {
+    const history = [tx({ type: 'income', amount: 0, date: '2026-01-01' }),
+      ...['2026-01-10', '2026-02-10', '2026-03-10'].map((date, index) => tx({ type: 'expense', date, amount: index === 2 ? 1000 : 100 }))];
+    const current = (amount: number) => tx({ type: 'expense', amount, date: '2026-06-10' });
+    expect(generateInsights(baseInput({ transactions: [...history, current(300)] })).some(insight => insight.kind === 'spending_anomaly')).toBe(false);
+    const anomaly = generateInsights(baseInput({ transactions: [...history, current(500)] })).find(insight => insight.kind === 'spending_anomaly')!;
+    expect(anomaly.details).toContainEqual({ label: 'Media degli stessi giorni', value: '240,00€' });
+    expect(anomaly.value).toBe(260);
+  });
+  it('rileva spesa molto sopra la media mensile', () => {
+    // Media storica: ~100€/mese per diversi mesi.
     const transactions: Transaction[] = [
-      // current month (2026-06): 300€ → 3× la mediana
+      // current month (2026-06): 300€ → 3× la media
       tx({ type: 'expense', amount: 300, date: '2026-06-10', category_id: 'cat1' }),
       // storico: 100€ al mese per 4 mesi
       ...['2026-05-10', '2026-04-10', '2026-03-10', '2026-02-10'].map((d) =>
@@ -128,7 +146,7 @@ describe('detectSpendingAnomalies', () => {
     expect(anomaly!.message).toContain('+200%');
   });
 
-  it('ignora spese vicine alla mediana', () => {
+  it('ignora spese vicine alla media', () => {
     const transactions: Transaction[] = [
       tx({ type: 'expense', amount: 110, date: '2026-06-10', category_id: 'cat1' }),
       ...['2026-05-10', '2026-04-10', '2026-03-10'].map((d) =>
@@ -173,13 +191,13 @@ describe('detectBudgetExceeded', () => {
     expect(insights.find((i) => i.kind === 'budget_exceeded')).toBeUndefined();
   });
 
-  it('ignora budget di altri mesi', () => {
+  it('confronta anche le spese dei mesi precedenti nella media del budget', () => {
     const transactions = [
       tx({ type: 'expense', amount: 999, date: '2026-05-10', category_id: 'cat1' }),
     ];
     const budgets = [budget({ amount: 200 })];
     const insights = generateInsights(baseInput({ transactions, budgets }));
-    expect(insights.find((i) => i.kind === 'budget_exceeded')).toBeUndefined();
+    expect(insights.find((i) => i.kind === 'budget_exceeded')?.value).toBe(299.5);
   });
 });
 
@@ -307,6 +325,7 @@ describe('detectNewRecurring', () => {
         description: 'Netflix',
         normalizedKey: 'netflix',
         medianAmount: 12.99,
+        meanAmount: 12.99,
         frequency: 'monthly',
         lastDate: '2026-06-01',
         suggestedNextDueDate: '2026-07-01',
@@ -328,12 +347,20 @@ describe('detectNewRecurring', () => {
 });
 
 describe('detectRecurringPriceChange', () => {
+  it('compares a price change with the mean of previous charges rather than their median', () => {
+    const transactions = ['2026-02-01', '2026-03-01', '2026-04-01', '2026-05-01']
+      .map((date, index) => tx({ type: 'expense', date, amount: [100, 100, 109, 120][index], description: 'Test subscription' }));
+    const insight = generateInsights(baseInput({ transactions })).find(item => item.kind === 'recurring_price_change')!;
+    expect(insight.details).toContainEqual({ label: 'Importo abituale', value: '103,00€' });
+    expect(insight.value).toBe(17);
+  });
   it('rileva rincaro abbonamento', () => {
     const recurringCandidates: RecurringCandidate[] = [
       {
         description: 'Netflix',
         normalizedKey: 'netflix',
         medianAmount: 12.99,
+        meanAmount: 12.99,
         frequency: 'monthly',
         lastDate: '2026-06-01',
         suggestedNextDueDate: '2026-07-01',
@@ -357,6 +384,7 @@ describe('detectRecurringPriceChange', () => {
         description: 'Spotify',
         normalizedKey: 'spotify',
         medianAmount: 10.99,
+        meanAmount: 10.99,
         frequency: 'monthly',
         lastDate: '2026-06-01',
         suggestedNextDueDate: '2026-07-01',
@@ -380,6 +408,7 @@ describe('detectRecurringPriceChange', () => {
         description: 'Netflix',
         normalizedKey: 'netflix',
         medianAmount: 12.99,
+        meanAmount: 12.99,
         frequency: 'monthly',
         lastDate: '2026-06-01',
         suggestedNextDueDate: '2026-07-01',
@@ -422,7 +451,7 @@ describe('regressioni sui confronti', () => {
     expect(insight?.severity).toBe('warning');
     expect(insight?.details?.find(detail => detail.label === 'Variazione')?.value).toBe('25%');
   });
-  it('non scambia quattro transazioni da 50 euro per una mediana mensile di 50 euro', () => {
+  it('non scambia quattro transazioni da 50 euro per una media mensile di 50 euro', () => {
     const transactions = ['2026-02', '2026-03', '2026-04', '2026-05', '2026-06'].flatMap(month =>
       [1, 4, 8, 12].map(day => tx({ type: 'expense', amount: 50, date: `${month}-${String(day).padStart(2, '0')}` })),
     );
@@ -444,10 +473,10 @@ describe('regressioni sui confronti', () => {
   it('raggruppa budget e anomalia della stessa categoria, conservando i confronti', () => {
     const transactions = ['2026-02-01', '2026-03-01', '2026-04-01', '2026-05-01'].map(date => tx({ type: 'expense', amount: 100, date }));
     transactions.push(tx({ type: 'expense', amount: 500, date: '2026-06-10' }));
-    const categoryInsights = generateInsights(baseInput({ transactions, budgets: [budget()] })).filter(insight => insight.categoryId === 'cat1');
+    const categoryInsights = generateInsights(baseInput({ transactions, budgets: [budget({ amount: 150 })] })).filter(insight => insight.categoryId === 'cat1');
     expect(categoryInsights).toHaveLength(1);
     expect(categoryInsights[0].kind).toBe('budget_exceeded');
-    expect(categoryInsights[0].details?.some(detail => detail.label === 'Mediana degli stessi giorni')).toBe(true);
+    expect(categoryInsights[0].details?.some(detail => detail.label === 'Media degli stessi giorni')).toBe(true);
   });
 
   it('somma le transazioni mensili anche per il trend', () => {

@@ -8,7 +8,7 @@ export function useSpendingForecast(date: string, enabled = true) {
   const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
   // Login instance prevents showing a cached response after signing in again.
   return useQuery({
-    queryKey: ['spending-forecast', user?.id, session?.user.last_sign_in_at, timeZone, date],
+    queryKey: ['spending-forecast', 2, user?.id, session?.user.last_sign_in_at, timeZone, date],
     enabled: enabled && !!user && !!session,
     staleTime: 30_000,
     retry: false,
@@ -17,10 +17,11 @@ export function useSpendingForecast(date: string, enabled = true) {
       if (error || !data.session || data.session.user.id !== user?.id) throw new Error('Session changed');
       const response = await fetch('/api/spending-forecast', {
         method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${data.session.access_token}` },
-        body: JSON.stringify({ schemaVersion: 1, timeZone }), signal, cache: 'no-store', redirect: 'error',
+        body: JSON.stringify({ schemaVersion: 2, timeZone }), signal, cache: 'no-store', redirect: 'error',
       });
       if (!response.ok) throw new Error('Forecast unavailable');
       const result = decodeForecast(await response.json(), user.id, timeZone);
+      if (result.schemaVersion !== 2) throw new Error('Forecast schema changed');
       const current = await supabase.auth.getSession();
       if (current.data.session?.user.id !== user.id || current.data.session.user.last_sign_in_at !== data.session.user.last_sign_in_at) throw new Error('Session changed');
       return result;

@@ -1,0 +1,1648 @@
+{
+  "model": "regular180-occasional730-mean-v3",
+  "cases": [
+    {
+      "name": "rolling-boundaries",
+      "date": "2026-11-01",
+      "transactions": [
+        {
+          "id": "coverage",
+          "date": "2024-01-01",
+          "amount": 0,
+          "category_id": null,
+          "type": "income",
+          "currency": "EUR",
+          "exchange_rate_eur": 1,
+          "description": null,
+          "deleted_at": null
+        },
+        {
+          "id": "old-regular",
+          "date": "2026-05-04",
+          "amount": 900,
+          "category_id": "c0",
+          "type": "expense",
+          "currency": "EUR",
+          "exchange_rate_eur": 1,
+          "description": null,
+          "deleted_at": null
+        },
+        {
+          "id": "boundary-regular",
+          "date": "2026-05-05",
+          "amount": 70,
+          "category_id": "c0",
+          "type": "expense",
+          "currency": "EUR",
+          "exchange_rate_eur": 1,
+          "description": null,
+          "deleted_at": null
+        },
+        {
+          "id": "current",
+          "date": "2026-11-01",
+          "amount": 140,
+          "category_id": "c0",
+          "type": "expense",
+          "currency": "EUR",
+          "exchange_rate_eur": 1,
+          "description": null,
+          "deleted_at": null
+        },
+        {
+          "id": "boundary-occasional",
+          "date": "2024-11-01",
+          "amount": 250,
+          "category_id": "c1",
+          "type": "expense",
+          "currency": "EUR",
+          "exchange_rate_eur": 1,
+          "description": null,
+          "deleted_at": null
+        },
+        {
+          "id": "current-occasional",
+          "date": "2026-11-01",
+          "amount": 250,
+          "category_id": "c1",
+          "type": "expense",
+          "currency": "EUR",
+          "exchange_rate_eur": 1,
+          "description": null,
+          "deleted_at": null
+        },
+        {
+          "id": "old-occasional",
+          "date": "2024-10-31",
+          "amount": 1000,
+          "category_id": "c1",
+          "type": "expense",
+          "currency": "EUR",
+          "exchange_rate_eur": 1,
+          "description": null,
+          "deleted_at": null
+        },
+        {
+          "id": "future",
+          "date": "2026-11-02",
+          "amount": 900,
+          "category_id": "c0",
+          "type": "expense",
+          "currency": "EUR",
+          "exchange_rate_eur": 1,
+          "description": null,
+          "deleted_at": null
+        },
+        {
+          "id": "deleted",
+          "date": "2026-11-01",
+          "amount": 900,
+          "category_id": "c0",
+          "type": "expense",
+          "currency": "EUR",
+          "exchange_rate_eur": 1,
+          "description": null,
+          "deleted_at": "2026-11-01"
+        }
+      ],
+      "categories": [
+        {
+          "id": "c0",
+          "name": "Category 0",
+          "type": "expense",
+          "spending_pattern": "regular",
+          "deleted_at": null
+        },
+        {
+          "id": "c1",
+          "name": "Category 1",
+          "type": "expense",
+          "spending_pattern": "occasional",
+          "deleted_at": null
+        }
+      ],
+      "budgets": [
+        {
+          "id": "b0",
+          "category_id": "c0",
+          "category": {
+            "id": "c0",
+            "name": "Category 0",
+            "type": "expense",
+            "spending_pattern": "regular",
+            "deleted_at": null
+          },
+          "amount": 25,
+          "currency": "EUR"
+        },
+        {
+          "id": "b1",
+          "category_id": "c1",
+          "category": {
+            "id": "c1",
+            "name": "Category 1",
+            "type": "expense",
+            "spending_pattern": "occasional",
+            "deleted_at": null
+          },
+          "amount": 15,
+          "currency": "EUR"
+        }
+      ],
+      "response": {
+        "schemaVersion": 2,
+        "modelVersion": "regular180-occasional730-mean-v3",
+        "userId": "11111111-1111-4111-8111-111111111111",
+        "timeZone": "Europe/Rome",
+        "generatedAt": "2026-11-01T12:00:00Z",
+        "inputSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "budgetSpending": {
+          "endDate": "2026-11-01",
+          "categories": [
+            {
+              "categoryId": "c0",
+              "spendingPattern": "regular",
+              "startDate": "2026-05-05",
+              "endDate": "2026-11-01",
+              "historyDays": 180,
+              "months": 7,
+              "total": "210.00",
+              "averageMonthly": "30.00",
+              "expectedMonthly": "25.00",
+              "exceeded": true,
+              "over": "5.00"
+            },
+            {
+              "categoryId": "c1",
+              "spendingPattern": "occasional",
+              "startDate": "2024-11-01",
+              "endDate": "2026-11-01",
+              "historyDays": 730,
+              "months": 25,
+              "total": "500.00",
+              "averageMonthly": "20.00",
+              "expectedMonthly": "15.00",
+              "exceeded": true,
+              "over": "5.00"
+            }
+          ]
+        },
+        "forecast": {
+          "date": "2026-11-01",
+          "historyDays": 730,
+          "available": true,
+          "spent": "390.00",
+          "scheduled": "900.00",
+          "variable": "20.44",
+          "total": "1310.44",
+          "budget": {
+            "limit": "40.00"
+          },
+          "categories": [
+            {
+              "categoryId": "c0",
+              "spent": "140.00",
+              "scheduled": "900.00",
+              "variable": "10.77",
+              "total": "1050.77",
+              "budget": {
+                "limit": "25.00"
+              }
+            },
+            {
+              "categoryId": "c1",
+              "spent": "250.00",
+              "scheduled": "0.00",
+              "variable": "9.67",
+              "total": "259.67",
+              "budget": {
+                "limit": "15.00"
+              }
+            }
+          ],
+          "unsupportedRecurring": 0,
+          "unsupportedBudgets": 0,
+          "points": [
+            {
+              "day": 1,
+              "actual": "390.00",
+              "projected": "390.00"
+            },
+            {
+              "day": 2,
+              "actual": null,
+              "projected": "1290.33"
+            },
+            {
+              "day": 3,
+              "actual": null,
+              "projected": "1293.36"
+            },
+            {
+              "day": 4,
+              "actual": null,
+              "projected": "1293.69"
+            },
+            {
+              "day": 5,
+              "actual": null,
+              "projected": "1294.03"
+            },
+            {
+              "day": 6,
+              "actual": null,
+              "projected": "1294.36"
+            },
+            {
+              "day": 7,
+              "actual": null,
+              "projected": "1294.69"
+            },
+            {
+              "day": 8,
+              "actual": null,
+              "projected": "1295.03"
+            },
+            {
+              "day": 9,
+              "actual": null,
+              "projected": "1295.36"
+            },
+            {
+              "day": 10,
+              "actual": null,
+              "projected": "1298.38"
+            },
+            {
+              "day": 11,
+              "actual": null,
+              "projected": "1298.72"
+            },
+            {
+              "day": 12,
+              "actual": null,
+              "projected": "1299.05"
+            },
+            {
+              "day": 13,
+              "actual": null,
+              "projected": "1299.38"
+            },
+            {
+              "day": 14,
+              "actual": null,
+              "projected": "1299.72"
+            },
+            {
+              "day": 15,
+              "actual": null,
+              "projected": "1300.05"
+            },
+            {
+              "day": 16,
+              "actual": null,
+              "projected": "1300.38"
+            },
+            {
+              "day": 17,
+              "actual": null,
+              "projected": "1303.41"
+            },
+            {
+              "day": 18,
+              "actual": null,
+              "projected": "1303.74"
+            },
+            {
+              "day": 19,
+              "actual": null,
+              "projected": "1304.08"
+            },
+            {
+              "day": 20,
+              "actual": null,
+              "projected": "1304.41"
+            },
+            {
+              "day": 21,
+              "actual": null,
+              "projected": "1304.74"
+            },
+            {
+              "day": 22,
+              "actual": null,
+              "projected": "1305.08"
+            },
+            {
+              "day": 23,
+              "actual": null,
+              "projected": "1305.41"
+            },
+            {
+              "day": 24,
+              "actual": null,
+              "projected": "1308.44"
+            },
+            {
+              "day": 25,
+              "actual": null,
+              "projected": "1308.77"
+            },
+            {
+              "day": 26,
+              "actual": null,
+              "projected": "1309.10"
+            },
+            {
+              "day": 27,
+              "actual": null,
+              "projected": "1309.44"
+            },
+            {
+              "day": 28,
+              "actual": null,
+              "projected": "1309.77"
+            },
+            {
+              "day": 29,
+              "actual": null,
+              "projected": "1310.10"
+            },
+            {
+              "day": 30,
+              "actual": null,
+              "projected": "1310.44"
+            }
+          ]
+        }
+      },
+      "insights": [
+        {
+          "id": "budget_exceeded:c0",
+          "kind": "budget_exceeded",
+          "severity": "warning"
+        },
+        {
+          "id": "budget_exceeded:c1",
+          "kind": "budget_exceeded",
+          "severity": "warning"
+        }
+      ]
+    },
+    {
+      "name": "classification-change",
+      "date": "2026-11-01",
+      "transactions": [
+        {
+          "id": "coverage",
+          "date": "2024-01-01",
+          "amount": 0,
+          "category_id": null,
+          "type": "income",
+          "currency": "EUR",
+          "exchange_rate_eur": 1,
+          "description": null,
+          "deleted_at": null
+        },
+        {
+          "id": "old-regular",
+          "date": "2026-05-04",
+          "amount": 900,
+          "category_id": "c0",
+          "type": "expense",
+          "currency": "EUR",
+          "exchange_rate_eur": 1,
+          "description": null,
+          "deleted_at": null
+        },
+        {
+          "id": "boundary-regular",
+          "date": "2026-05-05",
+          "amount": 70,
+          "category_id": "c0",
+          "type": "expense",
+          "currency": "EUR",
+          "exchange_rate_eur": 1,
+          "description": null,
+          "deleted_at": null
+        },
+        {
+          "id": "current",
+          "date": "2026-11-01",
+          "amount": 140,
+          "category_id": "c0",
+          "type": "expense",
+          "currency": "EUR",
+          "exchange_rate_eur": 1,
+          "description": null,
+          "deleted_at": null
+        },
+        {
+          "id": "boundary-occasional",
+          "date": "2024-11-01",
+          "amount": 250,
+          "category_id": "c1",
+          "type": "expense",
+          "currency": "EUR",
+          "exchange_rate_eur": 1,
+          "description": null,
+          "deleted_at": null
+        },
+        {
+          "id": "current-occasional",
+          "date": "2026-11-01",
+          "amount": 250,
+          "category_id": "c1",
+          "type": "expense",
+          "currency": "EUR",
+          "exchange_rate_eur": 1,
+          "description": null,
+          "deleted_at": null
+        },
+        {
+          "id": "old-occasional",
+          "date": "2024-10-31",
+          "amount": 1000,
+          "category_id": "c1",
+          "type": "expense",
+          "currency": "EUR",
+          "exchange_rate_eur": 1,
+          "description": null,
+          "deleted_at": null
+        },
+        {
+          "id": "future",
+          "date": "2026-11-02",
+          "amount": 900,
+          "category_id": "c0",
+          "type": "expense",
+          "currency": "EUR",
+          "exchange_rate_eur": 1,
+          "description": null,
+          "deleted_at": null
+        },
+        {
+          "id": "deleted",
+          "date": "2026-11-01",
+          "amount": 900,
+          "category_id": "c0",
+          "type": "expense",
+          "currency": "EUR",
+          "exchange_rate_eur": 1,
+          "description": null,
+          "deleted_at": "2026-11-01"
+        }
+      ],
+      "categories": [
+        {
+          "id": "c0",
+          "name": "Category 0",
+          "type": "expense",
+          "spending_pattern": "occasional",
+          "deleted_at": null
+        },
+        {
+          "id": "c1",
+          "name": "Category 1",
+          "type": "expense",
+          "spending_pattern": "regular",
+          "deleted_at": null
+        }
+      ],
+      "budgets": [
+        {
+          "id": "b0",
+          "category_id": "c0",
+          "category": {
+            "id": "c0",
+            "name": "Category 0",
+            "type": "expense",
+            "spending_pattern": "occasional",
+            "deleted_at": null
+          },
+          "amount": 25,
+          "currency": "EUR"
+        },
+        {
+          "id": "b1",
+          "category_id": "c1",
+          "category": {
+            "id": "c1",
+            "name": "Category 1",
+            "type": "expense",
+            "spending_pattern": "regular",
+            "deleted_at": null
+          },
+          "amount": 15,
+          "currency": "EUR"
+        }
+      ],
+      "response": {
+        "schemaVersion": 2,
+        "modelVersion": "regular180-occasional730-mean-v3",
+        "userId": "11111111-1111-4111-8111-111111111111",
+        "timeZone": "Europe/Rome",
+        "generatedAt": "2026-11-01T12:00:00Z",
+        "inputSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "budgetSpending": {
+          "endDate": "2026-11-01",
+          "categories": [
+            {
+              "categoryId": "c0",
+              "spendingPattern": "occasional",
+              "startDate": "2024-11-01",
+              "endDate": "2026-11-01",
+              "historyDays": 730,
+              "months": 25,
+              "total": "1110.00",
+              "averageMonthly": "44.40",
+              "expectedMonthly": "25.00",
+              "exceeded": true,
+              "over": "19.40"
+            },
+            {
+              "categoryId": "c1",
+              "spendingPattern": "regular",
+              "startDate": "2026-05-05",
+              "endDate": "2026-11-01",
+              "historyDays": 180,
+              "months": 7,
+              "total": "250.00",
+              "averageMonthly": "35.71",
+              "expectedMonthly": "15.00",
+              "exceeded": true,
+              "over": "20.71"
+            }
+          ]
+        },
+        "forecast": {
+          "date": "2026-11-01",
+          "historyDays": 730,
+          "available": true,
+          "spent": "390.00",
+          "scheduled": "900.00",
+          "variable": "36.21",
+          "total": "1326.21",
+          "budget": {
+            "limit": "40.00"
+          },
+          "categories": [
+            {
+              "categoryId": "c0",
+              "spent": "140.00",
+              "scheduled": "900.00",
+              "variable": "36.21",
+              "total": "1076.21",
+              "budget": {
+                "limit": "25.00"
+              }
+            },
+            {
+              "categoryId": "c1",
+              "spent": "250.00",
+              "scheduled": "0.00",
+              "variable": "0.00",
+              "total": "250.00",
+              "budget": {
+                "limit": "15.00"
+              }
+            }
+          ],
+          "unsupportedRecurring": 0,
+          "unsupportedBudgets": 0,
+          "points": [
+            {
+              "day": 1,
+              "actual": "390.00",
+              "projected": "390.00"
+            },
+            {
+              "day": 2,
+              "actual": null,
+              "projected": "1290.00"
+            },
+            {
+              "day": 3,
+              "actual": null,
+              "projected": "1291.29"
+            },
+            {
+              "day": 4,
+              "actual": null,
+              "projected": "1292.59"
+            },
+            {
+              "day": 5,
+              "actual": null,
+              "projected": "1293.88"
+            },
+            {
+              "day": 6,
+              "actual": null,
+              "projected": "1295.17"
+            },
+            {
+              "day": 7,
+              "actual": null,
+              "projected": "1296.47"
+            },
+            {
+              "day": 8,
+              "actual": null,
+              "projected": "1297.76"
+            },
+            {
+              "day": 9,
+              "actual": null,
+              "projected": "1299.05"
+            },
+            {
+              "day": 10,
+              "actual": null,
+              "projected": "1300.35"
+            },
+            {
+              "day": 11,
+              "actual": null,
+              "projected": "1301.64"
+            },
+            {
+              "day": 12,
+              "actual": null,
+              "projected": "1302.93"
+            },
+            {
+              "day": 13,
+              "actual": null,
+              "projected": "1304.23"
+            },
+            {
+              "day": 14,
+              "actual": null,
+              "projected": "1305.52"
+            },
+            {
+              "day": 15,
+              "actual": null,
+              "projected": "1306.81"
+            },
+            {
+              "day": 16,
+              "actual": null,
+              "projected": "1308.11"
+            },
+            {
+              "day": 17,
+              "actual": null,
+              "projected": "1309.40"
+            },
+            {
+              "day": 18,
+              "actual": null,
+              "projected": "1310.69"
+            },
+            {
+              "day": 19,
+              "actual": null,
+              "projected": "1311.99"
+            },
+            {
+              "day": 20,
+              "actual": null,
+              "projected": "1313.28"
+            },
+            {
+              "day": 21,
+              "actual": null,
+              "projected": "1314.57"
+            },
+            {
+              "day": 22,
+              "actual": null,
+              "projected": "1315.87"
+            },
+            {
+              "day": 23,
+              "actual": null,
+              "projected": "1317.16"
+            },
+            {
+              "day": 24,
+              "actual": null,
+              "projected": "1318.45"
+            },
+            {
+              "day": 25,
+              "actual": null,
+              "projected": "1319.75"
+            },
+            {
+              "day": 26,
+              "actual": null,
+              "projected": "1321.04"
+            },
+            {
+              "day": 27,
+              "actual": null,
+              "projected": "1322.33"
+            },
+            {
+              "day": 28,
+              "actual": null,
+              "projected": "1323.63"
+            },
+            {
+              "day": 29,
+              "actual": null,
+              "projected": "1324.92"
+            },
+            {
+              "day": 30,
+              "actual": null,
+              "projected": "1326.21"
+            }
+          ]
+        }
+      },
+      "insights": [
+        {
+          "id": "budget_exceeded:c0",
+          "kind": "budget_exceeded",
+          "severity": "warning"
+        },
+        {
+          "id": "budget_exceeded:c1",
+          "kind": "budget_exceeded",
+          "severity": "warning"
+        }
+      ]
+    },
+    {
+      "name": "half-cent-and-fx",
+      "date": "2026-11-01",
+      "transactions": [
+        {
+          "id": "coverage",
+          "date": "2026-10-01",
+          "amount": 0,
+          "category_id": null,
+          "type": "income",
+          "currency": "EUR",
+          "exchange_rate_eur": 1,
+          "description": null,
+          "deleted_at": null
+        },
+        {
+          "id": "cent",
+          "date": "2026-11-01",
+          "amount": 0.01,
+          "category_id": "c0",
+          "type": "expense",
+          "currency": "EUR",
+          "exchange_rate_eur": 1,
+          "description": null,
+          "deleted_at": null
+        },
+        {
+          "id": "fx",
+          "date": "2026-11-01",
+          "amount": 100,
+          "category_id": "c1",
+          "type": "expense",
+          "currency": "USD",
+          "exchange_rate_eur": 0.9,
+          "description": null,
+          "deleted_at": null
+        }
+      ],
+      "categories": [
+        {
+          "id": "c0",
+          "name": "Category 0",
+          "type": "expense",
+          "spending_pattern": "regular",
+          "deleted_at": null
+        },
+        {
+          "id": "c1",
+          "name": "Category 1",
+          "type": "expense",
+          "spending_pattern": "occasional",
+          "deleted_at": null
+        }
+      ],
+      "budgets": [],
+      "response": {
+        "schemaVersion": 2,
+        "modelVersion": "regular180-occasional730-mean-v3",
+        "userId": "11111111-1111-4111-8111-111111111111",
+        "timeZone": "Europe/Rome",
+        "generatedAt": "2026-11-01T12:00:00Z",
+        "inputSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "budgetSpending": {
+          "endDate": "2026-11-01",
+          "categories": [
+            {
+              "categoryId": "c0",
+              "spendingPattern": "regular",
+              "startDate": "2026-10-01",
+              "endDate": "2026-11-01",
+              "historyDays": 180,
+              "months": 2,
+              "total": "0.01",
+              "averageMonthly": "0.01",
+              "expectedMonthly": null,
+              "exceeded": false,
+              "over": "0.00"
+            },
+            {
+              "categoryId": "c1",
+              "spendingPattern": "occasional",
+              "startDate": "2026-10-01",
+              "endDate": "2026-11-01",
+              "historyDays": 730,
+              "months": 2,
+              "total": "90.00",
+              "averageMonthly": "45.00",
+              "expectedMonthly": null,
+              "exceeded": false,
+              "over": "0.00"
+            }
+          ]
+        },
+        "forecast": {
+          "date": "2026-11-01",
+          "historyDays": 31,
+          "available": false,
+          "spent": "90.01",
+          "scheduled": "0.00",
+          "variable": "0.00",
+          "total": null,
+          "budget": null,
+          "categories": [
+            {
+              "categoryId": "c0",
+              "spent": "0.01",
+              "scheduled": "0.00",
+              "variable": "0.00",
+              "total": null,
+              "budget": null
+            },
+            {
+              "categoryId": "c1",
+              "spent": "90.00",
+              "scheduled": "0.00",
+              "variable": "0.00",
+              "total": null,
+              "budget": null
+            }
+          ],
+          "unsupportedRecurring": 0,
+          "unsupportedBudgets": 0,
+          "points": [
+            {
+              "day": 1,
+              "actual": "90.01",
+              "projected": null
+            },
+            {
+              "day": 2,
+              "actual": null,
+              "projected": null
+            },
+            {
+              "day": 3,
+              "actual": null,
+              "projected": null
+            },
+            {
+              "day": 4,
+              "actual": null,
+              "projected": null
+            },
+            {
+              "day": 5,
+              "actual": null,
+              "projected": null
+            },
+            {
+              "day": 6,
+              "actual": null,
+              "projected": null
+            },
+            {
+              "day": 7,
+              "actual": null,
+              "projected": null
+            },
+            {
+              "day": 8,
+              "actual": null,
+              "projected": null
+            },
+            {
+              "day": 9,
+              "actual": null,
+              "projected": null
+            },
+            {
+              "day": 10,
+              "actual": null,
+              "projected": null
+            },
+            {
+              "day": 11,
+              "actual": null,
+              "projected": null
+            },
+            {
+              "day": 12,
+              "actual": null,
+              "projected": null
+            },
+            {
+              "day": 13,
+              "actual": null,
+              "projected": null
+            },
+            {
+              "day": 14,
+              "actual": null,
+              "projected": null
+            },
+            {
+              "day": 15,
+              "actual": null,
+              "projected": null
+            },
+            {
+              "day": 16,
+              "actual": null,
+              "projected": null
+            },
+            {
+              "day": 17,
+              "actual": null,
+              "projected": null
+            },
+            {
+              "day": 18,
+              "actual": null,
+              "projected": null
+            },
+            {
+              "day": 19,
+              "actual": null,
+              "projected": null
+            },
+            {
+              "day": 20,
+              "actual": null,
+              "projected": null
+            },
+            {
+              "day": 21,
+              "actual": null,
+              "projected": null
+            },
+            {
+              "day": 22,
+              "actual": null,
+              "projected": null
+            },
+            {
+              "day": 23,
+              "actual": null,
+              "projected": null
+            },
+            {
+              "day": 24,
+              "actual": null,
+              "projected": null
+            },
+            {
+              "day": 25,
+              "actual": null,
+              "projected": null
+            },
+            {
+              "day": 26,
+              "actual": null,
+              "projected": null
+            },
+            {
+              "day": 27,
+              "actual": null,
+              "projected": null
+            },
+            {
+              "day": 28,
+              "actual": null,
+              "projected": null
+            },
+            {
+              "day": 29,
+              "actual": null,
+              "projected": null
+            },
+            {
+              "day": 30,
+              "actual": null,
+              "projected": null
+            }
+          ]
+        }
+      },
+      "insights": []
+    },
+    {
+      "name": "leap-day",
+      "date": "2028-02-29",
+      "transactions": [
+        {
+          "id": "coverage",
+          "date": "2020-01-01",
+          "amount": 0,
+          "category_id": null,
+          "type": "income",
+          "currency": "EUR",
+          "exchange_rate_eur": 1,
+          "description": null,
+          "deleted_at": null
+        },
+        {
+          "id": "leap",
+          "date": "2028-02-29",
+          "amount": 250,
+          "category_id": "c1",
+          "type": "expense",
+          "currency": "EUR",
+          "exchange_rate_eur": 1,
+          "description": null,
+          "deleted_at": null
+        },
+        {
+          "id": "past",
+          "date": "2026-03-01",
+          "amount": 250,
+          "category_id": "c1",
+          "type": "expense",
+          "currency": "EUR",
+          "exchange_rate_eur": 1,
+          "description": null,
+          "deleted_at": null
+        }
+      ],
+      "categories": [
+        {
+          "id": "c0",
+          "name": "Category 0",
+          "type": "expense",
+          "spending_pattern": "regular",
+          "deleted_at": null
+        },
+        {
+          "id": "c1",
+          "name": "Category 1",
+          "type": "expense",
+          "spending_pattern": "occasional",
+          "deleted_at": null
+        }
+      ],
+      "budgets": [
+        {
+          "id": "b0",
+          "category_id": "c0",
+          "category": {
+            "id": "c0",
+            "name": "Category 0",
+            "type": "expense",
+            "spending_pattern": "regular",
+            "deleted_at": null
+          },
+          "amount": 25,
+          "currency": "EUR"
+        },
+        {
+          "id": "b1",
+          "category_id": "c1",
+          "category": {
+            "id": "c1",
+            "name": "Category 1",
+            "type": "expense",
+            "spending_pattern": "occasional",
+            "deleted_at": null
+          },
+          "amount": 15,
+          "currency": "EUR"
+        }
+      ],
+      "response": {
+        "schemaVersion": 2,
+        "modelVersion": "regular180-occasional730-mean-v3",
+        "userId": "11111111-1111-4111-8111-111111111111",
+        "timeZone": "Europe/Rome",
+        "generatedAt": "2028-02-29T12:00:00Z",
+        "inputSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "budgetSpending": {
+          "endDate": "2028-02-29",
+          "categories": [
+            {
+              "categoryId": "c0",
+              "spendingPattern": "regular",
+              "startDate": "2027-09-02",
+              "endDate": "2028-02-29",
+              "historyDays": 180,
+              "months": 6,
+              "total": "0.00",
+              "averageMonthly": "0.00",
+              "expectedMonthly": "25.00",
+              "exceeded": false,
+              "over": "0.00"
+            },
+            {
+              "categoryId": "c1",
+              "spendingPattern": "occasional",
+              "startDate": "2026-03-01",
+              "endDate": "2028-02-29",
+              "historyDays": 730,
+              "months": 24,
+              "total": "500.00",
+              "averageMonthly": "20.83",
+              "expectedMonthly": "15.00",
+              "exceeded": true,
+              "over": "5.83"
+            }
+          ]
+        },
+        "forecast": {
+          "date": "2028-02-29",
+          "historyDays": 730,
+          "available": true,
+          "spent": "250.00",
+          "scheduled": "0.00",
+          "variable": "0.00",
+          "total": "250.00",
+          "budget": {
+            "limit": "40.00"
+          },
+          "categories": [
+            {
+              "categoryId": "c0",
+              "spent": "0.00",
+              "scheduled": "0.00",
+              "variable": "0.00",
+              "total": "0.00",
+              "budget": {
+                "limit": "25.00"
+              }
+            },
+            {
+              "categoryId": "c1",
+              "spent": "250.00",
+              "scheduled": "0.00",
+              "variable": "0.00",
+              "total": "250.00",
+              "budget": {
+                "limit": "15.00"
+              }
+            }
+          ],
+          "unsupportedRecurring": 0,
+          "unsupportedBudgets": 0,
+          "points": [
+            {
+              "day": 1,
+              "actual": "0.00",
+              "projected": null
+            },
+            {
+              "day": 2,
+              "actual": "0.00",
+              "projected": null
+            },
+            {
+              "day": 3,
+              "actual": "0.00",
+              "projected": null
+            },
+            {
+              "day": 4,
+              "actual": "0.00",
+              "projected": null
+            },
+            {
+              "day": 5,
+              "actual": "0.00",
+              "projected": null
+            },
+            {
+              "day": 6,
+              "actual": "0.00",
+              "projected": null
+            },
+            {
+              "day": 7,
+              "actual": "0.00",
+              "projected": null
+            },
+            {
+              "day": 8,
+              "actual": "0.00",
+              "projected": null
+            },
+            {
+              "day": 9,
+              "actual": "0.00",
+              "projected": null
+            },
+            {
+              "day": 10,
+              "actual": "0.00",
+              "projected": null
+            },
+            {
+              "day": 11,
+              "actual": "0.00",
+              "projected": null
+            },
+            {
+              "day": 12,
+              "actual": "0.00",
+              "projected": null
+            },
+            {
+              "day": 13,
+              "actual": "0.00",
+              "projected": null
+            },
+            {
+              "day": 14,
+              "actual": "0.00",
+              "projected": null
+            },
+            {
+              "day": 15,
+              "actual": "0.00",
+              "projected": null
+            },
+            {
+              "day": 16,
+              "actual": "0.00",
+              "projected": null
+            },
+            {
+              "day": 17,
+              "actual": "0.00",
+              "projected": null
+            },
+            {
+              "day": 18,
+              "actual": "0.00",
+              "projected": null
+            },
+            {
+              "day": 19,
+              "actual": "0.00",
+              "projected": null
+            },
+            {
+              "day": 20,
+              "actual": "0.00",
+              "projected": null
+            },
+            {
+              "day": 21,
+              "actual": "0.00",
+              "projected": null
+            },
+            {
+              "day": 22,
+              "actual": "0.00",
+              "projected": null
+            },
+            {
+              "day": 23,
+              "actual": "0.00",
+              "projected": null
+            },
+            {
+              "day": 24,
+              "actual": "0.00",
+              "projected": null
+            },
+            {
+              "day": 25,
+              "actual": "0.00",
+              "projected": null
+            },
+            {
+              "day": 26,
+              "actual": "0.00",
+              "projected": null
+            },
+            {
+              "day": 27,
+              "actual": "0.00",
+              "projected": null
+            },
+            {
+              "day": 28,
+              "actual": "0.00",
+              "projected": null
+            },
+            {
+              "day": 29,
+              "actual": "250.00",
+              "projected": "250.00"
+            }
+          ]
+        }
+      },
+      "insights": [
+        {
+          "id": "budget_exceeded:c1",
+          "kind": "budget_exceeded",
+          "severity": "warning"
+        }
+      ]
+    },
+    {
+      "name": "empty",
+      "date": "2026-11-01",
+      "transactions": [],
+      "categories": [
+        {
+          "id": "c0",
+          "name": "Category 0",
+          "type": "expense",
+          "spending_pattern": "regular",
+          "deleted_at": null
+        },
+        {
+          "id": "c1",
+          "name": "Category 1",
+          "type": "expense",
+          "spending_pattern": "occasional",
+          "deleted_at": null
+        }
+      ],
+      "budgets": [
+        {
+          "id": "b0",
+          "category_id": "c0",
+          "category": {
+            "id": "c0",
+            "name": "Category 0",
+            "type": "expense",
+            "spending_pattern": "regular",
+            "deleted_at": null
+          },
+          "amount": 25,
+          "currency": "EUR"
+        },
+        {
+          "id": "b1",
+          "category_id": "c1",
+          "category": {
+            "id": "c1",
+            "name": "Category 1",
+            "type": "expense",
+            "spending_pattern": "occasional",
+            "deleted_at": null
+          },
+          "amount": 15,
+          "currency": "EUR"
+        }
+      ],
+      "response": {
+        "schemaVersion": 2,
+        "modelVersion": "regular180-occasional730-mean-v3",
+        "userId": "11111111-1111-4111-8111-111111111111",
+        "timeZone": "Europe/Rome",
+        "generatedAt": "2026-11-01T12:00:00Z",
+        "inputSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "budgetSpending": {
+          "endDate": "2026-11-01",
+          "categories": [
+            {
+              "categoryId": "c0",
+              "spendingPattern": "regular",
+              "startDate": "2026-11-01",
+              "endDate": "2026-11-01",
+              "historyDays": 180,
+              "months": 1,
+              "total": "0.00",
+              "averageMonthly": "0.00",
+              "expectedMonthly": "25.00",
+              "exceeded": false,
+              "over": "0.00"
+            },
+            {
+              "categoryId": "c1",
+              "spendingPattern": "occasional",
+              "startDate": "2026-11-01",
+              "endDate": "2026-11-01",
+              "historyDays": 730,
+              "months": 1,
+              "total": "0.00",
+              "averageMonthly": "0.00",
+              "expectedMonthly": "15.00",
+              "exceeded": false,
+              "over": "0.00"
+            }
+          ]
+        },
+        "forecast": {
+          "date": "2026-11-01",
+          "historyDays": 0,
+          "available": false,
+          "spent": "0.00",
+          "scheduled": "0.00",
+          "variable": "0.00",
+          "total": null,
+          "budget": {
+            "limit": "40.00"
+          },
+          "categories": [
+            {
+              "categoryId": "c0",
+              "spent": "0.00",
+              "scheduled": "0.00",
+              "variable": "0.00",
+              "total": null,
+              "budget": {
+                "limit": "25.00"
+              }
+            },
+            {
+              "categoryId": "c1",
+              "spent": "0.00",
+              "scheduled": "0.00",
+              "variable": "0.00",
+              "total": null,
+              "budget": {
+                "limit": "15.00"
+              }
+            }
+          ],
+          "unsupportedRecurring": 0,
+          "unsupportedBudgets": 0,
+          "points": [
+            {
+              "day": 1,
+              "actual": "0.00",
+              "projected": null
+            },
+            {
+              "day": 2,
+              "actual": null,
+              "projected": null
+            },
+            {
+              "day": 3,
+              "actual": null,
+              "projected": null
+            },
+            {
+              "day": 4,
+              "actual": null,
+              "projected": null
+            },
+            {
+              "day": 5,
+              "actual": null,
+              "projected": null
+            },
+            {
+              "day": 6,
+              "actual": null,
+              "projected": null
+            },
+            {
+              "day": 7,
+              "actual": null,
+              "projected": null
+            },
+            {
+              "day": 8,
+              "actual": null,
+              "projected": null
+            },
+            {
+              "day": 9,
+              "actual": null,
+              "projected": null
+            },
+            {
+              "day": 10,
+              "actual": null,
+              "projected": null
+            },
+            {
+              "day": 11,
+              "actual": null,
+              "projected": null
+            },
+            {
+              "day": 12,
+              "actual": null,
+              "projected": null
+            },
+            {
+              "day": 13,
+              "actual": null,
+              "projected": null
+            },
+            {
+              "day": 14,
+              "actual": null,
+              "projected": null
+            },
+            {
+              "day": 15,
+              "actual": null,
+              "projected": null
+            },
+            {
+              "day": 16,
+              "actual": null,
+              "projected": null
+            },
+            {
+              "day": 17,
+              "actual": null,
+              "projected": null
+            },
+            {
+              "day": 18,
+              "actual": null,
+              "projected": null
+            },
+            {
+              "day": 19,
+              "actual": null,
+              "projected": null
+            },
+            {
+              "day": 20,
+              "actual": null,
+              "projected": null
+            },
+            {
+              "day": 21,
+              "actual": null,
+              "projected": null
+            },
+            {
+              "day": 22,
+              "actual": null,
+              "projected": null
+            },
+            {
+              "day": 23,
+              "actual": null,
+              "projected": null
+            },
+            {
+              "day": 24,
+              "actual": null,
+              "projected": null
+            },
+            {
+              "day": 25,
+              "actual": null,
+              "projected": null
+            },
+            {
+              "day": 26,
+              "actual": null,
+              "projected": null
+            },
+            {
+              "day": 27,
+              "actual": null,
+              "projected": null
+            },
+            {
+              "day": 28,
+              "actual": null,
+              "projected": null
+            },
+            {
+              "day": 29,
+              "actual": null,
+              "projected": null
+            },
+            {
+              "day": 30,
+              "actual": null,
+              "projected": null
+            }
+          ]
+        }
+      },
+      "insights": []
+    }
+  ]
+}

@@ -12,6 +12,7 @@ export interface SharedExpenseViewRow {
   original_tx_id: string;
   created_by: string;
   couple_category_name: string | null;
+  category_icon?: string | null;
   split_percentage: number;
   split_mode: 'equal' | 'custom';
   partner_amount: number | null;

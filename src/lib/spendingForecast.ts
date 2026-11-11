@@ -32,6 +32,15 @@ export interface ForecastPoint {
   projected: number | null;
 }
 
+export interface CategorySpendingForecast {
+  categoryId: string | null;
+  spent: number;
+  scheduled: number;
+  variable: number;
+  total: number | null;
+  budget: { limit: number } | null;
+}
+
 export interface SpendingForecast {
   date: string;
   historyDays: number;
@@ -44,6 +53,15 @@ export interface SpendingForecast {
   points: ForecastPoint[];
   unsupportedRecurring: number;
   unsupportedBudgets: number;
+  /** Optional for compatibility with saved responses from before the category breakdown. */
+  categories?: CategorySpendingForecast[];
+  /** Offline candidate diagnostics; not part of the published response schema. */
+  twoPart?: { samples: number; seed: number; categories: { categoryId: string | null; positiveDays: number; probability: number; weekdayProbabilities: number[]; logAmountMean: number; logAmountVariance: number }[]; points: { date: string; median: number; lower80: number; upper80: number; mean: number }[] };
+  bootstrap?: { weeks: number; samples: number; seed: number; fallback: boolean; points: { date: string; median: number; lower80: number; upper80: number; mean: number }[] };
+  segmentation?: { ordinary: number; extraordinary: number; categories: {
+    categoryId: string | null; kind: 'ordinary' | 'occasional'; positiveDays: number; activeWeeks: number;
+    observedOrdinary: number; observedExtraordinary: number;
+  }[] };
 }
 
 

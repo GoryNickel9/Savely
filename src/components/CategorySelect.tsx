@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
@@ -24,10 +24,8 @@ interface CategorySelectProps {
   allOptionLabel?: string;
   allOptionValue?: string;
   /**
-   * Renderizza il popover inline invece che via portale. Necessario dentro le
-   * Dialog modali (focus trap): senza, cmdk non riceve focus né click.
-   * Ovunque else il portale è preferibile: il popover flottante sfugge al
-   * clipping di card e contenitori con overflow.
+   * Renderizza la lista nel flusso del form: la Dialog può espandersi e
+   * il campo di ricerca rimane dentro il suo focus trap.
    */
   disablePortal?: boolean;
 }
@@ -45,6 +43,19 @@ export function CategorySelect({
 }: CategorySelectProps) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const panelId = useId();
+  useEffect(() => {
+    if (!disablePortal || !open) return;
+    // Handle Escape before the modal's document capture listener closes the Dialog.
+    const closeList = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape' || !(event.target instanceof Node) || !triggerRef.current?.parentElement?.contains(event.target)) return;
+      event.preventDefault(); event.stopPropagation();
+      setOpen(false); triggerRef.current.focus();
+    };
+    window.addEventListener('keydown', closeList, true);
+    return () => window.removeEventListener('keydown', closeList, true);
+  }, [disablePortal, open]);
 
   const filteredCategories = filterType === 'all'
     ? categories
@@ -53,14 +64,21 @@ export function CategorySelect({
   const selectedCategory = categories.find(c => c.id === value);
   const isAllSelected = showAllOption && value === allOptionValue;
 
-  return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button
+  const selectCategory = (id: string) => {
+    onValueChange(id);
+    setOpen(false);
+    if (disablePortal) triggerRef.current?.focus();
+  };
+  const trigger = <Button
+          ref={triggerRef}
           type="button"
           variant="outline"
           role="combobox"
+          aria-label={isAllSelected ? t(allOptionLabel) : selectedCategory?.name ?? t(placeholder)}
+          aria-haspopup="dialog"
           aria-expanded={open}
+          {...(disablePortal ? { 'aria-controls': open ? panelId : undefined } : {})}
+          onClick={disablePortal ? () => setOpen(value => !value) : undefined}
           className="w-full justify-between"
         >
           {isAllSelected ? (
@@ -74,27 +92,16 @@ export function CategorySelect({
             <span className="text-muted-foreground">{t(placeholder)}</span>
           )}
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-        </Button>
-      </PopoverTrigger>
-      {/* Nel filtro a pagina il portale libera il popover da ogni clipping
-          ancestor; nelle Dialog il rendering inline resta obbligatorio. */}
-      <PopoverContent
-        className="w-[var(--radix-popover-trigger-width)] min-w-60 p-0"
-        align="start"
-        disablePortal={disablePortal}
-      >
-        <Command>
-          <CommandInput placeholder={t('Cerca categoria...')} />
-          <CommandList className="max-h-[min(45vh,300px)]">
+        </Button>;
+  const content = <Command>
+          <CommandInput autoFocus={disablePortal} placeholder={t('Cerca categoria...')} />
+          <CommandList className={disablePortal ? 'max-h-[min(35dvh,240px)]' : 'max-h-[min(45vh,300px)]'}>
             <CommandEmpty>{t('Nessuna categoria trovata.')}</CommandEmpty>
             <CommandGroup>
               {showAllOption && (
                 <CommandItem
                   value={t(allOptionLabel)}
-                  onSelect={() => {
-                    onValueChange(allOptionValue);
-                    setOpen(false);
-                  }}
+                  onSelect={() => selectCategory(allOptionValue)}
                 >
                   <Check
                     className={cn(
@@ -109,10 +116,7 @@ export function CategorySelect({
                 <CommandItem
                   key={category.id}
                   value={category.name}
-                  onSelect={() => {
-                    onValueChange(category.id);
-                    setOpen(false);
-                  }}
+                  onSelect={() => selectCategory(category.id)}
                 >
                   <Check
                     className={cn(
@@ -126,7 +130,18 @@ export function CategorySelect({
               ))}
             </CommandGroup>
           </CommandList>
-        </Command>
+        </Command>;
+
+  if (disablePortal) return <div className="space-y-1">
+    {trigger}
+    {open && <div id={panelId} role="dialog" aria-label={t('Categoria')} className="w-full rounded-md border bg-popover text-popover-foreground shadow-md">{content}</div>}
+  </div>;
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>{trigger}</PopoverTrigger>
+      <PopoverContent className="w-[var(--radix-popover-trigger-width)] min-w-60 p-0" align="start">
+        {content}
       </PopoverContent>
     </Popover>
   );

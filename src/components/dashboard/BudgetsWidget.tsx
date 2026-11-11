@@ -18,8 +18,8 @@ const MAX_ITEMS = 4;
 
 export default function BudgetsWidget({ budgets, transactions }: BudgetsWidgetProps) {
   const { t } = useTranslation();
-  const remote = useSpendingForecast(todayLocalISO(), budgets.some(budget => budget.category?.spending_pattern === 'occasional'));
-  const comparisons = remote.isError ? undefined : remote.data?.occasionalSpending;
+  const remote = useSpendingForecast(todayLocalISO(), budgets.length > 0);
+  const comparisons = remote.isError ? undefined : remote.data?.budgetSpending;
 
   // Same per-category comparison as the Budget page, independent of dashboard filters.
   const rows = useMemo(() => {
@@ -46,11 +46,9 @@ export default function BudgetsWidget({ budgets, transactions }: BudgetsWidgetPr
           {t('Vedi tutti')}
         </Link>
       </div>
-      <p className="mt-1 text-sm text-muted-foreground">
-        {t(budgets.some(budget => budget.category?.spending_pattern === 'occasional')
-          ? 'Spese regolari: mediana su 730 giorni. Spese saltuarie: media su 12 mesi, inclusi i mesi a zero.'
-          : 'Mediana mensile (ultimi 730 giorni)')}
-      </p>
+      {!budgets.some(budget => budget.category?.spending_pattern === 'occasional') && <p className="mt-1 text-sm text-muted-foreground">
+        {t('Media mensile: ordinarie 180 giorni, saltuarie 730 giorni')}
+      </p>}
 
       {rows.length === 0 ? (
         <div className="flex flex-1 items-center justify-center py-16 text-sm text-muted-foreground">
@@ -74,7 +72,6 @@ export default function BudgetsWidget({ budgets, transactions }: BudgetsWidgetPr
                 </span>
                 <span className="min-w-0 flex-1 truncate text-sm font-medium">
                   {budget.category?.name ?? t('Categoria')}
-                  {budget.category?.spending_pattern === 'occasional' && <span className="block text-xs font-normal text-muted-foreground">{t('Media mensile su 12 mesi')}</span>}
                 </span>
                 <span className="shrink-0 whitespace-nowrap text-xs text-muted-foreground tabular-nums">
                   {spent === null ? '—' : formatEUR(spent)}

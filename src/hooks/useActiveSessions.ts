@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
+import { getSessionId } from '@/lib/authSession';
 
 export interface ActiveSessionRow {
   id: string;
@@ -16,17 +17,18 @@ export interface ActiveSessionRow {
  * auth.sessions.
  */
 export function useActiveSessions() {
-  const { user } = useAuth();
+  const { user, session } = useAuth();
   const qc = useQueryClient();
   return {
     ...useQuery({
-      queryKey: ['active-sessions', user?.id] as const,
+      queryKey: ['active-sessions', user?.id, getSessionId(session)] as const,
       queryFn: async () => {
         const { data, error } = await supabase.rpc('get_active_sessions');
         if (error) throw error;
         return (data ?? []) as ActiveSessionRow[];
       },
-      enabled: !!user,
+      enabled: !!user && !!session,
+      refetchInterval: 30_000,
     }),
     invalidate: () => qc.invalidateQueries({ queryKey: ['active-sessions'] }),
   };

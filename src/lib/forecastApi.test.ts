@@ -45,7 +45,11 @@ afterEach(() => { vi.unstubAllGlobals(); vi.unstubAllEnvs(); });
 
 it('keeps the existing model and all 1464 chart points exactly', () => {
   for (const row of fixture.cases) {
-    expect(forecastSpending(row.transactions as unknown as Transaction[], row.budgets as unknown as Budget[], row.recurringExpenses as RecurringExpense[], row.date)).toEqual(row.forecast);
+    const { categories, ...legacyForecast } = forecastSpending(row.transactions as unknown as Transaction[], row.budgets as unknown as Budget[], row.recurringExpenses as RecurringExpense[], row.date);
+    expect(legacyForecast).toEqual(row.forecast);
+    for (const key of ['spent', 'scheduled', 'variable'] as const) {
+      expect(categories!.reduce((sum, category) => sum + Math.round(category[key] * 100), 0)).toBe(Math.round(row.forecast[key] * 100));
+    }
     expect(decodeForecast(row.response, owner, 'Europe/Rome').forecast).toEqual(row.forecast);
   }
 });
@@ -63,8 +67,20 @@ it('reads complete owned pages and returns a versioned exact-cent response', asy
   const result = await getForecast(req, now);
   expect(result.forecast.spent).toBe('0.00'); expect(result.forecast.historyDays).toBe(167);
   expect(calls.some(url => url.searchParams.get('offset') === '500')).toBe(true);
-  expect(result.modelVersion).toBe('weekday-regular-occasional-v2');
+  expect(result.modelVersion).toBe('weekday-history-mean-v2');
+  expect(result.forecast.categories?.[0].categoryId).toBeNull();
   expect(decodeForecast(result, owner, 'Europe/Rome').forecast.total).not.toBeNull();
+});
+it('rejects duplicate categories, inconsistent sums and missing category totals', async () => {
+  const result = await getForecast(req, now);
+  const categories = result.forecast.categories!;
+  for (const broken of [
+    [...categories, categories[0]],
+    [{ ...categories[0], variable: '999.00' }],
+    [{ ...categories[0], total: null }],
+  ]) {
+    expect(() => decodeForecast({ ...result, forecast: { ...result.forecast, categories: broken } }, owner, 'Europe/Rome')).toThrow();
+  }
 });
 it('serves the same 12-month comparison to both clients from owned data and includes classification in the hash', async () => {
   const baseline = await getForecast(req, now);
@@ -75,9 +91,21 @@ it('serves the same 12-month comparison to both clients from owned data and incl
     categories: [{ categoryId: 'dentist', averageMonthly: '25.00', expectedMonthly: '25.00', exceeded: false }],
   });
   expect(result.forecast.spent).toBe('100.00');
-  expect(result.forecast.variable).toBe('12.90');
-  expect(result.forecast.total).toBe('112.90');
   expect(result.inputSha256).not.toBe(baseline.inputSha256);
+});
+it('negotiates the 180/730-day model without breaking schema-1 Android clients', async () => {
+  occasional = true;
+  const modern = await getForecast({ ...req, body: { schemaVersion: 2, timeZone: 'Europe/Rome' } }, now);
+  expect(modern.schemaVersion).toBe(2);
+  expect(modern.modelVersion).toBe('regular180-occasional730-mean-v3');
+  expect(modern.occasionalSpending).toBeUndefined();
+  expect(modern.budgetSpending?.categories).toMatchObject([{ categoryId: 'dentist', historyDays: 730, months: 12, averageMonthly: '25.00' }]);
+  expect(decodeForecast(modern, owner, 'Europe/Rome').budgetSpending).toEqual(modern.budgetSpending);
+  const legacy = await getForecast(req, now);
+  expect(legacy.schemaVersion).toBe(1);
+  expect(legacy.occasionalSpending?.months).toBe(12);
+  expect(legacy.forecast.historyDays).toBeLessThanOrEqual(180);
+  await expect(getForecast({ ...req, body: { schemaVersion: 3, timeZone: 'Europe/Rome' } }, now)).rejects.toMatchObject({ status: 400 });
 });
 it('rejects missing authentication and user-supplied datasets before any read', async () => {
   await expect(getForecast({ ...req, headers: {} }, now)).rejects.toMatchObject({ status: 401 });

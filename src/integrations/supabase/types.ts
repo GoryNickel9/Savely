@@ -1308,6 +1308,7 @@ export type Database = {
     Views: {
       shared_expenses_view: {
         Row: {
+          category_icon: string | null
           connection_id: string | null
           couple_category_name: string | null
           created_at: string | null

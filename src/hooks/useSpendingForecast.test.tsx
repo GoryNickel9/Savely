@@ -8,7 +8,7 @@ import { useSpendingForecast } from './useSpendingForecast';
 const mock = vi.hoisted(() => ({ id: '11111111-1111-4111-8111-111111111111', login: '2026-10-15', token: 'synthetic' }));
 vi.mock('./useAuth', () => ({ useAuth: () => ({ user: { id: mock.id }, session: { user: { id: mock.id, last_sign_in_at: mock.login } } }) }));
 vi.mock('@/integrations/supabase/client', () => ({ supabase: { auth: { getSession: async () => ({ data: { session: { user: { id: mock.id, last_sign_in_at: mock.login }, access_token: mock.token } } }) } } }));
-const response = () => ({ ...fixture.cases[3].response, timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone });
+const response = () => ({ ...fixture.cases[3].response, schemaVersion: 2, budgetSpending: { endDate: '2026-10-15', categories: [] }, timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone });
 function setup() {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   const wrapper = ({ children }: { children: ReactNode }) => <QueryClientProvider client={client}>{children}</QueryClientProvider>;
@@ -21,6 +21,7 @@ it('loads only server cents using the current access token', async () => {
   expect(result.current.data?.forecast.total).toBe(fixture.cases[3].forecast.total);
   expect(fetch).toHaveBeenCalledWith('/api/spending-forecast', expect.objectContaining({ method: 'POST', cache: 'no-store', headers: expect.objectContaining({ Authorization: 'Bearer synthetic' }) }));
   const body = JSON.parse(vi.mocked(fetch).mock.calls[0][1]!.body as string);
+  expect(body.schemaVersion).toBe(2);
   expect(Object.keys(body).sort()).toEqual(['schemaVersion', 'timeZone']);
 });
 it('exposes network errors and keeps the last valid response in the account cache', async () => {
@@ -39,7 +40,7 @@ it('does not publish an old response after changing accounts during the request'
   resolve(Response.json(response()));
   rerender();
   await waitFor(() => expect(fetch).toHaveBeenCalledTimes(2));
-  const previous = client.getQueryCache().findAll({ queryKey: ['spending-forecast', fixture.cases[3].response.userId] })[0];
+  const previous = client.getQueryCache().findAll({ queryKey: ['spending-forecast', 2, fixture.cases[3].response.userId] })[0];
   expect(previous.state.data).toBeUndefined();
   expect(previous.state.fetchStatus).toBe('idle');
   expect(result.current.data).toBeUndefined();

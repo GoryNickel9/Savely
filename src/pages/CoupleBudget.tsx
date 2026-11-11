@@ -5,6 +5,8 @@ import MainLayout from '@/components/layout/MainLayout';
 import { useCouplePairStatus } from '@/hooks/useCouplePairStatus';
 import { useSharedExpenses } from '@/hooks/useSharedExpenses';
 import { useCoupleBudgets } from '@/hooks/useCoupleBudgets';
+import { useCategories } from '@/hooks/useCategories';
+import { getCoupleCategoryIcon } from '@/lib/coupleCategoryIcon';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -13,12 +15,21 @@ import { Progress } from '@/components/ui/progress';
 import { CURRENCY_SYMBOLS } from '@/lib/constants';
 import { Plus, Edit2, Trash2, HeartHandshake } from 'lucide-react';
 import { toast } from 'sonner';
-import { getMedianMonthlySpendingShared } from '@/lib/coupleExpenses';
+import { getAverageMonthlySpendingShared } from '@/lib/coupleExpenses';
 import { parseAmount } from '@/lib/utils';
+import type { Category } from '@/lib/types';
+import { REGULAR_SPENDING_DAYS, OCCASIONAL_SPENDING_DAYS } from '@/lib/spendingWindow';
+
+function categoryDays(name: string | null, categories: Category[]) {
+  const category = categories.find(row => !row.deleted_at && row.type === 'expense'
+    && row.name.trim().toLocaleLowerCase('it') === name?.trim().toLocaleLowerCase('it'));
+  return category?.spending_pattern === 'occasional' ? OCCASIONAL_SPENDING_DAYS : REGULAR_SPENDING_DAYS;
+}
 
 export default function CoupleBudget() {
   const { t } = useTranslation();
   const { connection, isLoading: statusLoading } = useCouplePairStatus();
+  const { categories } = useCategories();
   const { sharedExpenses, isLoading: expensesLoading } = useSharedExpenses(connection?.id ?? null);
   const { budgets, availableCategories, isLoading: budgetsLoading, createBudget, updateBudget, deleteBudget } =
     useCoupleBudgets(connection?.id ?? null, sharedExpenses);
@@ -48,9 +59,11 @@ export default function CoupleBudget() {
   // Totals
   const totals = useMemo(() => {
     const totalExpected = budgets.reduce((s, b) => s + Number(b.amount), 0);
-    const totalActual = getMedianMonthlySpendingShared(sharedExpenses);
+    const names = new Set(sharedExpenses.filter(row => !row.tx_deleted_at).map(row => row.couple_category_name));
+    const reference = new Date();
+    const totalActual = [...names].reduce((sum, name) => sum + getAverageMonthlySpendingShared(sharedExpenses, name, reference, categoryDays(name, categories)), 0);
     return { totalExpected, totalActual, difference: totalActual - totalExpected };
-  }, [budgets, sharedExpenses]);
+  }, [budgets, sharedExpenses, categories]);
 
   // Guard: no connection → redirect to settings (after all hooks)
   if (!isLoading && !connection) {
@@ -109,7 +122,7 @@ export default function CoupleBudget() {
             <p className="text-muted-foreground">
               {isArchived
                 ? t('Connessione archiviata — sola lettura')
-                : t('Budget basato sulla mediana mensile delle spese condivise')}
+                : t('Medie mensili: ordinarie 180 giorni, saltuarie 730 giorni.')}
             </p>
           </div>
 
@@ -137,7 +150,7 @@ export default function CoupleBudget() {
                         <SelectTrigger><SelectValue placeholder={t('Seleziona categoria')} /></SelectTrigger>
                         <SelectContent>
                           {freeCategories.map(cat => (
-                            <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                            <SelectItem key={cat} value={cat}><span aria-hidden>{getCoupleCategoryIcon(cat, categories, sharedExpenses)}</span> {cat}</SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
@@ -184,7 +197,7 @@ export default function CoupleBudget() {
               </p>
             </div>
             <div className="glass rounded-xl p-6">
-              <p className="text-sm text-muted-foreground mb-1">{t('Spesa mediana mensile reale')}</p>
+              <p className="text-sm text-muted-foreground mb-1">{t('Spesa media mensile reale')}</p>
               <p className="text-2xl font-bold">
                 {CURRENCY_SYMBOLS.EUR}{totals.totalActual.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </p>
@@ -209,19 +222,19 @@ export default function CoupleBudget() {
                 </div>
               )
             ) : sortedBudgets.map(b => {
-              const medianSpent = getMedianMonthlySpendingShared(sharedExpenses, b.couple_category_name);
-              const percent = b.amount > 0 ? Math.min((medianSpent / Number(b.amount)) * 100, 100) : 0;
-              const isOver = medianSpent > Number(b.amount);
+              const averageSpent = getAverageMonthlySpendingShared(sharedExpenses, b.couple_category_name, new Date(), categoryDays(b.couple_category_name, categories));
+              const percent = b.amount > 0 ? Math.min((averageSpent / Number(b.amount)) * 100, 100) : 0;
+              const isOver = averageSpent > Number(b.amount);
               return (
                 <div key={b.id} className="glass rounded-xl p-6">
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-3">
-                      <HeartHandshake className="w-5 h-5 text-rose-400" />
+                      <span className="text-2xl" aria-hidden>{getCoupleCategoryIcon(b.couple_category_name, categories, sharedExpenses)}</span>
                       <span className="font-medium">{b.couple_category_name}</span>
                     </div>
                     <div className="flex items-center gap-3">
                       <span className={isOver ? 'text-destructive font-semibold' : 'text-muted-foreground'}>
-                        {CURRENCY_SYMBOLS.EUR}{medianSpent.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        {CURRENCY_SYMBOLS.EUR}{averageSpent.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         {' '}/ {CURRENCY_SYMBOLS.EUR}{Number(b.amount).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </span>
                       {!isArchived && (
