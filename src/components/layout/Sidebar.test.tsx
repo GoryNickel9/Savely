@@ -38,7 +38,7 @@ it('raggruppa e ordina le voci richieste nel menu desktop e mobile', () => {
       .toEqual(['Dashboard', 'Budgeting', 'Finance', 'Altro']);
     const expected = [
       ['Dashboard', 'Transazioni'],
-      ['Budget', 'Budget Familiare'],
+      ['Budget', 'Spese Ricorrenti', 'Budget Familiare'],
       ['Portfolio', 'Insights', 'Grafici'],
       ['Poker', 'Fumo', 'FIRE', 'TCG', 'Libreria'],
     ];
@@ -56,7 +56,7 @@ it('nasconde le voci riservate e il gruppo Altro quando i permessi sono assenti'
     expect(within(nav).queryByRole('region', { name: 'Altro' })).toBeNull();
     expect(within(nav).queryByRole('link', { name: 'Budget Familiare' })).toBeNull();
     expect(within(nav).getAllByRole('link').map((link) => link.getAttribute('href')))
-      .toEqual(['/', '/transactions', '/budget', '/portfolio', '/insights', '/charts']);
+      .toEqual(['/', '/transactions', '/budget', '/recurring', '/portfolio', '/insights', '/charts']);
   }
 });
 

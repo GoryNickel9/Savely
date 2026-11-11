@@ -23,6 +23,7 @@ import {
   BookOpen,
   HeartHandshake,
   Lightbulb,
+  Repeat,
   ChevronLeft,
   ChevronRight,
 } from 'lucide-react';
@@ -51,6 +52,7 @@ const navigation: { name: string; items: NavigationItem[] }[] = [
     name: 'Budgeting',
     items: [
       { name: 'Budget', href: '/budget', icon: PiggyBank },
+      { name: 'Spese Ricorrenti', href: '/recurring', icon: Repeat },
       { name: 'Budget Familiare', href: '/couple-budget', icon: HeartHandshake, permission: 'couple_expenses' },
     ],
   },
