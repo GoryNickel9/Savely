@@ -632,7 +632,7 @@ export default function Transactions() {
             return (
               <div key={`se-${se.id}`} className="flex items-center justify-between p-4 bg-rose-500/5">
                 <div className="flex items-center gap-3">
-                  <span className="text-2xl">💑</span>
+                  <span className="text-2xl">{se.category_icon || '💑'}</span>
                   <div>
                     <div className="flex items-center gap-2">
                       <p className="font-medium">{se.couple_category_name || t('Spesa condivisa')}</p>
