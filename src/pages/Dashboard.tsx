@@ -19,15 +19,26 @@ import {
 import { useTransactions } from '@/hooks/useTransactions';
 import { useBudgets } from '@/hooks/useBudgets';
 import { useTransactionBalance } from '@/hooks/useTransactionBalance';
+import { useCouplePairStatus } from '@/hooks/useCouplePairStatus';
+import { useSharedExpenses } from '@/hooks/useSharedExpenses';
+import { useAuth } from '@/hooks/useAuth';
+import { withPersonalSharedExpenses } from '@/lib/sharedExpenseTransactions';
 
 export default function Dashboard() {
   const { t } = useTranslation();
   const { transactions } = useTransactions();
+  const { user } = useAuth();
+  const { connection } = useCouplePairStatus();
+  const { sharedExpenses } = useSharedExpenses(connection?.id ?? null);
+  const personalTransactions = useMemo(
+    () => withPersonalSharedExpenses(transactions, sharedExpenses, user?.id),
+    [transactions, sharedExpenses, user?.id],
+  );
   const { budgets } = useBudgets();
 
   const [selection, setSelection] = useState<PeriodSelection>({ preset: 'mese-corrente' });
   const range = useMemo(() => resolvePeriod(selection), [selection]);
-  const stats = useMemo(() => computePeriodStats(transactions, range), [transactions, range]);
+  const stats = useMemo(() => computePeriodStats(personalTransactions, range), [personalTransactions, range]);
   const balanceQuery = useTransactionBalance(range.to, previousRange(range).to);
   const balance = balanceQuery.isError ? undefined : balanceQuery.data;
 
@@ -77,16 +88,16 @@ export default function Dashboard() {
 
         <section className="grid grid-cols-1 gap-6 xl:grid-cols-5">
           <div className="xl:col-span-3">
-            <IncomeExpenseChart transactions={transactions} range={range} />
+            <IncomeExpenseChart transactions={personalTransactions} range={range} />
           </div>
           <div className="xl:col-span-2">
-            <CategoryDonut transactions={transactions} range={range} />
+            <CategoryDonut transactions={personalTransactions} range={range} />
           </div>
         </section>
 
         <section className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-          <RecentTransactions transactions={transactions} range={range} />
-          <BudgetsWidget budgets={budgets} transactions={transactions} />
+          <RecentTransactions transactions={personalTransactions} range={range} />
+          <BudgetsWidget budgets={budgets} transactions={personalTransactions} />
         </section>
       </div>
     </MainLayout>

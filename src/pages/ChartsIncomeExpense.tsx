@@ -15,6 +15,10 @@ import { it } from 'date-fns/locale';
 import { useFilteredTransactions } from '@/hooks/useFilteredTransactions';
 import { useMonthlyAggregation } from '@/hooks/useMonthlyAggregation';
 import { useTranslation } from 'react-i18next';
+import { useCouplePairStatus } from '@/hooks/useCouplePairStatus';
+import { useSharedExpenses } from '@/hooks/useSharedExpenses';
+import { useAuth } from '@/hooks/useAuth';
+import { withPersonalSharedExpenses } from '@/lib/sharedExpenseTransactions';
 
 interface CumulativeDataPoint {
   date: string;
@@ -27,6 +31,13 @@ type FilterMode = 'all' | 'year' | 'month' | 'since' | 'between';
 export default function ChartsIncomeExpense() {
   const { t } = useTranslation();
   const { transactions } = useTransactions();
+  const { user } = useAuth();
+  const { connection } = useCouplePairStatus();
+  const { sharedExpenses } = useSharedExpenses(connection?.id ?? null);
+  const personalTransactions = useMemo(
+    () => withPersonalSharedExpenses(transactions, sharedExpenses, user?.id),
+    [transactions, sharedExpenses, user?.id],
+  );
   const [filterMode, setFilterMode] = useState<FilterMode>('year');
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear().toString());
   const [selectedMonth, setSelectedMonth] = useState((new Date().getMonth() + 1).toString());
@@ -36,7 +47,7 @@ export default function ChartsIncomeExpense() {
   
   // Usa i nuovi hook per filtrare e aggregare
   const filteredTransactions = useFilteredTransactions({
-    transactions,
+    transactions: personalTransactions,
     filterMode,
     selectedYear,
     selectedMonth,
@@ -48,11 +59,11 @@ export default function ChartsIncomeExpense() {
   const monthlyData = useMonthlyAggregation(filteredTransactions);
 
   const years = useMemo(() => {
-    const yearsSet = new Set(transactions.map(t => new Date(t.date).getFullYear()));
+    const yearsSet = new Set(personalTransactions.map(t => new Date(t.date).getFullYear()));
     const currentYear = new Date().getFullYear();
     yearsSet.add(currentYear);
     return Array.from(yearsSet).sort((a, b) => b - a);
-  }, [transactions]);
+  }, [personalTransactions]);
 
   // Cumulative balance over time - day by day based on filter
   const cumulativeData = useMemo((): CumulativeDataPoint[] => {
